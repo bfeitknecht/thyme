@@ -1,0 +1,5 @@
+dist/
+.tmp-pkg/
+.tmp-check/
+.tmp-stage/
+.DS_Store
