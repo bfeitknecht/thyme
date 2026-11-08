@@ -16,6 +16,70 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  format-check:
+    name: Verify Formatting Before Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Read typst.toml metadata
+        id: meta
+        run: |
+          echo "compiler=$(sed -n 's/^compiler = "\(.*\)":' typst.toml)" >> "$GITHUB_OUTPUT"
+
+      - name: Install Typst ${{ steps.meta.outputs.compiler }}, STIX Two, Commit Mono & just
+        run: |
+          mkdir -p "$HOME/.local/bin" "$HOME/.local/share/fonts"
+          curl -fsSL "https://github.com/typst/typst/releases/download/v${{ steps.meta.outputs.compiler }}/typst-x86_64-unknown-linux-musl.tar.xz" \
+            | tar -xJ -C "$HOME/.local/bin" --strip-components=1 "typst-x86_64-unknown-linux-musl/typst"
+          curl -fsSL "https://just.systems/install.sh" | bash -s -- --to "$HOME/.local/bin"
+          for f in STIXTwoText-Regular.otf STIXTwoText-Italic.otf STIXTwoText-SemiBold.otf STIXTwoText-SemiBoldItalic.otf STIXTwoText-Bold.otf STIXTwoText-BoldItalic.otf STIXTwoMath-Regular.otf; do
+            curl -fsSL "https://cdn.jsdelivr.net/gh/stipub/stixfonts@v2.13b171/fonts/static_otf/${f}" -o "$HOME/.local/share/fonts/${f}"
+          done
+          curl -fsSL "https://github.com/eigilnikolajsen/commit-mono/releases/download/v1.143/CommitMono-1.143.zip" -o /tmp/cm.zip
+          unzip -j -q /tmp/cm.zip "*.otf" -d "$HOME/.local/share/fonts/"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          echo "TYPST_FONT_PATHS=$HOME/.local/share/fonts" >> "$GITHUB_ENV"
+
+      - name: Run formatting check
+        run: just fmt
+
+  lint-check:
+    name: Verify Linting Before Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Read typst.toml metadata
+        id: meta
+        run: |
+          echo "compiler=$(sed -n 's/^compiler = "\(.*\)":' typst.toml)" >> "$GITHUB_OUTPUT"
+
+      - name: Install Typst ${{ steps.meta.outputs.compiler }}, STIX Two, Commit Mono & just
+        run: |
+          mkdir -p "$HOME/.local/bin" "$HOME/.local/share/fonts"
+          curl -fsSL "https://github.com/typst/typst/releases/download/v${{ steps.meta.outputs.compiler }}/typst-x86_64-unknown-linux-musl.tar.xz" \
+            | tar -xJ -C "$HOME/.local/bin" --strip-components=1 "typst-x86_64-unknown-linux-musl/typst"
+          curl -fsSL "https://just.systems/install.sh" | bash -s -- --to "$HOME/.local/bin"
+          for f in STIXTwoText-Regular.otf STIXTwoText-Italic.otf STIXTwoText-SemiBold.otf STIXTwoText-SemiBoldItalic.otf STIXTwoText-Bold.otf STIXTwoText-BoldItalic.otf STIXTwoMath-Regular.otf; do
+            curl -fsSL "https://cdn.jsdelivr.net/gh/stipub/stixfonts@v2.13b171/fonts/static_otf/${f}" -o "$HOME/.local/share/fonts/${f}"
+          done
+          curl -fsSL "https://github.com/eigilnikolajsen/commit-mono/releases/download/v1.143/CommitMono-1.143.zip" -o /tmp/cm.zip
+          unzip -j -q /tmp/cm.zip "*.otf" -d "$HOME/.local/share/fonts/"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          echo "TYPST_FONT_PATHS=$HOME/.local/share/fonts" >> "$GITHUB_ENV"
+
+      - name: Run linting check
+        run: just lint
+
   github-release:
     name: Verify & Publish GitHub Release
     runs-on: ubuntu-latest
@@ -37,9 +101,9 @@ jobs:
         run: |
           set -eu
           TAG_VER="${RAW_TAG#v}"
-          PKG_NAME="$(sed -n 's/^name = "\(.*\)"/\1/p' typst.toml)"
-          PKG_VER="$(sed -n 's/^version = "\(.*\)"/\1/p' typst.toml)"
-          COMPILER="$(sed -n 's/^compiler = "\(.*\)"/\1/p' typst.toml)"
+          PKG_NAME="$(sed -n 's/^name = "\(.*\)":' typst.toml)"
+          PKG_VER="$(sed -n 's/^version = "\(.*\)":' typst.toml)"
+          COMPILER="$(sed -n 's/^compiler = "\(.*\)":' typst.toml)"
 
           if [ "$TAG_VER" != "$PKG_VER" ]; then
             echo "::error::Tag ${RAW_TAG} does not match typst.toml version ${PKG_VER}"
@@ -84,7 +148,7 @@ jobs:
           ver = sys.argv[1]
           text = pathlib.Path("CHANGELOG.md").read_text()
           m = re.search(
-              rf"^## \[{re.escape(ver)}\][^\n]*\n(.*?)(?=^## \[|^\[[^\]]+\]:|\Z)",
+              rf"^## \[{re.escape(ver)}\][^\n]*\n(.*?)(?=^## \[|^\\[[^\\]]+\\]:|\\Z)",
               text,
               re.M | re.S,
           )
@@ -107,7 +171,7 @@ jobs:
 
   universe-draft-pr:
     name: Open Draft PR on typst/packages
-    needs: github-release
+    needs: [format-check, lint-check, github-release]
     runs-on: ubuntu-latest
     permissions:
       contents: read
