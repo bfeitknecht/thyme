@@ -44,7 +44,20 @@ jobs:
       - uses: ./.github/actions/setup
 
       - name: Run full check suite
-        run: just check
+        run: |
+          set -o pipefail
+          just check 2>&1 | tee check.log
+
+      # Job logs are not always reachable (they redirect to storage that some
+      # environments cannot fetch), so surface the failure as an annotation too.
+      - name: Annotate failure
+        if: failure()
+        run: |
+          echo "::error::just check failed — tail follows"
+          tail -n 40 check.log || true
+          grep -nE '^(error|Error|Traceback|[A-Za-z]*Error)|error:' check.log | tail -n 8 | while IFS= read -r line; do
+            echo "::error::${line}"
+          done
 
       - name: Fail if generated docs are stale
         run: |
