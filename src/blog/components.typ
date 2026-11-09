@@ -105,13 +105,13 @@
   }
 }
 
-#let _sbox-paged-fill(variant, theme-cfg) = {
+#let _sbox-paged-fill(variant, theme-config) = {
   if variant in ("definition", "theorem", "lemma", "proposition") {
-    theme-cfg.surface-2-light
+    theme-config.surface-2-light
   } else if variant == "example" {
-    theme-cfg.surface-1-light
+    theme-config.surface-1-light
   } else {
-    theme-cfg.paper-light
+    theme-config.paper-light
   }
 }
 
@@ -337,7 +337,7 @@
               weight: "bold",
               tracking: 0.05em,
               fill: t.text-light,
-              upper(to-plain-text(title)) + ".",
+              upper(to-plain-text(title)),
             ),
           )
           body
@@ -593,9 +593,12 @@
   }
 }
 
-/// Horizontal `Commit Mono` link row separated by middle dots (`·`) for thin homepages.
+/// General links layout (`direction: "row"` for horizontal, `direction: "col"` for vertical).
 /// -> content
-#let links-row(
+#let links(
+  /// Direction of layout (`"row"` for horizontal, `"col"` for vertical).
+  /// -> str
+  direction: "row",
   /// Link elements (e.g. `link("https://example.org")[example.org]`, `[@rss[rss]]`).
   /// -> content
   ..items,
@@ -603,16 +606,26 @@
   let t = active-theme()
   let entries = items.pos()
   if target() == "html" {
-    html.ul(class: "links", {
+    html.ul(class: if direction == "row" { "links" } else { "links-col" }, {
       for item in entries {
         html.li(item)
       }
     })
   } else {
-    block(above: 0.6em, below: 1.2em, {
-      set text(font: t.mono-fonts, size: 0.8em, fill: t.muted-light)
-      entries.join(" · ")
-    })
+    if direction == "row" {
+      block(above: 0.6em, below: 1.2em, {
+        set text(font: t.mono-fonts, size: 0.8em, fill: t.muted-light)
+        entries.join(" · ")
+      })
+    } else {
+      block(above: 0.6em, below: 1.2em, {
+        set text(font: t.mono-fonts, size: 0.8em, fill: t.muted-light)
+        for item in entries {
+          item
+          v(0.2em)
+        }
+      })
+    }
   }
 }
 

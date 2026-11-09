@@ -15,6 +15,7 @@
   query-doc-tr-codes,
   query-pages,
   render-top-bar,
+  site-config,
 )
 #import "../i18n.typ": resolve-page-langs
 #import "../paths.typ": (
@@ -31,7 +32,7 @@
 #import "../text.typ": count-words, estimate-reading-minutes, query-body-words
 #import "html.typ": render-html-shell
 #import "notes.typ": is-sidenote-link, reset-sidenotes, sidenote, sidenote-bottom-guard
-#import "theme.typ": active-theme, build-theme-override-css, default-theme, resolve-theme
+#import "theme.typ": active-theme, theme-override-css, default-theme, resolve-theme
 
 #let _paged-sec-counter = counter("blog/paged-sec")
 
@@ -43,8 +44,6 @@
 /// Query all public (non-draft, non-unlisted) posts in the active bundle, sorted newest-first.
 /// Must be called inside `context`.
 /// -> array
-#let query-all-posts(tag: none, lang: none) = query-pages(collection: "posts", tag: tag, lang: lang)
-
 /// Render chronological older / newer navigation links at the bottom of a post.
 /// Emits nothing when outside a bundle or when only one public post exists.
 /// -> content
@@ -60,7 +59,7 @@
   if enc-doc == none or enc-doc.path == none {
     return []
   }
-  let all-posts = query-all-posts()
+  let all-posts = query-pages(collection: "posts")
   let idx = all-posts.position(p => p.html-path == enc-doc.path)
   if idx == none {
     return []
@@ -105,11 +104,11 @@
 }
 
 // Apply theme-driven `oklch` monochrome typography to paged previews.
-#let style-paged-article(theme-cfg, lang: "en", numbered-headings: true, body) = {
+#let style-paged-article(theme-config, lang: "en", numbered-headings: true, body) = {
   set text(
-    font: theme-cfg.serif-fonts,
-    size: theme-cfg.font-size,
-    fill: theme-cfg.text-light,
+    font: theme-config.serif-fonts,
+    size: theme-config.font-size,
+    fill: theme-config.text-light,
     lang: lang,
   )
   set par(
@@ -118,32 +117,32 @@
     justify: false,
   )
 
-  show math.equation: set text(font: theme-cfg.math-fonts)
-  show raw: set text(font: theme-cfg.mono-fonts, size: 0.84em)
+  show math.equation: set text(font: theme-config.math-fonts)
+  show raw: set text(font: theme-config.mono-fonts, size: 0.84em)
   show raw.where(block: false): box.with(
-    fill: theme-cfg.surface-1-light,
-    stroke: 0.45pt + theme-cfg.border-light,
+    fill: theme-config.surface-1-light,
+    stroke: 0.45pt + theme-config.border-light,
     inset: (x: 0.3em, y: 0.12em),
     outset: (y: 0.12em),
     radius: 2pt,
   )
   show raw.where(block: true): block.with(
     width: 100%,
-    fill: theme-cfg.surface-1-light,
-    stroke: 0.55pt + theme-cfg.border-light,
+    fill: theme-config.surface-1-light,
+    stroke: 0.55pt + theme-config.border-light,
     inset: (x: 0.9em, y: 0.75em),
     radius: 2.5pt,
   )
 
   show link: it => {
     if type(it.dest) in (str, location, label) and not is-sidenote-link(it.body) {
-      underline(stroke: 0.5pt + theme-cfg.muted-light, offset: 2pt, text(fill: theme-cfg.text-light, it))
+      underline(stroke: 0.5pt + theme-config.muted-light, offset: 2pt, text(fill: theme-config.text-light, it))
     } else {
       it
     }
   }
 
-  show heading: set text(font: theme-cfg.serif-fonts, fill: theme-cfg.text-light)
+  show heading: set text(font: theme-config.serif-fonts, fill: theme-config.text-light)
   show heading.where(level: 1): it => {
     if numbered-headings {
       _paged-sec-counter.step()
@@ -153,16 +152,16 @@
       above: 1.85em,
       below: 0.78em,
       inset: (bottom: 0.38em),
-      stroke: (bottom: 0.55pt + theme-cfg.border-light),
+      stroke: (bottom: 0.55pt + theme-config.border-light),
       context {
         if numbered-headings {
           let n = _paged-sec-counter.get().first()
           let pad = if n < 10 { "0" + str(n) } else { str(n) }
           text(
-            font: theme-cfg.mono-fonts,
+            font: theme-config.mono-fonts,
             size: 0.78em,
             weight: "regular",
-            fill: theme-cfg.muted-light,
+            fill: theme-config.muted-light,
             pad,
           )
           h(0.55em)
@@ -181,22 +180,22 @@
   show quote.where(block: true): it => block(
     width: 100%,
     inset: (left: 1em, y: 0.2em),
-    stroke: (left: 1.5pt + theme-cfg.text-light),
+    stroke: (left: 1.5pt + theme-config.text-light),
     above: 1.1em,
     below: 1.1em,
     {
-      emph(text(fill: theme-cfg.muted-light, it.body))
+      emph(text(fill: theme-config.muted-light, it.body))
       if it.attribution != none {
         v(0.3em)
-        align(right, text(font: theme-cfg.mono-fonts, size: 0.78em, fill: theme-cfg.muted-light, "- " + it.attribution))
+        align(right, text(font: theme-config.mono-fonts, size: 0.78em, fill: theme-config.muted-light, "- " + it.attribution))
       }
     },
   )
 
   set table(
     stroke: (_, y) => (
-      top: if y == 0 { 1pt + theme-cfg.text-light } else if y == 1 { 0.6pt + theme-cfg.text-light } else { none },
-      bottom: 1pt + theme-cfg.text-light,
+      top: if y == 0 { 1pt + theme-config.text-light } else if y == 1 { 0.6pt + theme-config.text-light } else { none },
+      bottom: 1pt + theme-config.text-light,
     ),
     inset: (x: 0.65em, y: 0.46em),
   )
@@ -206,7 +205,7 @@
 }
 
 /// Dual-purpose scholarly post template and inline capability-path mounter:
-/// - In a post file (`posts/foo.typ` or `posts/foo/index.typ`):
+/// - In a post file (`posts/foo.typ` or `posts/foo/site.typ`):
 ///   `#show: post.with(title: [...], author: "...", created: ..., modified: ...)`
 /// - In `site.typ`:
 ///   `#post(path("posts/foo.typ")) <foo>` (evaluates the post AND exposes `/posts/foo.typ` as Tadi Web plaintext source; `include "posts/foo.typ"` is also accepted).
@@ -382,16 +381,14 @@
   context {
     let enc-doc = find-doc-containing(here())
     let doc-path = if enc-doc != none { enc-doc.path } else { none }
-    let core-cfgs = query(<thyme-site-cfg>)
-    let core-cfg = if core-cfgs.len() > 0 { core-cfgs.first().value } else { none }
-    let site-cfgs = query(<blog-site-cfg>)
-    let site-cfg = if site-cfgs.len() > 0 { site-cfgs.first().value } else { none }
-    let base-theme = if site-cfg != none { site-cfg.theme } else { default-theme }
+    // Merged preset + core site metadata (preset keys win).
+    let site-config = site-config()
+    let base-theme = if site-config != none { site-config.theme } else { default-theme }
     let has-post-theme = theme != none and theme != (:)
     let merged-theme = resolve-theme(base-theme + (if has-post-theme { theme } else { (:) }))
-    let site-title = if site-cfg != none { site-cfg.title } else if core-cfg != none { core-cfg.title } else { none }
-    let site-url = if site-cfg != none { site-cfg.url } else if core-cfg != none { core-cfg.url } else { none }
-    let site-lang = if site-cfg != none { site-cfg.lang } else if core-cfg != none { core-cfg.lang } else { "en" }
+    let site-title = if site-config != none { site-config.title } else { none }
+    let site-url = if site-config != none { site-config.url } else { none }
+    let site-lang = if site-config != none { site-config.lang } else { "en" }
     let eff-langs = resolve-page-langs(
       lang,
       default-lang: site-lang,
@@ -401,57 +398,55 @@
     let primary-lang = eff-langs.first()
     let eff-author = if author != none {
       author
-    } else if site-cfg != none {
-      site-cfg.author
-    } else if core-cfg != none {
-      core-cfg.author
+    } else if site-config != none {
+      site-config.at("author", default: none)
     } else {
       none
     }
     let eff-permalinks = if heading-permalinks != auto {
       heading-permalinks == true
-    } else if site-cfg != none {
-      site-cfg.at("heading-permalinks", default: false)
+    } else if site-config != none {
+      site-config.at("heading-permalinks", default: false)
     } else {
       false
     }
     let eff-backlinks = if show-backlinks != auto {
       show-backlinks == true
-    } else if site-cfg != none {
-      site-cfg.at("backlinks", default: false)
+    } else if site-config != none {
+      site-config.at("backlinks", default: false)
     } else {
       false
     }
     let eff-post-nav = if show-post-nav != auto {
       show-post-nav == true
-    } else if site-cfg != none {
-      site-cfg.at("post-nav", default: false)
+    } else if site-config != none {
+      site-config.at("post-nav", default: false)
     } else {
       false
     }
     let eff-copy = if copy-button != auto {
       copy-button
-    } else if site-cfg != none {
-      site-cfg.at("copy-button", default: auto)
+    } else if site-config != none {
+      site-config.at("copy-button", default: auto)
     } else {
       auto
     }
     let eff-og = if open-graph != auto {
       open-graph == true
-    } else if site-cfg != none {
-      site-cfg.at("open-graph", default: false)
+    } else if site-config != none {
+      site-config.at("open-graph", default: false)
     } else {
       false
     }
     let eff-scholar = if scholar-meta != auto {
       scholar-meta == true
-    } else if site-cfg != none {
-      site-cfg.at("scholar-meta", default: false)
+    } else if site-config != none {
+      site-config.at("scholar-meta", default: false)
     } else {
       false
     }
-    let link-tags = site-cfg != none and site-cfg.at("tag-pages", default: false) and doc-path != none
-    let tags-dir = if site-cfg != none { site-cfg.at("tags-dir", default: "tags") } else { "tags" }
+    let link-tags = site-config != none and site-config.at("tag-pages", default: false) and doc-path != none
+    let tags-dir = if site-config != none { site-config.at("tags-dir", default: "tags") } else { "tags" }
 
     let has-props = (
       eff-author != none
@@ -473,15 +468,15 @@
       } else {
         none
       }
-      let src-label = if core-cfg != none { core-cfg.source-label } else if site-cfg != none { site-cfg.source-label } else { none }
+      let src-label = if site-config != none { site-config.at("source-label", default: none) } else { none }
       let src-href = if src-label != none { lookup-source-href(doc-path) } else { none }
-      let sheet-paths = if core-cfg != none {
-        core-cfg.at("stylesheet-paths", default: auto)
+      let sheet-paths = if site-config != none {
+        site-config.at("stylesheet-paths", default: auto)
       } else {
         auto
       }
       let theme-override-css = if doc-path != none and has-post-theme {
-        build-theme-override-css(merged-theme)
+        theme-override-css(merged-theme)
       } else {
         none
       }
@@ -498,11 +493,11 @@
         alternates: alternates,
         stylesheet-paths: sheet-paths,
         theme-override-css: theme-override-css,
-        favicon-href: if core-cfg != none { core-cfg.at("favicon-href", default: none) } else { none },
-        favicon-type: if core-cfg != none { core-cfg.at("favicon-type", default: none) } else { none },
+        favicon-href: if site-config != none { site-config.at("favicon-href", default: none) } else { none },
+        favicon-type: if site-config != none { site-config.at("favicon-type", default: none) } else { none },
         source-href: src-href,
         source-label: src-label,
-        theme-cfg: merged-theme,
+        theme-config: merged-theme,
         copy-button: eff-copy,
         include-feeds: false,
         created: eff-created,

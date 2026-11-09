@@ -30,8 +30,8 @@
 )
 #import "../text.typ": count-words
 #import "html.typ": render-html-shell, render-not-found-page
-#import "post.typ": post, query-all-posts
-#import "theme.typ": active-theme, build-stylesheet, resolve-theme, stylesheet-asset-path, stylesheet-href
+#import "post.typ": post
+#import "theme.typ": active-theme, stylesheet-css, resolve-theme, stylesheet-asset-path, stylesheet-href
 
 // Shared entry card renderer for both inline `#post(...)` mounts and `#post-list()`.
 #let _render-entry-card(
@@ -42,7 +42,7 @@
   subtitle: none,
   show-summary: true,
   wrapper-tag: "div",
-  theme-cfg: none,
+  theme-config: none,
 ) = {
   let desc = if summary != none { summary } else { subtitle }
   if target() == "html" {
@@ -62,7 +62,7 @@
       strong(title)
       if created-str != none {
         h(1fr)
-        text(font: theme-cfg.mono-fonts, size: 0.8em, created-str)
+        text(font: theme-config.mono-fonts, size: 0.8em, created-str)
       }
     })
   }
@@ -94,7 +94,7 @@
           subtitle: p.subtitle,
           show-summary: show-summary,
           wrapper-tag: "li",
-          theme-cfg: t,
+          theme-config: t,
         )
       }
     })
@@ -104,7 +104,7 @@
         title: p.title,
         created-str: p.created-str,
         show-summary: show-summary,
-        theme-cfg: t,
+        theme-config: t,
       )
     }
   }
@@ -119,7 +119,7 @@
   tags-dir: "tags",
 ) = context {
   let t = active-theme()
-  let posts = query-all-posts()
+  let posts = query-pages(collection: "posts")
   let counts = (:)
   for p in posts {
     for tg in p.at("tags", default: ()) {
@@ -178,13 +178,13 @@
       subtitle: pm.at("subtitle", default: none),
       show-summary: show-summary,
       wrapper-tag: "div",
-      theme-cfg: t,
+      theme-config: t,
     )
   }
 }
 
 /// Scholarly monochrome blog bundler (`#show: site.with(...)` after `#import blog: *`,
-/// `#show: blog-site.with(...)`, or `#show: site.with(preset: blog, ...)`).
+/// or `#show: blog.site.with(...)`).
 ///
 /// Renders `site.typ`'s body as `index.html` (`<site>`), emits every mounted
 /// `#post(path("posts/foo.typ")) <foo>` as `<posts-dir>/foo/index.html` (`<foo>`) and any
@@ -194,9 +194,6 @@
 /// and `atom.xml` (`<atom>`).
 /// -> content
 #let site(
-  /// Ignored compatibility parameter so `site.with(preset: blog, ...)` works regardless of import order.
-  /// -> any
-  preset: none,
   /// Site title (`auto` infers from the first `= ...` heading in `body`, or pass any `str` / rich `content`).
   /// -> auto | content | str
   title: auto,
@@ -224,10 +221,10 @@
   /// Output directory prefix for static tag archive pages (`tags/<tag>/index.html`).
   /// -> str
   tags-dir: "tags",
-  /// Capability `path("site.typ")` (or `str`) of the root entrypoint so Tadi Web source view emits `/index.typ`.
+  /// Capability `path("site.typ")` (or `str`) of the root entrypoint so Tadi Web source view emits `/site.typ`.
   /// -> path | str | none
   src: none,
-  /// Co-emit sibling `.typ` plaintext source files (`/index.typ`, `/posts/<slug>.typ`) and render a top-right `.typ` link (`true` uses `".typ"`, `false` disables, or pass custom label `str`).
+  /// Co-emit sibling `.typ` plaintext source files (`/site.typ`, `/posts/<slug>.typ`) and render a top-right `.typ` link (`true` uses `".typ"`, `false` disables, or pass custom label `str`).
   /// -> bool | str
   expose-source: true,
   /// Additional user stylesheets (`path("extra.css")`) appended after `css/style.css`.
@@ -287,13 +284,13 @@
   /// Theme overrides merged onto `default-theme` across both HTML CSS and paged previews.
   /// -> dictionary
   theme: (:),
-  /// Homepage markup (`= Heading`, `#links-row(...)`, and mounted `#post(path("...")) <slug>` entries).
+  /// Homepage markup (`= Heading`, `#links(direction: "row", ...)`, and mounted `#post(path("...")) <slug>` entries).
   /// -> content
   body,
 ) = {
-  let theme-cfg = resolve-theme(theme)
-  let built-css = build-stylesheet(theme: theme-cfg)
-  let built-css-href = stylesheet-href(css: built-css, theme: theme-cfg)
+  let theme-config = resolve-theme(theme)
+  let built-css = stylesheet-css(theme: theme-config)
+  let built-css-href = stylesheet-href(css: built-css, theme: theme-config)
   let site-typ-path = if type(src) == path { unwrap-typ-path(src) } else { none }
   let source-label = if expose-source == false or expose-source == none {
     none
@@ -322,7 +319,7 @@
     [Blog]
   }
 
-  let blog-cfg = (
+  let blog-config = (
     title: resolved-blog-title,
     description: description,
     url: url,
@@ -332,7 +329,7 @@
     tag-pages: tag-pages,
     tags-dir: tags-dir,
     source-label: source-label,
-    theme: theme-cfg,
+    theme: theme-config,
     sitemap-path: sitemap-path,
     rss-path: rss-path,
     atom-path: atom-path,
@@ -375,7 +372,7 @@
     head: head,
     _default-title: [Blog],
     _feed-collection: "posts",
-    _extra-metadata: [#metadata(blog-cfg)<blog-site-cfg>],
+    _preset-config: blog-config,
     _default-route-fn: default-route,
     _mount-card-fn: rec => _render-mounted-entry(
       rec,
@@ -421,7 +418,7 @@
         source-href: source-href,
         source-label: source-label,
         render-topbar: true,
-        theme-cfg: theme-cfg,
+        theme-config: theme-config,
         copy-button: copy-button,
         include-feeds: include-feeds,
         rss-path: rss-path,
@@ -435,7 +432,7 @@
       site-title: res-title,
       lang: primary-lang,
       stylesheet-paths: sheet-hrefs,
-      theme-cfg: theme-cfg,
+      theme-config: theme-config,
     ),
     _extra-docs-fn: (
       all-mounts: (),
@@ -507,7 +504,7 @@
                 favicon-type: favicon-type,
                 back-content: back-node,
                 render-topbar: true,
-                theme-cfg: theme-cfg,
+                theme-config: theme-config,
                 copy-button: copy-button,
                 include-feeds: false,
                 created: pg-created,
@@ -566,7 +563,7 @@
                   favicon-type: favicon-type,
                   back-content: back-node,
                   render-topbar: true,
-                  theme-cfg: theme-cfg,
+                  theme-config: theme-config,
                   copy-button: false,
                   include-feeds: false,
                   {
@@ -607,7 +604,7 @@
                     favicon-type: favicon-type,
                     back-content: back-node,
                     render-topbar: true,
-                    theme-cfg: theme-cfg,
+                    theme-config: theme-config,
                     copy-button: false,
                     include-feeds: false,
                     {

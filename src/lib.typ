@@ -1,19 +1,20 @@
 // Public entrypoint for `@preview/thyme:0.1.0`.
 //
 // Generic zero-CSS SSG core exports are available directly via `#import "@preview/thyme:0.1.0": *`.
-// Scholarly monochrome blog preset exports live in `blog` (`#import blog: *`, `#show: blog-site.with(...)`,
-// or order-independently via `#show: site.with(preset: blog, ...)`).
+// Scholarly monochrome blog preset exports live in `blog` (`#import blog: *`,
+// `#show: blog.site.with(...)`).
+//
+// `site` is always the core engine. The blog preset ships its own bundler as
+// `blog.site`, so the two never collide and import order never matters.
 
 #import "blog/mod.typ" as blog
-#import "blog/site.typ": site as blog-site
 
 #import "core.typ": (
   backlinks,
+  file,
   mount,
   page-asset,
   query-pages,
-  raw-file,
-  route,
   site,
   webpage,
   with-html-math,
@@ -26,7 +27,7 @@
 )
 
 #import "i18n.typ": (
-  build-i18n-css,
+  i18n-css,
   lang-switcher,
   normalize-alternates,
   resolve-page-langs,
@@ -42,10 +43,10 @@
 )
 
 #import "seo.typ": (
-  build-atom-feed,
-  build-robots-txt,
-  build-rss-feed,
-  build-sitemap,
+  atom-xml,
+  robots-txt,
+  rss-xml,
+  sitemap-xml,
   content-to-feed-html,
   render-seo-meta,
 )

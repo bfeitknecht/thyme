@@ -1,6 +1,6 @@
 // thyme v0.1.0 — Package Reference Manual (generated from source doc-comments via @preview/tidy)
 #import "@preview/tidy:0.4.3"
-#import "@preview/thyme:0.1.0"
+#import "@preview/thyme:0.1.0" as thyme
 #import "@preview/thyme:0.1.0": *
 #import blog: (
   checklist,
@@ -378,7 +378,7 @@
         row-gutter: 0.34em,
         column-gutter: 0.9em,
         text(fill: t.muted-light)[core ssg], [`#import "@preview/thyme:0.1.0": *`],
-        text(fill: t.muted-light)[blog preset], [`#import blog: *` or `site.with(preset: blog)`],
+        text(fill: t.muted-light)[blog preset], [`#import blog: *` or `blog.site.with(...)`],
         text(fill: t.muted-light)[scaffold], [`typst init @preview/thyme:0.1.0 my-site`],
         text(fill: t.muted-light)[dev / build], [`typst watch --features html,bundle -f bundle site.typ dist`],
         text(fill: t.muted-light)[license], [`MIT` (`src/`) · `MIT-0` (`template/`, `examples/`)],
@@ -413,16 +413,16 @@
     ),
     [Core SSG],
     [`#import "@preview/thyme:0.1.0": *`],
-    [Unopinionated zero-CSS `site`, `webpage`, `mount(path(...))`, `raw-file`, `backlinks`, `htm` / `h` typed hypertagged HTML, `#tr(...)` zero-JS CSS i18n + `hreflang` alternates, sibling `.typ` source co-emission, `sitemap.xml`, `robots.txt`, OpenGraph/Scholar `<meta>`, and summary or full-HTML `rss.xml` / `atom.xml`.],
+    [Unopinionated zero-CSS `site`, `webpage`, `mount(path(...))`, `file`, `backlinks`, `htm` / `h` typed hypertagged HTML, `#tr(...)` zero-JS CSS i18n + `hreflang` alternates, sibling `.typ` source co-emission, `sitemap.xml`, `robots.txt`, OpenGraph/Scholar `<meta>`, and summary or full-HTML `rss.xml` / `atom.xml`.],
     [`blog` Preset],
-    [`#import blog: *` / `preset: blog`],
+    [`#import blog: *` / `blog.site`],
     [Opinionated scholarly monochrome blog (`oklch` / `light-dark()` + 2-column `@media print`), _STIX Two_ + _Helvetica Neue_ + _Commit Mono_, `@preview/marge` sidenotes + `#mcite` margin citations, static `/tags/` archives, `#toc()`, `#post-nav()`, Obsidian `<dl>` frontmatter, theorem/proof boxes, `zebraw`, `tablem`, and `cheq`.],
   )
 ]
 
 = Tadi Web `.typ` Sources & `sws.toml` Headers
 
-When pages are mounted via Typst capability paths (`src: path("site.typ")`, `#mount(path("contact.typ"))`, `#post(path("posts/foo.typ"))`), `thyme` reads and co-emits the verbatim `.typ` source alongside each HTML page (`index.typ`, `contact.typ`, `posts/foo.typ`) and links it via `.typ` in the top utility bar. Configure your static server (such as `static-web-server`) so browsers render `.typ` inline as UTF-8 plaintext:
+When pages are mounted via Typst capability paths (`src: path("site.typ")`, `#mount(path("contact.typ"))`, `#post(path("posts/foo.typ"))`), `thyme` reads and co-emits the verbatim `.typ` source alongside each HTML page (`site.typ`, `contact.typ`, `posts/foo.typ`) and links it via `.typ` in the top utility bar. Configure your static server (such as `static-web-server`) so browsers render `.typ` inline as UTF-8 plaintext:
 
 #zebraw(numbering: false)[
   ```toml
@@ -472,7 +472,7 @@ When pages are mounted via Typst capability paths (`src: path("site.typ")`, `#mo
 = `blog` Preset Reference (`src/blog/*.typ`)
 
 == Blog Bundler (`src/blog/site.typ`)
-#render-src-module("../src/blog/site.typ", "blog-site")
+#render-src-module("../src/blog/site.typ", "site")
 
 == Post Template (`src/blog/post.typ`)
 #render-src-module("../src/blog/post.typ", "blog-post")

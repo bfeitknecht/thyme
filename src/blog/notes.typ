@@ -34,8 +34,8 @@
   false
 }
 
-#let format-paged-note(num-content, source-loc, theme-cfg, body) = {
-  set text(font: theme-cfg.serif-fonts, size: 0.85em, fill: theme-cfg.muted-light)
+#let format-paged-note(num-content, source-loc, theme-config, body) = {
+  set text(font: theme-config.serif-fonts, size: 0.85em, fill: theme-config.muted-light)
   set par(leading: 0.48em, justify: false)
   if num-content != none {
     let badge = super(
@@ -44,7 +44,7 @@
       baseline: -0.34em,
       link(
         source-loc,
-        [#metadata("thyme-sn-link")] + text(fill: theme-cfg.text-light, weight: "regular", num-content),
+        [#metadata("thyme-sn-link")] + text(fill: theme-config.text-light, weight: "regular", num-content),
       ),
     ) + h(0.26em)
     par(
