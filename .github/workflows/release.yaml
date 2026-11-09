@@ -31,28 +31,16 @@ jobs:
 
       - uses: ./.github/actions/setup
 
-      - name: Validate tag, typst.toml, and CHANGELOG
+      - name: Validate the release tag
         id: meta
         env:
-          RAW_TAG: ${{ inputs.tag || github.ref_name }}
+          TAG: ${{ inputs.tag || github.ref_name }}
         run: |
-          set -eu
-          pkg_name="$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml","rb"))["package"]["name"])')"
-          pkg_version="$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml","rb"))["package"]["version"])')"
-
-          if [ "$RAW_TAG" != "v$pkg_version" ]; then
-            echo "::error::tag '$RAW_TAG' does not match typst.toml version '$pkg_version' (want 'v$pkg_version')"
-            exit 1
-          fi
-          # The release notes are the `## [<version>]` section of CHANGELOG.md. Check it
-          # here, with the same rules the notes step uses below, so "the section exists"
-          # and "the notes are publishable" cannot disagree.
-          if ! grep -Eq "^## \[${pkg_version}\] - [0-9]{4}-[0-9]{2}-[0-9]{2}" CHANGELOG.md; then
-            echo "::error::CHANGELOG.md needs a dated '## [${pkg_version}] - YYYY-MM-DD' section"
-            exit 1
-          fi
-          echo "pkg_name=${pkg_name}" >> "$GITHUB_OUTPUT"
-          echo "pkg_version=${pkg_version}" >> "$GITHUB_OUTPUT"
+          just check-release "$TAG"
+          {
+            echo "pkg_name=$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml","rb"))["package"]["name"])')"
+            echo "pkg_version=$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml","rb"))["package"]["version"])')"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Run full check suite
         run: |
@@ -77,46 +65,24 @@ jobs:
       - name: Build manual
         run: just docs
 
-      - name: Extract changelog notes & publish
+      - name: Publish the GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ inputs.tag || github.ref_name }}
           VER: ${{ needs.verify.outputs.pkg_version }}
         run: |
           set -eu
-          # The notes are the `## [<version>]` section of CHANGELOG.md, up to the next
-          # `## [...]` heading or the `[x.y.z]: url` link definitions. A missing span is a
-          # hard failure: never publish a placeholder or an empty body.
-          python3 - "$VER" > release-notes.md <<'PY'
-          import pathlib, re, sys
-          version = sys.argv[1]
-          text = pathlib.Path("CHANGELOG.md").read_text()
-          match = re.search(
-              rf"^## \[{re.escape(version)}\][^\n]*\n(.*?)(?=^## \[|^\[[^\]]+\]:|\Z)",
-              text,
-              re.M | re.S,
-          )
-          body = match.group(1).strip() if match else ""
-          if not body:
-              sys.exit(
-                  f"::error::no publishable '## [{version}]' section in CHANGELOG.md "
-                  "(missing or empty) — refusing to publish empty release notes"
-              )
-          print(body)
-          PY
+          just notes "$VER" > release-notes.md
           cat >> release-notes.md <<'EOF'
 
           ---
           _Release notes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/spec/v2.0.0.html)._
           EOF
-
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" docs/manual.pdf --clobber
             gh release edit "$TAG" --notes-file release-notes.md
           else
-            gh release create "$TAG" docs/manual.pdf \
-              --title "$TAG" \
-              --notes-file release-notes.md
+            gh release create "$TAG" docs/manual.pdf --title "$TAG" --notes-file release-notes.md
           fi
 
   universe-pr:
