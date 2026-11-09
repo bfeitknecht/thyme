@@ -1211,6 +1211,14 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
     none
   }
 
+  // `site()` emits the mounted pages and the built-in 404 itself, so it needs the same
+  // resolved theme `webpage()` derives: a preset (e.g. `blog`) supplies it through
+  // `_preset-config`, a plain core site keeps `default-theme`.
+  let shell-theme = if ext.at("_preset-config", default: none) != none {
+    ext.at("_preset-config").at("theme", default: default-theme)
+  } else {
+    default-theme
+  }
   let site-config = (
     title: resolved-title,
     description: description,
