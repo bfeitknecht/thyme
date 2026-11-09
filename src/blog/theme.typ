@@ -122,20 +122,22 @@
 /// _Helvetica Neue_ + _Commit Mono_ font stacks, and paged preview geometry.
 /// -> dictionary
 #let default-theme = (
-  paper-light: oklch(94.9%, 0, 0deg),
-  text-light: oklch(10.1%, 0, 0deg),
-  muted-light: oklch(35.8%, 0, 0deg),
-  border-light: oklch(35.8%, 0, 0deg),
-  frame-light: oklch(10.1%, 0, 0deg),
-  surface-1-light: oklch(94.9%, 0, 0deg),
-  surface-2-light: oklch(85%, 0, 0deg),
-  paper-dark: oklch(6.2%, 0, 0deg),
-  text-dark: oklch(93.1%, 0, 0deg),
-  muted-dark: oklch(62.3%, 0, 0deg),
-  border-dark: oklch(62.3%, 0, 0deg),
-  frame-dark: oklch(93.1%, 0, 0deg),
-  surface-1-dark: oklch(6.2%, 0, 0deg),
-  surface-2-dark: oklch(15%, 0, 0deg),
+  // Lightness values are exact: each one renders the sRGB hex noted beside it,
+  // so `light-dark()` output matches the documented palette byte for byte.
+  paper-light: oklch(96.12%, 0, 0deg), // #f2f2f2
+  text-light: oklch(21.34%, 0, 0deg), // #191919
+  muted-light: oklch(47.48%, 0, 0deg), // #5c5c5c
+  border-light: oklch(47.48%, 0, 0deg), // #5c5c5c
+  frame-light: oklch(21.34%, 0, 0deg), // #191919
+  surface-1-light: oklch(96.12%, 0, 0deg), // #f2f2f2
+  surface-2-light: oklch(91.89%, 0, 0deg), // #e4e4e4
+  paper-dark: oklch(17.3%, 0, 0deg), // #101010
+  text-dark: oklch(94.61%, 0, 0deg), // #ededed
+  muted-dark: oklch(69.93%, 0, 0deg), // #9e9e9e
+  border-dark: oklch(69.93%, 0, 0deg), // #9e9e9e
+  frame-dark: oklch(94.61%, 0, 0deg), // #ededed
+  surface-1-dark: oklch(17.3%, 0, 0deg), // #101010
+  surface-2-dark: oklch(26.86%, 0, 0deg), // #262626
   serif-fonts: (
     "STIX Two Text",
     "Libertinus Serif",
