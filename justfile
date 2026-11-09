@@ -10,11 +10,61 @@ _link-pkg dir=".tmp-pkg":
     for manifest in typst.toml vendor/*/typst.toml; do
         [ -f "$manifest" ] || continue
         p_dir="$(cd "$(dirname "$manifest")" && pwd)"
-        p_name="$(sed -n 's/^name = "\(.*\)"/\1/p' "$manifest")"
-        p_ver="$(sed -n 's/^version = "\(.*\)"/\1/p' "$manifest")"
+        p_name="$(sed -n 's/^name = "\(.*\)"$/\1/p' "$manifest")"
+        p_ver="$(sed -n 's/^version = "\(.*\)"$/\1/p' "$manifest")"
         mkdir -p "{{dir}}/preview/$p_name"
         ln -s "$p_dir" "{{dir}}/preview/$p_name/$p_ver"
     done
+
+# Format all Typst files in the repository in place (`just fmt-check` to verify)
+fmt:
+    #!/usr/bin/env sh
+    set -eu
+    # Typst 0.15.1+ supports `typst fmt`
+    typst_files="$(find src template examples tests docs -name '*.typ' 2>/dev/null)"
+    for f in $typst_files; do
+        typst fmt "$f"
+    done
+    echo "formatted all .typ files"
+
+# Check that every Typst file is already formatted (does not modify the tree)
+fmt-check:
+    #!/usr/bin/env sh
+    set -eu
+    typst_files="$(find src template examples tests docs -name '*.typ' 2>/dev/null)"
+    tmp="$(mktemp -d)"
+    trap 'rm -rf "$tmp"' EXIT
+    stale=""
+    for f in $typst_files; do
+        mkdir -p "$tmp/$(dirname "$f")"
+        cp "$f" "$tmp/$f"
+        typst fmt "$tmp/$f"
+        if ! cmp -s "$f" "$tmp/$f"; then
+            stale="$stale $f"
+        fi
+    done
+    if [ -n "$stale" ]; then
+        echo "unformatted Typst files:$stale" >&2
+        echo "run 'just fmt' and commit the result" >&2
+        exit 1
+    fi
+    echo "all Typst files are formatted"
+
+# Lint Typst files and Python scripts
+lint:
+    #!/usr/bin/env sh
+    set -eu
+    # Check Typst syntax (basic compilation check)
+    trap 'rm -rf ".tmp-lint"' EXIT
+    just _link-pkg ".tmp-lint"
+    typst compile --package-path ".tmp-lint" --features html,bundle --format bundle template/site.typ .tmp-lint/lint-check
+
+    # Python linting (if ruff is available)
+    if command -v ruff >/dev/null 2>&1; then
+        ruff check . --exclude vendor,preview
+        ruff format --check . --exclude vendor,preview
+    fi
+    echo "linting passed"
 
 # Run full compilation, XML/sitemap/link/source verification, and Universe staging checks
 check:
@@ -71,7 +121,7 @@ check:
             assert "<lastBuildDate>" in rss_txt, f"missing <lastBuildDate> in {bundle}/rss.xml"
         for html_file in sorted(bundle.rglob("*.html")):
             txt = html_file.read_text()
-            assert ">??<" not in txt and "[??]" not in txt, f"unresolved ref in {html_file}"
+            assert ">??" not in txt and "[??]" not in txt, f"unresolved ref in {html_file}"
             for href in re.findall(r'href="([^"#?]+)', txt):
                 if href.startswith(("http://", "https://", "mailto:", "javascript:", "data:")):
                     continue
@@ -100,10 +150,59 @@ check:
     # 4. Dry-run Universe directory staging
     sh ./scripts/stage-universe.sh --allow-vendored "$tmp_stage"
 
+    pkg_name="$(sed -n 's/^name = "\(.*\)"$/\1/p' typst.toml)"
+    pkg_ver="$(sed -n 's/^version = "\(.*\)"$/\1/p' typst.toml)"
     if command -v typst-package-check >/dev/null 2>&1 && [ ! -d vendor/exemel ]; then
         typst-package-check check "$tmp_stage/packages/preview/$pkg_name/$pkg_ver"
     fi
     echo "all checks passed"
+
+# Compile template + examples into a browsable preview/ site (open preview/index.html)
+preview:
+    #!/usr/bin/env sh
+    set -eu
+    tmp_pkg=".tmp-pkg"
+    out="preview"
+    trap 'rm -rf "$tmp_pkg"' EXIT
+    just _link-pkg "$tmp_pkg"
+
+    rm -rf "$out"
+    mkdir -p "$out"
+    typst compile --package-path "$tmp_pkg" --features html,bundle --format bundle template/site.typ "$out/template"
+    typst compile --package-path "$tmp_pkg" --features html,bundle --format bundle examples/blog/site.typ "$out/blog"
+    typst compile --package-path "$tmp_pkg" --features html,bundle --format bundle examples/portfolio/site.typ "$out/portfolio"
+
+    cat > "$out/index.html" <<'HTML'
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>thyme &mdash; preview</title>
+        <meta name="theme-color" content="#f2f2f2" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#101010" media="(prefers-color-scheme: dark)">
+        <style>
+          :root { color-scheme: light dark; --paper: light-dark(#f2f2f2, #101010); --text: light-dark(#191919, #ededed); --muted: light-dark(#5c5c5c, #9e9e9e); }
+          body { max-width: 40rem; margin: 0 auto; padding: 4rem 1.5rem; background: var(--paper); color: var(--text); font: 17px/1.6 "STIX Two Text", Georgia, serif; }
+          h1 { font-family: ui-monospace, Menlo, monospace; font-size: 1.9rem; letter-spacing: -0.02em; margin: 0 0 2.5rem; }
+          ul { list-style: none; padding: 0; } li { border-top: 1px solid var(--muted); } li:last-child { border-bottom: 1px solid var(--muted); }
+          a { display: block; padding: 1rem 0.5rem; color: inherit; text-decoration: none; }
+          a:hover { text-decoration: underline; text-underline-offset: 0.2em; }
+          span { display: block; font: 0.72rem ui-monospace, Menlo, monospace; color: var(--muted); }
+        </style>
+      </head>
+      <body>
+        <h1>thyme preview</h1>
+        <ul>
+          <li><a href="template/index.html">Template &mdash; folio<span>template/site.typ</span></a></li>
+          <li><a href="blog/index.html">Blog preset &mdash; noether<span>examples/blog/site.typ</span></a></li>
+          <li><a href="portfolio/index.html">Portfolio &mdash; zero built-in CSS<span>examples/portfolio/site.typ</span></a></li>
+        </ul>
+      </body>
+    </html>
+    HTML
+    echo "preview written to $out/index.html"
+    echo "live reload: typst watch --features html,bundle -f bundle template/site.typ preview/template --serve"
 
 # Compile docs/manual.typ -> docs/manual.pdf
 docs:
@@ -194,7 +293,7 @@ release $tag="" $message="":
         *) echo "release: tag must start with 'v' (e.g. v0.1.0)" >&2; exit 1 ;;
     esac
 
-    toml_ver="$(sed -n 's/^version = "\(.*\)"/\1/p' typst.toml)"
+    toml_ver="$(sed -n 's/^version = "\(.*\)"$/\1/p' typst.toml)"
     if [ "$ver" != "$toml_ver" ]; then
         echo "release: tag $tag does not match typst.toml version $toml_ver (run 'just bump $ver' first)" >&2
         exit 1
@@ -213,6 +312,8 @@ release $tag="" $message="":
     fi
 
     just check
+    just fmt-check
+    just lint
 
     git add -A
     if ! git diff --cached --quiet; then

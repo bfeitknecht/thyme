@@ -13,7 +13,7 @@
   assets: (("dfa.svg", read("dfa.svg", encoding: none)),),
 )
 
-Posts with co-located figures can live in a subfolder (`posts/state-machine/index.typ`) while still emitting cleanly to `posts/state-machine/index.html` and `posts/state-machine.typ`#sidenote[The post slug resolves automatically from the parent folder name whenever the file is named `index.typ`.].
+Posts with co-located figures can live in a subfolder (`posts/state-machine/site.typ`) while still emitting cleanly to `posts/state-machine/index.html` and `posts/state-machine.typ`#sidenote[The post slug resolves automatically from the parent folder name whenever the file is named `site.typ`.].
 
 #diagram(caption: [Two-state parity acceptor over $\{0, 1\}^*$.])[
   #image("dfa.svg", width: 240pt)

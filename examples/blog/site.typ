@@ -1,8 +1,7 @@
 #import "@preview/thyme:0.1.0": *
-#import blog: *
+#import "@preview/thyme:0.1.0": blog
 
-#show: site.with(
-  preset: blog,
+#show: blog.site.with(
   description: "Algebraic invariants, automata, and bilingual static notes.",
   url: "https://notes.example.org",
   author: "Emmy Noether",
@@ -15,13 +14,14 @@
   scholar-meta: true,
 )
 
-#mount(path("about.typ")) <about>
+#blog.mount(path("about.typ")) <about>
 
 = `noether`
 
 Algebraic invariants, finite-state machines, and static scholarly notes.
 
-#links-row(
+#blog.links(
+  direction: "row",
   link(<about>)[colophon],
   link(<tags>)[tags],
   [@rss[rss]],
@@ -30,5 +30,5 @@ Algebraic invariants, finite-state machines, and static scholarly notes.
 
 == Notes
 
-#post(path("posts/bilingual-notes.typ")) <bilingual-notes>
-#post(path("posts/state-machine/index.typ")) <state-machine>
+#blog.post(path("posts/bilingual-notes.typ")) <bilingual-notes>
+#blog.post(path("posts/state-machine/site.typ")) <state-machine>

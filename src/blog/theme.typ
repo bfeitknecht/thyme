@@ -36,6 +36,24 @@
   }
 }
 
+// `font-weight` and `font-style` are CSS keywords/numbers, not strings: quoting
+// them (`font-weight: "400"`) is an invalid declaration the browser discards, so
+// every face loses its weight and style descriptor and the family degrades to a
+// single face. Only `font-family` and `src` take quoted values.
+/// Format any Typst `color` as a lowercase `#rrggbb` hex string, for contexts that
+/// need a plain sRGB literal rather than `oklch(...)` (e.g. `<meta name="theme-color">`).
+/// -> str
+#let css-hex(col) = {
+  let (r, g, b, ..) = rgb(col).components()
+  let h(v) = {
+    // Channels are ratios in 0..1. Scale to an integer 0..255, then print it in
+    // base 16 and pad to two digits so low channels do not collapse to `#f22`.
+    let digits = str(int(calc.round(float(v) * 255)), base: 16)
+    if digits.len() == 1 { "0" + digits } else { digits }
+  }
+  "#" + h(r) + h(g) + h(b)
+}
+
 #let _font-face-rule(family, url, weight, style) = (
   "@font-face {\n  font-family: \""
     + family
@@ -122,20 +140,20 @@
 /// _Helvetica Neue_ + _Commit Mono_ font stacks, and paged preview geometry.
 /// -> dictionary
 #let default-theme = (
-  paper-light: oklch(99%, 0, 0deg),
-  text-light: oklch(18%, 0, 0deg),
-  muted-light: oklch(52%, 0, 0deg),
-  border-light: oklch(89%, 0, 0deg),
-  frame-light: oklch(20%, 0, 0deg),
-  surface-1-light: oklch(96.5%, 0, 0deg),
-  surface-2-light: oklch(93.5%, 0, 0deg),
-  paper-dark: oklch(18%, 0, 0deg),
-  text-dark: oklch(93%, 0, 0deg),
-  muted-dark: oklch(65%, 0, 0deg),
-  border-dark: oklch(29%, 0, 0deg),
-  frame-dark: oklch(84%, 0, 0deg),
-  surface-1-dark: oklch(22%, 0, 0deg),
-  surface-2-dark: oklch(26%, 0, 0deg),
+  paper-light: oklch(96%, 0, 0deg),
+  text-light: oklch(21%, 0, 0deg),
+  muted-light: oklch(47%, 0, 0deg),
+  border-light: oklch(47%, 0, 0deg),
+  frame-light: oklch(21%, 0, 0deg),
+  surface-1-light: oklch(96%, 0, 0deg),
+  surface-2-light: oklch(92%, 0, 0deg),
+  paper-dark: oklch(17%, 0, 0deg),
+  text-dark: oklch(95%, 0, 0deg),
+  muted-dark: oklch(70%, 0, 0deg),
+  border-dark: oklch(70%, 0, 0deg),
+  frame-dark: oklch(95%, 0, 0deg),
+  surface-1-dark: oklch(17%, 0, 0deg),
+  surface-2-dark: oklch(27%, 0, 0deg),
   serif-fonts: (
     "STIX Two Text",
     "Libertinus Serif",
@@ -182,16 +200,16 @@
 }
 
 /// Resolve the active theme inside `context` (preferring any enclosing per-post
-/// `<blog-post-theme>` override over site-wide `<blog-site-cfg>`).
+/// `<blog-post-theme>` override over the site-wide `<site-config>`).
 /// -> dictionary
 #let active-theme() = {
   let post-themes = query(selector(<blog-post-theme>).before(here()))
   if post-themes.len() > 0 {
     post-themes.last().value
   } else {
-    let cfgs = query(<blog-site-cfg>)
-    if cfgs.len() > 0 {
-      cfgs.first().value.theme
+    let found = query(<site-config>)
+    if found.len() > 0 and found.first().value.at("theme", default: none) != none {
+      found.first().value.theme
     } else {
       default-theme
     }
@@ -228,7 +246,7 @@
 /// Render `src/blog/style.css` substituting all `oklch(...)` palette tokens,
 /// `--serif` / `--math` / `--sans` / `--mono` font stacks, and `@font-face` declarations from `theme`.
 /// -> str
-#let build-stylesheet(
+#let stylesheet-css(
   /// Theme dictionary (`default-theme` or user overrides).
   /// -> dictionary
   theme: default-theme,
@@ -260,8 +278,8 @@
 
 // Build a compact per-post `:root` CSS custom-property override block when a post inside
 // a bundle overrides `theme` tokens, without discarding site-level external `stylesheets`.
-#let build-theme-override-css(theme-cfg) = {
-  let t = resolve-theme(theme-cfg)
+#let theme-override-css(theme-config) = {
+  let t = resolve-theme(theme-config)
   let bg-l = css-oklch(t.paper-light)
   let fg-l = css-oklch(t.text-light)
   let mu-l = css-oklch(t.muted-light)
@@ -285,6 +303,6 @@
 
 // Compute a deterministic content-addressed `style.css?v=<hash>` href from the rendered CSS.
 #let stylesheet-href(root-prefix: "", css: none, theme: default-theme) = {
-  let rendered = if css != none { css } else { build-stylesheet(theme: theme) }
+  let rendered = if css != none { css } else { stylesheet-css(theme: theme) }
   root-prefix + stylesheet-asset-path + "?v=" + short-hash(rendered)
 }
