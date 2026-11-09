@@ -10,35 +10,59 @@ _link-pkg dir=".tmp-pkg":
     for manifest in typst.toml vendor/*/typst.toml; do
         [ -f "$manifest" ] || continue
         p_dir="$(cd "$(dirname "$manifest")" && pwd)"
-        p_name="$(sed -n 's/^name = "\(.*\)":' "$manifest")"
-        p_ver="$(sed -n 's/^version = "\(.*\)":' "$manifest")"
+        p_name="$(sed -n 's/^name = "\(.*\)"$/\1/p' "$manifest")"
+        p_ver="$(sed -n 's/^version = "\(.*\)"$/\1/p' "$manifest")"
         mkdir -p "{{dir}}/preview/$p_name"
         ln -s "$p_dir" "{{dir}}/preview/$p_name/$p_ver"
     done
 
-# Autoformat all Typst files in the repository
+# Format all Typst files in the repository in place (`just fmt-check` to verify)
 fmt:
     #!/usr/bin/env sh
     set -eu
     # Typst 0.15.1+ supports `typst fmt`
-    for f in src/**/*.typ template/**/*.typ examples/**/*.typ tests/**/*.typ docs/**/*.typ; do
-        [ -f "$f" ] || continue
+    typst_files="$(find src template examples tests docs -name '*.typ' 2>/dev/null)"
+    for f in $typst_files; do
         typst fmt "$f"
     done
     echo "formatted all .typ files"
+
+# Check that every Typst file is already formatted (does not modify the tree)
+fmt-check:
+    #!/usr/bin/env sh
+    set -eu
+    typst_files="$(find src template examples tests docs -name '*.typ' 2>/dev/null)"
+    tmp="$(mktemp -d)"
+    trap 'rm -rf "$tmp"' EXIT
+    stale=""
+    for f in $typst_files; do
+        mkdir -p "$tmp/$(dirname "$f")"
+        cp "$f" "$tmp/$f"
+        typst fmt "$tmp/$f"
+        if ! cmp -s "$f" "$tmp/$f"; then
+            stale="$stale $f"
+        fi
+    done
+    if [ -n "$stale" ]; then
+        echo "unformatted Typst files:$stale" >&2
+        echo "run 'just fmt' and commit the result" >&2
+        exit 1
+    fi
+    echo "all Typst files are formatted"
 
 # Lint Typst files and Python scripts
 lint:
     #!/usr/bin/env sh
     set -eu
     # Check Typst syntax (basic compilation check)
+    trap 'rm -rf ".tmp-lint"' EXIT
     just _link-pkg ".tmp-lint"
     typst compile --package-path ".tmp-lint" --features html,bundle --format bundle template/site.typ .tmp-lint/lint-check
-    
+
     # Python linting (if ruff is available)
     if command -v ruff >/dev/null 2>&1; then
-        ruff check .
-        ruff format --check .
+        ruff check . --exclude vendor,preview
+        ruff format --check . --exclude vendor,preview
     fi
     echo "linting passed"
 
@@ -79,7 +103,7 @@ check:
     assert '<div class="empty-box"></div>' in unit_html and '<div class="empty-htm"></div>' in unit_html, "empty h/htm element test failed"
     assert "<pre>line 1\n  indented line 2</pre>" in unit_html, "<pre> whitespace preservation failed"
     assert '<mo form="prefix" stretchy="false">(</mo><mi>𝑒</mi><mo stretchy="false">)</mo>' in unit_html, "with-html-math failed to suppress auto-lr stretch on F(e)"
-    assert '<msup><mi>𝑑</mi><miarchiwizowane></msup>' in unit_html and '<msup><mi>ℝ</mi><mi>+</mi></msup>' in unit_html, "with-html-math failed to normalize lone script operators"
+    assert '<msup><mi>𝑑</mi><mi>∗</mi></msup>' in unit_html and '<msup><mi>ℝ</mi><mi>+</mi></msup>' in unit_html, "with-html-math failed to normalize lone script operators"
     assert '<mrow><mo>(</mo><mfrac><mi>𝑎</mi><mi>𝑏</mi></mfrac><mo>)</mo></mrow>' in unit_html, "with-html-math broke stretchy frac delimiters"
     assert '<mrow><mo>(</mo><mi>𝑒</mi><mo>)</mo></mrow>' in unit_html, "with-html-math broke explicit lr((e))"
     assert 'font-variant-caps: small-caps' in unit_html and 'font-variant-caps: all-small-caps' in unit_html, "smallcaps HTML export failed"
@@ -126,8 +150,8 @@ check:
     # 4. Dry-run Universe directory staging
     sh ./scripts/stage-universe.sh --allow-vendored "$tmp_stage"
 
-    pkg_name="$(sed -n 's/^name = "\(.*\)":' typst.toml)"
-    pkg_ver="$(sed -n 's/^version = "\(.*\)":' typst.toml)"
+    pkg_name="$(sed -n 's/^name = "\(.*\)"$/\1/p' typst.toml)"
+    pkg_ver="$(sed -n 's/^version = "\(.*\)"$/\1/p' typst.toml)"
     if command -v typst-package-check >/dev/null 2>&1 && [ ! -d vendor/exemel ]; then
         typst-package-check check "$tmp_stage/packages/preview/$pkg_name/$pkg_ver"
     fi
@@ -269,7 +293,7 @@ release $tag="" $message="":
         *) echo "release: tag must start with 'v' (e.g. v0.1.0)" >&2; exit 1 ;;
     esac
 
-    toml_ver="$(sed -n 's/^version = "\(.*\)":' typst.toml)"
+    toml_ver="$(sed -n 's/^version = "\(.*\)"$/\1/p' typst.toml)"
     if [ "$ver" != "$toml_ver" ]; then
         echo "release: tag $tag does not match typst.toml version $toml_ver (run 'just bump $ver' first)" >&2
         exit 1
@@ -288,7 +312,7 @@ release $tag="" $message="":
     fi
 
     just check
-    just fmt
+    just fmt-check
     just lint
 
     git add -A
