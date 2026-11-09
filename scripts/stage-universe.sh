@@ -16,13 +16,9 @@ done
 REPO_ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 cd "$REPO_ROOT"
 
-PKG_NAME="$(sed -n 's/^name = "\(.*\)"/\1/p' typst.toml)"
-PKG_VER="$(sed -n 's/^version = "\(.*\)"/\1/p' typst.toml)"
-
-if [ -z "$PKG_NAME" ] || [ -z "$PKG_VER" ]; then
-  echo "stage-universe: failed to read name/version from typst.toml" >&2
-  exit 1
-fi
+# `manifest.py` validates typst.toml and exits non-zero on a missing field.
+PKG_NAME="$(python3 scripts/manifest.py get name)"
+PKG_VER="$(python3 scripts/manifest.py get version)"
 
 # Guard against staging for Typst Universe while unpublished dependencies remain in vendor/
 if [ "$ALLOW_VENDORED" -eq 0 ] && [ -d vendor ] && [ -n "$(find vendor -mindepth 1 -maxdepth 2 -name typst.toml 2>/dev/null)" ]; then

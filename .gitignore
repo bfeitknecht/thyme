@@ -5,3 +5,4 @@ dist/
 .DS_Store
 preview/
 .tmp-lint/
+__pycache__/

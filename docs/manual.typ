@@ -2,15 +2,7 @@
 #import "@preview/tidy:0.4.3"
 #import "@preview/thyme:0.1.0" as thyme
 #import "@preview/thyme:0.1.0": *
-#import blog: (
-  checklist,
-  default-theme,
-  kbd,
-  sidenote,
-  wide,
-  zebraw,
-  zebraw-init,
-)
+#import blog: checklist, default-theme, kbd, sidenote, wide, zebraw, zebraw-init
 
 #import "../src/blog/notes.typ": is-sidenote-link
 
@@ -38,7 +30,10 @@
     set text(font: t.mono-fonts, size: 7.5pt, fill: t.muted-light)
     line(length: 100%, stroke: 0.45pt + t.border-light)
     v(-0.35em)
-    [https://github.com/bfeitknecht/thyme #h(1fr) #counter(page).display("1 / 1", both: true)]
+    [https://github.com/bfeitknecht/thyme #h(1fr) #counter(page).display(
+        "1 / 1",
+        both: true,
+      )]
   },
 )
 
@@ -67,30 +62,67 @@
 #show: zebraw-init
 #show: checklist.with(
   marker-map: (
-    " ": move(dy: -0.08em, box(baseline: bottom, circle(radius: 0.22em, stroke: 0.65pt + t.muted-light))),
-    "x": move(dy: -0.08em, box(baseline: bottom, circle(radius: 0.22em, stroke: 0.65pt + t.text-light, fill: t.text-light))),
+    " ": move(dy: -0.08em, box(baseline: bottom, circle(
+      radius: 0.22em,
+      stroke: 0.65pt + t.muted-light,
+    ))),
+    "x": move(dy: -0.08em, box(baseline: bottom, circle(
+      radius: 0.22em,
+      stroke: 0.65pt + t.text-light,
+      fill: t.text-light,
+    ))),
   ),
 )
 
 #set heading(numbering: "1.1")
-#show heading.where(level: 1): it => block(above: 1.9em, below: 0.9em, breakable: false, {
-  if it.numbering != none {
-    text(font: t.mono-fonts, size: 0.78em, weight: "regular", fill: t.muted-light, counter(heading).display("01"))
-    h(0.55em)
-  }
-  show raw.where(block: false): r => text(font: t.mono-fonts, size: 0.86em, r.text)
-  text(size: 1.38em, weight: "semibold", it.body)
-  v(0.28em)
-  line(length: 100%, stroke: 0.55pt + t.border-light)
-})
-#show heading.where(level: 2): it => block(above: 1.45em, below: 0.65em, breakable: false, {
-  if it.numbering != none {
-    text(font: t.mono-fonts, size: 0.78em, weight: "regular", fill: t.muted-light, counter(heading).display())
-    h(0.5em)
-  }
-  show raw.where(block: false): r => text(font: t.mono-fonts, size: 0.88em, r.text)
-  text(size: 1.12em, weight: "semibold", it.body)
-})
+#show heading.where(level: 1): it => block(
+  above: 1.9em,
+  below: 0.9em,
+  breakable: false,
+  {
+    if it.numbering != none {
+      text(
+        font: t.mono-fonts,
+        size: 0.78em,
+        weight: "regular",
+        fill: t.muted-light,
+        counter(heading).display("01"),
+      )
+      h(0.55em)
+    }
+    show raw.where(block: false): r => text(
+      font: t.mono-fonts,
+      size: 0.86em,
+      r.text,
+    )
+    text(size: 1.38em, weight: "semibold", it.body)
+    v(0.28em)
+    line(length: 100%, stroke: 0.55pt + t.border-light)
+  },
+)
+#show heading.where(level: 2): it => block(
+  above: 1.45em,
+  below: 0.65em,
+  breakable: false,
+  {
+    if it.numbering != none {
+      text(
+        font: t.mono-fonts,
+        size: 0.78em,
+        weight: "regular",
+        fill: t.muted-light,
+        counter(heading).display(),
+      )
+      h(0.5em)
+    }
+    show raw.where(block: false): r => text(
+      font: t.mono-fonts,
+      size: 0.88em,
+      r.text,
+    )
+    text(size: 1.12em, weight: "semibold", it.body)
+  },
+)
 
 // ─── Monochrome `tidy` Style ─────────────────────────────────────────────────
 
@@ -128,8 +160,13 @@
         } else {
           ""
         }
-        let target-lbl = label(style-args.label-prefix + fn.name + "." + name.trim("."))
-        let linked-name = if style-args.enable-cross-references and info.at("description", default: "") != "" {
+        let target-lbl = label(
+          style-args.label-prefix + fn.name + "." + name.trim("."),
+        )
+        let linked-name = if (
+          style-args.enable-cross-references
+            and info.at("description", default: "") != ""
+        ) {
           link(target-lbl, name)
         } else {
           name
@@ -164,7 +201,13 @@
   breakable: style-args.break-param-descriptions,
   {
     set par(leading: 0.56em, spacing: 0.55em)
-    text(font: t.mono-fonts, size: 8.3pt, weight: "bold", fill: t.text-light, name)
+    text(
+      font: t.mono-fonts,
+      size: 8.3pt,
+      weight: "bold",
+      fill: t.text-light,
+      name,
+    )
     if function-name != none and style-args.enable-cross-references {
       [#box()#label(function-name + "." + name.trim("."))]
     }
@@ -258,7 +301,13 @@
       block(
         below: 0.25em,
         breakable: false,
-        text(font: t.sans-fonts, size: 7.4pt, weight: "bold", tracking: 0.05em, fill: t.muted-light)[PARAMETERS.],
+        text(
+          font: t.sans-fonts,
+          size: 7.4pt,
+          weight: "bold",
+          tracking: 0.05em,
+          fill: t.muted-light,
+        )[PARAMETERS.],
       )
       param-blocks.join()
     }
@@ -281,7 +330,13 @@
       radius: 2pt,
       breakable: false,
       {
-        text(font: t.mono-fonts, size: 8.2pt, weight: "bold", fill: t.text-light, var.name)
+        text(
+          font: t.mono-fonts,
+          size: 8.2pt,
+          weight: "bold",
+          fill: t.text-light,
+          var.name,
+        )
         if style-args.enable-cross-references {
           [#box()#label(style-args.label-prefix + var.name)]
         }
@@ -305,7 +360,10 @@
   show-parameter-block: _show-parameter-block,
   show-function: _show-function,
   show-variable: _show-variable,
-  show-reference: (lbl, name, style-args: none) => link(lbl, raw(name, lang: none)),
+  show-reference: (lbl, name, style-args: none) => link(lbl, raw(
+    name,
+    lang: none,
+  )),
   show-example: (..args) => tidy.show-example.show-example(
     ..args,
     dir: ttb,
@@ -337,9 +395,12 @@
     scope: combined-scope,
   )
   let filtered = if omit-names.len() > 0 {
-    parsed + (
-      functions: parsed.functions.filter(f => f.name not in omit-names),
-      variables: parsed.variables.filter(v => v.name not in omit-names),
+    (
+      parsed
+        + (
+          functions: parsed.functions.filter(f => f.name not in omit-names),
+          variables: parsed.variables.filter(v => v.name not in omit-names),
+        )
     )
   } else {
     parsed
@@ -359,9 +420,18 @@
 // ─── Title Block ─────────────────────────────────────────────────────────────
 
 #block(width: 100%, below: 1.5em, {
-  text(font: t.mono-fonts, size: 2.2em, weight: "bold", tracking: -0.03em)[thyme]
+  text(
+    font: t.mono-fonts,
+    size: 2.2em,
+    weight: "bold",
+    tracking: -0.03em,
+  )[thyme]
   h(0.65em)
-  text(font: t.mono-fonts, size: 0.9em, fill: t.muted-light)[v0.1.0 · Typst >= 0.15.1]
+  text(
+    font: t.mono-fonts,
+    size: 0.9em,
+    fill: t.muted-light,
+  )[v0.1.0 · Typst >= 0.15.1]
   v(0.35em)
   text(size: 1.14em, fill: t.muted-light, emph[
     Pure-Typst static site generator with typed hypertagged HTML, Tadi Web .typ source transparency, zero-JS CSS i18n, XML sitemaps & feeds, and a monochrome blog preset.
@@ -377,11 +447,20 @@
         columns: (6.8em, 1fr),
         row-gutter: 0.34em,
         column-gutter: 0.9em,
-        text(fill: t.muted-light)[core ssg], [`#import "@preview/thyme:0.1.0": *`],
-        text(fill: t.muted-light)[blog preset], [`#import blog: *` or `blog.site.with(...)`],
-        text(fill: t.muted-light)[scaffold], [`typst init @preview/thyme:0.1.0 my-site`],
-        text(fill: t.muted-light)[dev / build], [`typst watch --features html,bundle -f bundle site.typ dist`],
-        text(fill: t.muted-light)[license], [`MIT` (`src/`) · `MIT-0` (`template/`, `examples/`)],
+        text(fill: t.muted-light)[core ssg],
+        [`#import "@preview/thyme:0.1.0": *`],
+
+        text(fill: t.muted-light)[blog preset],
+        [`#import blog: *` or `blog.site.with(...)`],
+
+        text(fill: t.muted-light)[scaffold],
+        [`typst init @preview/thyme:0.1.0 my-site`],
+
+        text(fill: t.muted-light)[dev / build],
+        [`typst watch --features html,bundle -f bundle site.typ dist`],
+
+        text(fill: t.muted-light)[license],
+        [`MIT` (`src/`) · `MIT-0` (`template/`, `examples/`)],
       )
     },
   )
@@ -398,7 +477,9 @@
   #table(
     columns: (auto, auto, 1fr),
     stroke: (x, y) => (
-      top: if y == 0 { 0.65pt + t.frame-light } else { 0.45pt + t.border-light },
+      top: if y == 0 { 0.65pt + t.frame-light } else {
+        0.45pt + t.border-light
+      },
       bottom: 0.5pt + t.border-light,
       left: none,
       right: none,
@@ -414,6 +495,7 @@
     [Core SSG],
     [`#import "@preview/thyme:0.1.0": *`],
     [Unopinionated zero-CSS `site`, `webpage`, `mount(path(...))`, `file`, `backlinks`, `htm` / `h` typed hypertagged HTML, `#tr(...)` zero-JS CSS i18n + `hreflang` alternates, sibling `.typ` source co-emission, `sitemap.xml`, `robots.txt`, OpenGraph/Scholar `<meta>`, and summary or full-HTML `rss.xml` / `atom.xml`.],
+
     [`blog` Preset],
     [`#import blog: *` / `blog.site`],
     [Opinionated scholarly monochrome blog (`oklch` / `light-dark()` + 2-column `@media print`), _STIX Two_ + _Helvetica Neue_ + _Commit Mono_, `@preview/marge` sidenotes + `#mcite` margin citations, static `/tags/` archives, `#toc()`, `#post-nav()`, Obsidian `<dl>` frontmatter, theorem/proof boxes, `zebraw`, `tablem`, and `cheq`.],

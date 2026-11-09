@@ -16,7 +16,7 @@ runs:
       shell: bash
       run: |
         set -eu
-        compiler="$(sed -n 's/^compiler = "\(.*\)"$/\1/p' typst.toml)"
+        compiler="$(python3 scripts/manifest.py get compiler)"
         if [ -z "$compiler" ]; then
           echo "::error::could not read 'compiler' from typst.toml"
           exit 1
@@ -60,7 +60,11 @@ runs:
         set -eu
         # The Typst CLI has no `fmt` subcommand; typstyle is the community formatter
         # and is what `just fmt` / `just fmt-check` drive.
+        # Pin the formatter: typstyle's output changes between releases (it adds/removes
+        # trailing commas and parentheses), so a floating version makes `just fmt` on one
+        # machine fail `just fmt-check` on CI. 0.15.1 is the version the tree is formatted
+        # with; bumping it means re-running `just fmt` in the same commit.
         if ! command -v typstyle >/dev/null 2>&1; then
-          cargo install typstyle --locked
+          cargo install typstyle --version 0.15.1 --locked
         fi
         echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"

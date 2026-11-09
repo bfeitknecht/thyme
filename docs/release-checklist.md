@@ -130,11 +130,19 @@ section is the contract to hand to anyone downstream.
   for HTML, but the paged Universe preview may fall back if those fonts are absent from
   their renderer. Cosmetic only — check it in step 6.
 - **`[Unreleased]` is already folded into `[0.1.0]`** (done, dated 2026-11-09). This
-  mattered because `release.yaml` extracts notes by regexing `^## \[<version>\]` out of
-  `CHANGELOG.md`: before folding, a `v0.1.0` tag would have published the original
-  `[0.1.0]` body and silently omitted the `theme-color`, `robots.txt`, `shell-theme` and
-  CI fixes — i.e. a release note that dropped its own headline fixes. Verified the
-  extracted notes now contain all four. Keep `[Unreleased]` empty until the next cycle.
+  mattered because the release notes are the `## [0.1.0]` section of `CHANGELOG.md`:
+  before folding, a `v0.1.0` tag would have published the original `[0.1.0]` body and
+  silently omitted the `theme-color`, `robots.txt`, `shell-theme` and CI fixes — i.e. a
+  release note that dropped its own headline fixes. Verified the extracted notes now
+  contain all four. Keep `[Unreleased]` empty until the next cycle.
+- **The notes step now fails instead of guessing.** Extraction lives in
+  `scripts/changelog.py`; a missing, empty, undated, or subsection-less `## [<version>]`
+  section aborts the run before anything is published. To preview the notes without
+  tagging, run `python3 scripts/changelog.py notes 0.1.0`, and to check them
+  `python3 scripts/changelog.py check 0.1.0 v0.1.0`.
+- **The formatter is pinned to `typstyle` 0.15.1.** `just check` runs in CI after
+  `just fmt-check`; if you bump the pin, run `just fmt` and commit the reformat in the
+  same change, or `Format` goes red for the whole tree.
 - **Never re-point an existing tag at new commits.** `actions/checkout` uses
   `inputs.tag || github.ref`, and `github.ref` for a tag push is the tag. If you delete and
   re-push a tag after amending the release commit, `universe-pr` can stage the *old* tree

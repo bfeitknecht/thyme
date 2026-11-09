@@ -31,31 +31,20 @@ jobs:
 
       - uses: ./.github/actions/setup
 
-      - name: Validate tag against typst.toml & CHANGELOG
+      - name: Validate tag, typst.toml, and CHANGELOG
         id: meta
         env:
           RAW_TAG: ${{ inputs.tag || github.ref_name }}
         run: |
           set -eu
-          tag_version="${RAW_TAG#v}"
-          pkg_name="$(sed -n 's/^name = "\(.*\)"$/\1/p' typst.toml)"
-          pkg_version="$(sed -n 's/^version = "\(.*\)"$/\1/p' typst.toml)"
-
-          if [ -z "$pkg_name" ] || [ -z "$pkg_version" ]; then
-            echo "::error::could not read name/version from typst.toml"
-            exit 1
-          fi
-          if [ "$tag_version" != "$pkg_version" ]; then
-            echo "::error::tag ${RAW_TAG} does not match typst.toml version ${pkg_version}"
-            exit 1
-          fi
-          if ! grep -Eq "^## \[${pkg_version}\]" CHANGELOG.md; then
-            echo "::error::missing '## [${pkg_version}]' section in CHANGELOG.md"
-            exit 1
-          fi
-
-          echo "pkg_name=${pkg_name}" >> "$GITHUB_OUTPUT"
-          echo "pkg_version=${pkg_version}" >> "$GITHUB_OUTPUT"
+          eval "$(python3 scripts/manifest.py env)"
+          # One parser asserts all of it: the version is plain X.Y.Z, the tag is exactly
+          # `v<version>`, and the matching CHANGELOG section exists, is dated, and is not
+          # empty. The same parser produces the release notes below, so "the section
+          # exists" and "the notes are publishable" can never disagree.
+          python3 scripts/changelog.py check "$PKG_VER" "$RAW_TAG"
+          echo "pkg_name=${PKG_NAME}" >> "$GITHUB_OUTPUT"
+          echo "pkg_version=${PKG_VER}" >> "$GITHUB_OUTPUT"
 
       - name: Run full check suite
         run: |
@@ -80,31 +69,19 @@ jobs:
       - name: Build manual
         run: just docs
 
-      - name: Extract Keep a Changelog notes & publish
+      - name: Extract changelog notes & publish
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ inputs.tag || github.ref_name }}
           VER: ${{ needs.verify.outputs.pkg_version }}
         run: |
           set -eu
-          python3 - "$VER" <<'PY' > release-notes.md
-          import pathlib, re, sys
+          python3 scripts/changelog.py notes "$VER" > release-notes.md
+          cat >> release-notes.md <<'EOF'
 
-          version = sys.argv[1]
-          text = pathlib.Path("CHANGELOG.md").read_text()
-          match = re.search(
-              rf"^## \[{re.escape(version)}\][^\n]*\n(.*?)(?=^## \[|^\[[^\]]+\]:|\Z)",
-              text,
-              re.M | re.S,
-          )
-          body = match.group(1).strip() if match else f"Release v{version}"
-          footer = (
-              "\n\n---\n"
-              "_Release notes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) "
-              "and [Semantic Versioning](https://semver.org/spec/v2.0.0.html)._"
-          )
-          print(body + footer)
-          PY
+          ---
+          _Release notes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/spec/v2.0.0.html)._
+          EOF
 
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" docs/manual.pdf --clobber
@@ -155,17 +132,21 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cargo/bin/typst-package-check
-          key: typst-package-check-${{ runner.os }}-v1
+          key: typst-package-check-${{ runner.os }}-v0.7.0
 
       - name: Install Typst & typst-package-check
         run: |
           set -eu
           mkdir -p "$HOME/.local/bin"
-          typst_version="$(sed -n 's/^compiler = "\(.*\)"$/\1/p' typst.toml)"
+          typst_version="$(python3 scripts/manifest.py get compiler)"
           curl -fsSL "https://github.com/typst/typst/releases/download/v${typst_version}/typst-x86_64-unknown-linux-musl.tar.xz" \
             | tar -xJ -C "$HOME/.local/bin" --strip-components=1 "typst-x86_64-unknown-linux-musl/typst"
+          # Pin the validator to a tag: `--git` without a rev installs whatever master
+          # happens to be at release time, so a release can fail (or pass) for reasons
+          # that do not exist in this repository's history.
           if [ ! -x "$HOME/.cargo/bin/typst-package-check" ]; then
-            cargo install --locked --git https://github.com/typst/package-check.git typst-package-check
+            cargo install --locked --git https://github.com/typst/package-check.git \
+              --tag v0.7.0 typst-package-check
           fi
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"

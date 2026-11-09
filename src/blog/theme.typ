@@ -29,7 +29,9 @@
   let s = str(base).trim()
   if s == "" {
     none
-  } else if s.starts-with("http://") or s.starts-with("https://") or s.starts-with("/") {
+  } else if (
+    s.starts-with("http://") or s.starts-with("https://") or s.starts-with("/")
+  ) {
     s.trim("/", at: end) + "/"
   } else {
     "/" + s.trim("/") + "/"
@@ -70,7 +72,9 @@
 // subsets (e.g. Google Fonts' STIX Two Text without `smcp`/`c2sc`/`onum`) can never
 // shadow the pinned upstream or self-hosted `.woff2` binaries.
 #let _build-builtin-font-faces(font-base: none, font-version: none) = {
-  let base = if font-base != none { _normalize-font-base(font-base) } else { none }
+  let base = if font-base != none { _normalize-font-base(font-base) } else {
+    none
+  }
   let q = if font-version != none and str(font-version) != "" {
     "?v=" + str(font-version)
   } else {
@@ -84,19 +88,74 @@
   }
   (
     "STIX Two Text": (
-      _font-face-rule("STIX Two Text", stix-prefix + "STIXTwoText-Regular.woff2" + q, 400, "normal"),
-      _font-face-rule("STIX Two Text", stix-prefix + "STIXTwoText-Italic.woff2" + q, 400, "italic"),
-      _font-face-rule("STIX Two Text", stix-prefix + "STIXTwoText-SemiBold.woff2" + q, 600, "normal"),
-      _font-face-rule("STIX Two Text", stix-prefix + "STIXTwoText-SemiBoldItalic.woff2" + q, 600, "italic"),
-      _font-face-rule("STIX Two Text", stix-prefix + "STIXTwoText-Bold.woff2" + q, 700, "normal"),
-      _font-face-rule("STIX Two Text", stix-prefix + "STIXTwoText-BoldItalic.woff2" + q, 700, "italic"),
+      _font-face-rule(
+        "STIX Two Text",
+        stix-prefix + "STIXTwoText-Regular.woff2" + q,
+        400,
+        "normal",
+      ),
+      _font-face-rule(
+        "STIX Two Text",
+        stix-prefix + "STIXTwoText-Italic.woff2" + q,
+        400,
+        "italic",
+      ),
+      _font-face-rule(
+        "STIX Two Text",
+        stix-prefix + "STIXTwoText-SemiBold.woff2" + q,
+        600,
+        "normal",
+      ),
+      _font-face-rule(
+        "STIX Two Text",
+        stix-prefix + "STIXTwoText-SemiBoldItalic.woff2" + q,
+        600,
+        "italic",
+      ),
+      _font-face-rule(
+        "STIX Two Text",
+        stix-prefix + "STIXTwoText-Bold.woff2" + q,
+        700,
+        "normal",
+      ),
+      _font-face-rule(
+        "STIX Two Text",
+        stix-prefix + "STIXTwoText-BoldItalic.woff2" + q,
+        700,
+        "italic",
+      ),
     ).join("\n\n"),
-    "STIX Two Math": _font-face-rule("STIX Two Math", stix-prefix + "STIXTwoMath-Regular.woff2" + q, 400, "normal"),
+    "STIX Two Math": _font-face-rule(
+      "STIX Two Math",
+      stix-prefix + "STIXTwoMath-Regular.woff2" + q,
+      400,
+      "normal",
+    ),
     "CommitMono": (
-      _font-face-rule("CommitMono", cm-url("CommitMono-400-Regular.woff2", "latin-400-normal.woff2"), 400, "normal"),
-      _font-face-rule("CommitMono", cm-url("CommitMono-400-Italic.woff2", "latin-400-italic.woff2"), 400, "italic"),
-      _font-face-rule("CommitMono", cm-url("CommitMono-700-Regular.woff2", "latin-700-normal.woff2"), 700, "normal"),
-      _font-face-rule("CommitMono", cm-url("CommitMono-700-Italic.woff2", "latin-700-italic.woff2"), 700, "italic"),
+      _font-face-rule(
+        "CommitMono",
+        cm-url("CommitMono-400-Regular.woff2", "latin-400-normal.woff2"),
+        400,
+        "normal",
+      ),
+      _font-face-rule(
+        "CommitMono",
+        cm-url("CommitMono-400-Italic.woff2", "latin-400-italic.woff2"),
+        400,
+        "italic",
+      ),
+      _font-face-rule(
+        "CommitMono",
+        cm-url("CommitMono-700-Regular.woff2", "latin-700-normal.woff2"),
+        700,
+        "normal",
+      ),
+      _font-face-rule(
+        "CommitMono",
+        cm-url("CommitMono-700-Italic.woff2", "latin-700-italic.woff2"),
+        700,
+        "italic",
+      ),
     ).join("\n\n"),
   )
 }
@@ -105,10 +164,22 @@
 #let css-oklch(col) = {
   let (l, c, h, a) = oklch(col).components()
   let c-clean = if calc.abs(c) < 0.0005 { 0 } else { calc.round(c, digits: 4) }
-  let h-clean = if c-clean == 0 { "0" } else { str(calc.round(h.deg(), digits: 2)) + "deg" }
+  let h-clean = if c-clean == 0 { "0" } else {
+    str(calc.round(h.deg(), digits: 2)) + "deg"
+  }
   let l-str = str(calc.round(l / 1%, digits: 2)) + "%"
   if a < 100% {
-    "oklch(" + l-str + " " + str(c-clean) + " " + h-clean + " / " + str(calc.round(a / 1%, digits: 2)) + "%)"
+    (
+      "oklch("
+        + l-str
+        + " "
+        + str(c-clean)
+        + " "
+        + h-clean
+        + " / "
+        + str(calc.round(a / 1%, digits: 2))
+        + "%)"
+    )
   } else {
     "oklch(" + l-str + " " + str(c-clean) + " " + h-clean + ")"
   }
@@ -208,7 +279,9 @@
     post-themes.last().value
   } else {
     let found = query(<site-config>)
-    if found.len() > 0 and found.first().value.at("theme", default: none) != none {
+    if (
+      found.len() > 0 and found.first().value.at("theme", default: none) != none
+    ) {
       found.first().value.theme
     } else {
       default-theme
@@ -257,7 +330,10 @@
     "__FONT_SERIF__": _css-font-stack(t.serif-fonts, ("Georgia", "serif")),
     "__FONT_MATH__": _css-font-stack(t.math-fonts, ("math",)),
     "__FONT_SANS__": _css-font-stack(t.sans-fonts, ("sans-serif",)),
-    "__FONT_MONO__": _css-font-stack(t.mono-fonts, ("ui-monospace", "monospace")),
+    "__FONT_MONO__": _css-font-stack(t.mono-fonts, (
+      "ui-monospace",
+      "monospace",
+    )),
     "__BG_LIGHT__": css-oklch(t.paper-light),
     "__FG_LIGHT__": css-oklch(t.text-light),
     "__MUTED_LIGHT__": css-oklch(t.muted-light),
@@ -273,7 +349,9 @@
     "__SURF1_DARK__": css-oklch(t.surface-1-dark),
     "__SURF2_DARK__": css-oklch(t.surface-2-dark),
   )
-  token-map.pairs().fold(read("style.css"), (css, pair) => css.replace(pair.at(0), pair.at(1)))
+  token-map
+    .pairs()
+    .fold(read("style.css"), (css, pair) => css.replace(pair.at(0), pair.at(1)))
 }
 
 // Build a compact per-post `:root` CSS custom-property override block when a post inside
@@ -295,9 +373,73 @@
   let s1-d = css-oklch(t.surface-1-dark)
   let s2-d = css-oklch(t.surface-2-dark)
   (
-    ":root { --bg: " + bg-d + "; --fg: " + fg-d + "; --muted: " + mu-d + "; --line: " + ln-d + "; --frame: " + fr-d + "; --surface-1: " + s1-d + "; --surface-2: " + s2-d + "; --serif: " + _css-font-stack(t.serif-fonts, ("Georgia", "serif")) + "; --math: " + _css-font-stack(t.math-fonts, ("math",)) + "; --sans: " + _css-font-stack(t.sans-fonts, ("sans-serif",)) + "; --mono: " + _css-font-stack(t.mono-fonts, ("ui-monospace", "monospace")) + "; }",
-    "@media (prefers-color-scheme: light) { :root { --bg: " + bg-l + "; --fg: " + fg-l + "; --muted: " + mu-l + "; --line: " + ln-l + "; --frame: " + fr-l + "; --surface-1: " + s1-l + "; --surface-2: " + s2-l + "; } }",
-    "@supports (color: light-dark(oklch(0% 0 0), oklch(100% 0 0))) { :root { --bg: light-dark(" + bg-l + ", " + bg-d + "); --fg: light-dark(" + fg-l + ", " + fg-d + "); --muted: light-dark(" + mu-l + ", " + mu-d + "); --line: light-dark(" + ln-l + ", " + ln-d + "); --frame: light-dark(" + fr-l + ", " + fr-d + "); --surface-1: light-dark(" + s1-l + ", " + s1-d + "); --surface-2: light-dark(" + s2-l + ", " + s2-d + "); } }",
+    ":root { --bg: "
+      + bg-d
+      + "; --fg: "
+      + fg-d
+      + "; --muted: "
+      + mu-d
+      + "; --line: "
+      + ln-d
+      + "; --frame: "
+      + fr-d
+      + "; --surface-1: "
+      + s1-d
+      + "; --surface-2: "
+      + s2-d
+      + "; --serif: "
+      + _css-font-stack(t.serif-fonts, ("Georgia", "serif"))
+      + "; --math: "
+      + _css-font-stack(t.math-fonts, ("math",))
+      + "; --sans: "
+      + _css-font-stack(t.sans-fonts, ("sans-serif",))
+      + "; --mono: "
+      + _css-font-stack(t.mono-fonts, ("ui-monospace", "monospace"))
+      + "; }",
+    "@media (prefers-color-scheme: light) { :root { --bg: "
+      + bg-l
+      + "; --fg: "
+      + fg-l
+      + "; --muted: "
+      + mu-l
+      + "; --line: "
+      + ln-l
+      + "; --frame: "
+      + fr-l
+      + "; --surface-1: "
+      + s1-l
+      + "; --surface-2: "
+      + s2-l
+      + "; } }",
+    "@supports (color: light-dark(oklch(0% 0 0), oklch(100% 0 0))) { :root { --bg: light-dark("
+      + bg-l
+      + ", "
+      + bg-d
+      + "); --fg: light-dark("
+      + fg-l
+      + ", "
+      + fg-d
+      + "); --muted: light-dark("
+      + mu-l
+      + ", "
+      + mu-d
+      + "); --line: light-dark("
+      + ln-l
+      + ", "
+      + ln-d
+      + "); --frame: light-dark("
+      + fr-l
+      + ", "
+      + fr-d
+      + "); --surface-1: light-dark("
+      + s1-l
+      + ", "
+      + s1-d
+      + "); --surface-2: light-dark("
+      + s2-l
+      + ", "
+      + s2-d
+      + "); } }",
   ).join("\n")
 }
 
