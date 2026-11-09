@@ -1544,6 +1544,13 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
         )
         [#asset(sitemap-path, bytes(sm-xml))<sitemap>]
       }
+      // `robots: auto` means "on whenever a sitemap is emitted". This was documented and
+      // `robots-txt` was exported, but nothing ever called it, so no bundle contained a
+      // robots.txt at all.
+      let emit-robots = if robots == auto { sitemap-path != none } else { robots == true }
+      if emit-robots {
+        [#asset("robots.txt", bytes(robots-txt(site-url: url, sitemap-path: sitemap-path)))<robots>]
+      }
       if rss-path != none {
         let rss-xml = rss-xml(
           site-title: resolved-title,

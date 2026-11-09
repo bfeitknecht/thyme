@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **`robots.txt` was never emitted.** It is documented in the README, the manual and
+  `blog.site`'s doc-comment, `robots-txt` is exported from both modules, and `robots: auto` is a
+  public option — but nothing ever called the function, so no bundle contained a `robots.txt` at
+  all and `Sitemap:` discovery silently did not work. Now emitted whenever `robots` is `auto` and a
+  sitemap is produced. Regression assertions added to `tests/unit.typ`.
 - **`just fmt` / `just fmt-check` / the pre-commit hook called a command that does not exist.**
   The Typst CLI has no `fmt` subcommand — 0.15.x ships `compile`, `watch`, `init`, `query`,
   `eval`, `fonts`, `update`, `completions`, `info` — so every invocation exited 2 (clap usage
@@ -20,6 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   variants (the built-in one emitted no `theme-color` at all; the preset's emitted none either).
   A custom `content` value for `not-found-page` was also emitted as a bare fragment with no
   `<head>`; it is now wrapped in the core shell like any other document.
+- **`unknown variable: shell-theme` in the bundle path.** The theme plumbing referenced a
+  variable bound inside `webpage()` from inside `site()`. Typst gives every top-level `#let` its
+  own scope, so this failed as soon as the bundle target evaluated the 404 and mounted-page
+  branches — which no local check reached, because the node-based compiler skips them entirely.
+  `site()` now derives its own theme from `_preset-config`.
 - **`release.yaml` could never have run.** `pkg_name`/`pkg_version` were read with a malformed
   `sed` expression (missing the `/p` flag and with a stray `:` inside the pattern), so both were
   always empty and the `typst/packages` PR step would have failed on its first use.

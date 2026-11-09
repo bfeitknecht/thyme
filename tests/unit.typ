@@ -74,6 +74,15 @@
 #assert.eq(css-hex(_probe-theme.paper-dark), "#2e2e2e")
 #assert.ne(css-hex(_probe-theme.paper-light), css-hex(default-theme.paper-light))
 
+// `robots.txt` is a documented, exported feature; make sure it is actually emitted and
+// points at the sitemap (it was exported but never called for a while).
+#let _robots = robots-txt(site-url: "https://example.org", sitemap-path: "sitemap.xml")
+#assert.eq(_robots, "User-agent: *\nAllow: /\n\nSitemap: https://example.org/sitemap.xml\n")
+#assert.eq(
+  robots-txt(site-url: "https://example.org/", sitemap-path: none),
+  "User-agent: *\nAllow: /\n",
+)
+
 #assert.eq(source-path-for("posts/foo/index.html"), "posts/foo.typ")
 #assert.eq(canonical-page-url("https://blog.example.org", "posts/foo/index.html"), "https://blog.example.org/posts/foo/")
 #let alts = normalize-alternates((de: "/de/posts/foo/", fr: "https://fr.example.org/foo/"), site-url: "https://example.org")
