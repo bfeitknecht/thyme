@@ -351,7 +351,11 @@ docs:
     tmp_pkg=".tmp-pkg"
     trap 'rm -rf "$tmp_pkg"' EXIT
     just _link-pkg "$tmp_pkg"
-    typst compile --root . --package-path "$tmp_pkg" docs/manual.typ docs/manual.pdf
+    # Reproducible build: pin the PDF creation date so `docs/manual.pdf` is a pure function
+    # of the sources. Without this every rebuild rewrites /CreationDate and a
+    # "is the manual stale?" check can never pass. 0 = the Unix epoch.
+    SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-0}" \
+        typst compile --root . --package-path "$tmp_pkg" docs/manual.typ docs/manual.pdf
     echo "built docs/manual.pdf"
 
 # Regenerate thumbnail.png (250 PPI) from template/posts/fixed-points.typ
