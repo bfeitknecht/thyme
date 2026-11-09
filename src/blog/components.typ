@@ -105,13 +105,13 @@
   }
 }
 
-#let _sbox-paged-fill(variant, theme-cfg) = {
+#let _sbox-paged-fill(variant, theme-config) = {
   if variant in ("definition", "theorem", "lemma", "proposition") {
-    theme-cfg.surface-2-light
+    theme-config.surface-2-light
   } else if variant == "example" {
-    theme-cfg.surface-1-light
+    theme-config.surface-1-light
   } else {
-    theme-cfg.paper-light
+    theme-config.paper-light
   }
 }
 

@@ -15,7 +15,6 @@
   mount,
   page-asset,
   query-pages,
-  route,
   site,
   webpage,
   with-html-math,
@@ -28,7 +27,7 @@
 )
 
 #import "i18n.typ": (
-  build-i18n-css,
+  i18n-css,
   lang-switcher,
   normalize-alternates,
   resolve-page-langs,
@@ -44,10 +43,10 @@
 )
 
 #import "seo.typ": (
-  build-atom-feed,
-  build-robots-txt,
-  build-rss-feed,
-  build-sitemap,
+  atom-xml,
+  robots-txt,
+  rss-xml,
+  sitemap-xml,
   content-to-feed-html,
   render-seo-meta,
 )

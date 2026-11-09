@@ -4,7 +4,7 @@
 #import "../src/paths.typ": heading-anchor-id
 #import "../src/htm.typ": _tokenize-htm
 #import "../src/text.typ": query-body-words
-#import "../src/blog/theme.typ": build-stylesheet, build-theme-override-css, default-woff2-files, stylesheet-href
+#import "../src/blog/theme.typ": stylesheet-css, theme-override-css, default-woff2-files, stylesheet-href
 #import "../src/blog/notes.typ": is-sidenote-link
 #import "@preview/exemel:0.3.0": format-rfc3339, rss-encode, rss-post
 
@@ -106,7 +106,7 @@
 #let orig = block[Hello *world*]
 #let untouched = map-containers(orig, _ => auto)
 #assert.eq(untouched, orig)
-#let override-css = build-theme-override-css((paper-light: oklch(97%, 0, 0deg)))
+#let override-css = theme-override-css((paper-light: oklch(97%, 0, 0deg)))
 #assert(override-css.contains(":root {") and override-css.contains("oklch(97%"))
 
 // 7. Paged PDF `#tr(...)` honors `set text(lang: "de")`, secondary `#tr` skips `word-hint`,
@@ -148,10 +148,10 @@
 // 8. Deterministic `@font-face` rules (zero `local(...)` shadowing, `font-base` + `font-version`
 //    self-hosting), `with-html-math` AST normalizer, and OpenType small caps (`smcp` / `c2sc`)
 #assert.eq(default-woff2-files.len(), 11)
-#let cdn-css = build-stylesheet()
+#let cdn-css = stylesheet-css()
 #assert(not cdn-css.contains("local("))
 #assert(cdn-css.contains("commit-mono-latin-700-italic.woff2"))
-#let self-css = build-stylesheet(theme: (font-base: "/fonts/", font-version: "2.13b171-1.143"))
+#let self-css = stylesheet-css(theme: (font-base: "/fonts/", font-version: "2.13b171-1.143"))
 #assert(not self-css.contains("local(") and not self-css.contains("jsdelivr"))
 #assert(self-css.contains("/fonts/STIXTwoText-Regular.woff2?v=2.13b171-1.143"))
 #assert(self-css.contains("/fonts/STIXTwoMath-Regular.woff2?v=2.13b171-1.143"))

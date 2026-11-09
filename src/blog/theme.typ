@@ -182,16 +182,16 @@
 }
 
 /// Resolve the active theme inside `context` (preferring any enclosing per-post
-/// `<blog-post-theme>` override over the site-wide `<site-cfg>`).
+/// `<blog-post-theme>` override over the site-wide `<site-config>`).
 /// -> dictionary
 #let active-theme() = {
   let post-themes = query(selector(<blog-post-theme>).before(here()))
   if post-themes.len() > 0 {
     post-themes.last().value
   } else {
-    let cfgs = query(<site-cfg>)
-    if cfgs.len() > 0 and cfgs.first().value.at("theme", default: none) != none {
-      cfgs.first().value.theme
+    let found = query(<site-config>)
+    if found.len() > 0 and found.first().value.at("theme", default: none) != none {
+      found.first().value.theme
     } else {
       default-theme
     }
@@ -228,7 +228,7 @@
 /// Render `src/blog/style.css` substituting all `oklch(...)` palette tokens,
 /// `--serif` / `--math` / `--sans` / `--mono` font stacks, and `@font-face` declarations from `theme`.
 /// -> str
-#let build-stylesheet(
+#let stylesheet-css(
   /// Theme dictionary (`default-theme` or user overrides).
   /// -> dictionary
   theme: default-theme,
@@ -260,8 +260,8 @@
 
 // Build a compact per-post `:root` CSS custom-property override block when a post inside
 // a bundle overrides `theme` tokens, without discarding site-level external `stylesheets`.
-#let build-theme-override-css(theme-cfg) = {
-  let t = resolve-theme(theme-cfg)
+#let theme-override-css(theme-config) = {
+  let t = resolve-theme(theme-config)
   let bg-l = css-oklch(t.paper-light)
   let fg-l = css-oklch(t.text-light)
   let mu-l = css-oklch(t.muted-light)
@@ -285,6 +285,6 @@
 
 // Compute a deterministic content-addressed `style.css?v=<hash>` href from the rendered CSS.
 #let stylesheet-href(root-prefix: "", css: none, theme: default-theme) = {
-  let rendered = if css != none { css } else { build-stylesheet(theme: theme) }
+  let rendered = if css != none { css } else { stylesheet-css(theme: theme) }
   root-prefix + stylesheet-asset-path + "?v=" + short-hash(rendered)
 }

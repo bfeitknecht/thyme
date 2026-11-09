@@ -25,15 +25,14 @@
   file,
   mount,
   query-pages,
-  route,
   webpage,
   with-html-math,
 )
 
 #import "theme.typ": (
   active-theme,
-  build-stylesheet,
-  build-theme-override-css,
+  stylesheet-css,
+  theme-override-css,
   css-oklch,
   default-theme,
   default-woff2-files,
@@ -85,7 +84,6 @@
   post,
   post-asset,
   post-nav,
-  query-all-posts,
 )
 
 #import "site.typ": (
@@ -94,11 +92,18 @@
   tag-cloud,
 )
 
-// Preset surface (imported above, hence re-exported by this module).
-// - core engine: site, webpage, route, mount, file, query-pages, backlinks, with-html-math
-// - theme: active-theme, build-stylesheet, build-theme-override-css, css-oklch,
-//          default-theme, default-woff2-files, resolve-theme, stylesheet-asset-path, stylesheet-href
-// - notes: container, marginnote, mcite, mn, sidenote, sn
-// - components: callout, codeblock, ..., zebraw
-// - posts: post, post-asset, post-nav, query-all-posts
-// - listings: post-list, tag-cloud
+// Public surface of `blog` (everything imported above is re-exported by this module).
+//
+//   engine      site, webpage, mount, file, page-asset, query-pages, backlinks
+//   theme       default-theme, resolve-theme, active-theme, css-oklch,
+//               stylesheet-css, stylesheet-href, stylesheet-asset-path,
+//               theme-override-css, default-woff2-files
+//   typography  htm, h
+//   notes       sidenote, sn, marginnote, mn, mcite, container
+//   blocks      callout, codeblock, sbox, academic environments
+//               (definition, theorem, lemma, proposition, corollary, example,
+//               recipe, remark, proof), note-box, tip-box, warning-box,
+//               important-box, epigraph, wide, diagram, kbd, hr, links, toc
+//   tables      tablem, three-line-table, grid-table, zebraw
+//   posts       post, post-asset, post-nav, post-list, tag-cloud
+//   upstream    checklist, showybox, zebraw-init, zebraw-themes
