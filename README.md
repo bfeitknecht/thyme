@@ -144,10 +144,10 @@ rename a non-event for anyone who is not actively upgrading.
 
 ### Releasing
 
-Publishing a version is `just release vX.Y.Z "message"`; the push of the `v*.*.*` tag
-drives `.github/workflows/release.yaml`, which verifies the tag against `typst.toml` and
-`CHANGELOG.md`, runs the full check suite, publishes a GitHub Release with
-`docs/manual.pdf` attached, and opens the Typst Universe PR.
+Publishing a version is `just release vX.Y.Z`. It validates the tag against `typst.toml` and
+`CHANGELOG.md`, runs the full gate, regenerates `docs/manual.pdf` and `thumbnail.png`, then
+commits and pushes the tag — which drives `.github/workflows/release.yaml` to publish a GitHub
+Release with `docs/manual.pdf` attached and open the Typst Universe PR.
 
 The ordered, actionable sequence — including the gate that has to be opened first and the
 things to check on the upstream PR — is [`docs/release-checklist.md`](docs/release-checklist.md).
@@ -161,9 +161,10 @@ To stabilise a site against upstream churn, pin the exact patch version and let 
 #import "@preview/thyme:0.1.0": *
 ```
 
-`just check` verifies the whole repository (all three example sites, unit tests, docs, and the
-Universe staging payload) against the pinned compiler from `typst.toml`, so a dependency bump is a
-single PR that either goes fully green or does not merge.
+`just check` verifies the whole repository — all three example sites, the unit tests and the
+manual — against the pinned compiler from `typst.toml`, so a dependency bump is a single PR that
+either goes fully green or does not merge. It reads and reports; it never writes, so a clean
+`git status` after a run is guaranteed rather than lucky.
 
 ### Hacking on thyme
 

@@ -29,11 +29,13 @@
   - Add repository secret `UNIVERSE_TOKEN` on `bfeitknecht/thyme` (fine-grained PAT with `Contents: Read and write` on `bfeitknecht/packages` and `Pull requests: Read and write` on `typst/packages`).
   - Leave repository variable `UNIVERSE_SUBMIT` unset (or `false`) until Step 1 completes.
 - [ ] **Remove temporary `exemel` vendoring once `exemel:0.3.0` is live**
-  *(Note: `universe-pr` refuses to submit while `vendor/exemel/` exists so an incomplete archive can never reach `typst/packages`.)*
   ```sh
   rm -rf vendor
   ```
   - Remove the `// TODO` comment at the top of `src/seo.typ`.
+  - Drop the `vendor/*` glob from `_link-pkg` in the `justfile`. That glob is the only place
+    left that knows vendoring exists; every other branch on `vendor/` was deleted, so this is
+    the last commit needed to make the directory unrepresentable.
   - Update the release date on `## [0.1.0] - YYYY-MM-DD` in `CHANGELOG.md` if needed.
 - [ ] **Verify & stage locally against live Typst Universe**
   ```sh
@@ -43,7 +45,7 @@
   ```sh
   git init -b main
   git remote add origin git@github.com:bfeitknecht/thyme.git
-  just release v0.1.0 "Initial release v0.1.0"
+  just release v0.1.0    # prompts for the commit message; falls back to the tag
   ```
   - Verify GitHub Actions (`release.yaml`) publishes the `v0.1.0` GitHub Release (with `docs/manual.pdf` attached), runs `typst-package-check`, pushes branch `thyme-0.1.0` to `bfeitknecht/packages`, and opens a **Draft PR** on `typst/packages`.
   - Review the Draft PR diff on `typst/packages`, confirm upstream CI is green, mark **Ready for review**, and wait for `@preview/thyme:0.1.0` to merge.
@@ -68,9 +70,9 @@
 
 ### Step 4 — Update `bfeitknecht/apex` (`0xbf.ch`)
 - [ ] Copy the files from `apex/` into your `bfeitknecht/apex` checkout (`cv.pdf`, `age.txt`, and `pgp.txt` already match upstream; replace `cv.pdf` if updated).
-- [ ] **Choose deployment timing**
-  - **Deploy immediately (before Universe PRs merge):** Keep `vendor/`; `justfile` and `Dockerfile` auto-detect `vendor/{exemel,thyme}` and compile offline.
-  - **Switch to pure Typst Universe (after `exemel:0.3.0` & `thyme:0.1.0` merge):** Run `rm -rf vendor`; `justfile` and `Dockerfile` automatically pull `@preview/thyme:0.1.0` from Universe.
+- [ ] **Pin to Universe, not a vendored copy:** imports resolve to `@preview/thyme:0.1.0` from the
+  real package cache. `apex` vendors nothing — there is no `vendor/` fallback to design around,
+  so this step is gated on Step 1 rather than on a deployment choice.
 - [ ] *(Optional — Ratatui WASM TUI)* Pass `head: html.script(type: "module", src: "/boot.js")` inside `site.with(...)` in `site.typ` and copy the compiled WASM/`.js` assets into `/public/` in `Dockerfile`.
 - [ ] **Compile & release**
   ```sh
