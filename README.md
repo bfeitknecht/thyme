@@ -165,6 +165,21 @@ To stabilise a site against upstream churn, pin the exact patch version and let 
 Universe staging payload) against the pinned compiler from `typst.toml`, so a dependency bump is a
 single PR that either goes fully green or does not merge.
 
+### Hacking on thyme
+
+```sh
+just fmt        # format every .typ file (typstyle, pinned to 0.15.1)
+just fmt-check  # verify formatting without writing
+just lint       # ruff over Python, typstyle over Typst
+just check      # the full gate; run this before opening a PR
+just preview    # build template/ + examples/ into a browsable preview/
+```
+
+`typstyle` is not part of the Typst CLI — `cargo install typstyle --version 0.15.1 --locked`.
+The CI setup action pins the same version, and `.pre-commit-config.yaml` runs the same hook, so
+local and CI formatting cannot drift. Bumping the pin means re-running `just fmt` in the same
+commit.
+
 ---
 
 ## Documentation & Examples

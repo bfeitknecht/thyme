@@ -1,7 +1,9 @@
 // Dual-target perceptual `oklch` monochrome margin sidenotes, margin notes,
 // and margin-routed bibliography citations (`mcite`).
 
-#import "@preview/marge:0.1.0": container as marge-container, sidenote as marge-sidenote
+#import "@preview/marge:0.1.0": (
+  container as marge-container, sidenote as marge-sidenote,
+)
 #import "../text.typ": word-hint
 #import "theme.typ": active-theme
 
@@ -35,18 +37,30 @@
 }
 
 #let format-paged-note(num-content, source-loc, theme-config, body) = {
-  set text(font: theme-config.serif-fonts, size: 0.85em, fill: theme-config.muted-light)
+  set text(
+    font: theme-config.serif-fonts,
+    size: 0.85em,
+    fill: theme-config.muted-light,
+  )
   set par(leading: 0.48em, justify: false)
   if num-content != none {
-    let badge = super(
-      typographic: false,
-      size: 0.76em,
-      baseline: -0.34em,
-      link(
-        source-loc,
-        [#metadata("thyme-sn-link")] + text(fill: theme-config.text-light, weight: "regular", num-content),
-      ),
-    ) + h(0.26em)
+    let badge = (
+      super(
+        typographic: false,
+        size: 0.76em,
+        baseline: -0.34em,
+        link(
+          source-loc,
+          [#metadata("thyme-sn-link")]
+            + text(
+              fill: theme-config.text-light,
+              weight: "regular",
+              num-content,
+            ),
+        ),
+      )
+        + h(0.26em)
+    )
     par(
       hanging-indent: measure(badge).width,
       badge + body,
@@ -77,7 +91,11 @@
   /// -> content
   body,
 ) = {
-  [#metadata((thyme-feed-node: true, kind: "sidenote", body: body))<thyme-feed-meta>]
+  [#metadata((
+    thyme-feed-node: true,
+    kind: "sidenote",
+    body: body,
+  ))<thyme-feed-meta>]
   blog-html-id-counter.step()
   context {
     word-hint(body)
@@ -118,19 +136,28 @@
       let t = active-theme()
       show link: it => {
         if type(it.dest) == dictionary and it.body.func() == super {
-          h(0.05em) + super(
-            typographic: false,
-            size: 0.7em,
-            baseline: -0.42em,
-            underline(
-              stroke: 0.5pt + t.text-light,
-              offset: 1.15pt,
-              link(
-                it.dest,
-                [#metadata("thyme-sn-link")] + text(fill: t.text-light, weight: "regular", it.body.body),
-              ),
-            ),
-          ) + h(0.06em)
+          (
+            h(0.05em)
+              + super(
+                typographic: false,
+                size: 0.7em,
+                baseline: -0.42em,
+                underline(
+                  stroke: 0.5pt + t.text-light,
+                  offset: 1.15pt,
+                  link(
+                    it.dest,
+                    [#metadata("thyme-sn-link")]
+                      + text(
+                        fill: t.text-light,
+                        weight: "regular",
+                        it.body.body,
+                      ),
+                  ),
+                ),
+              )
+              + h(0.06em)
+          )
         } else {
           it
         }
@@ -221,7 +248,10 @@
     let pg = here().page()
     let end-y = here().position().y
     let notes = state("marge:0.1.0/page-" + str(pg), ()).final()
-    let max-y = notes.fold(end-y, (acc, n) => calc.max(acc, n.position.y + n.height))
+    let max-y = notes.fold(end-y, (acc, n) => calc.max(
+      acc,
+      n.position.y + n.height,
+    ))
     if max-y > end-y {
       v(max-y - end-y + 0.5em)
     }

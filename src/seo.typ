@@ -5,22 +5,27 @@
 // TODO: Remove `vendor/exemel` once upstream merges the RSS 2.0 + Sitemap PR and publishes
 // `@preview/exemel:0.3.0` on Typst Universe.
 #import "@preview/exemel:0.3.0": (
-  atom-author,
-  atom-encode,
-  atom-post,
-  atom-site-id,
-  rss-encode,
-  rss-post,
-  sitemap-encode,
-  sitemap-url,
+  atom-author, atom-encode, atom-post, atom-site-id, rss-encode, rss-post,
+  sitemap-encode, sitemap-url,
 )
 #import "i18n.typ": normalize-alternates
-#import "paths.typ": canonical-page-url, date-sort-key, format-date, url-authority
+#import "paths.typ": (
+  canonical-page-url, date-sort-key, format-date, url-authority,
+)
 #import "text.typ": to-plain-text
 
-#let _default-epoch = datetime(year: 2026, month: 1, day: 1, hour: 0, minute: 0, second: 0)
+#let _default-epoch = datetime(
+  year: 2026,
+  month: 1,
+  day: 1,
+  hour: 0,
+  minute: 0,
+  second: 0,
+)
 
-#let _plain-or-none(v, lang: none) = if v == none { none } else { to-plain-text(v, lang: lang) }
+#let _plain-or-none(v, lang: none) = if v == none { none } else {
+  to-plain-text(v, lang: lang)
+}
 
 #let _escape-html(s) = {
   str(s)
@@ -34,7 +39,9 @@
   let s = p.at("summary", default: none)
   let sub = p.at("subtitle", default: none)
   let desc = p.at("description", default: none)
-  let raw-val = if s != none { s } else if desc != none { desc } else if sub != none { sub } else { none }
+  let raw-val = if s != none { s } else if desc != none { desc } else if (
+    sub != none
+  ) { sub } else { none }
   _plain-or-none(raw-val, lang: lang)
 }
 
@@ -47,7 +54,9 @@
 #let _latest-lastmod(entries) = {
   let dated = entries.filter(e => _entry-lastmod(e) != none)
   if dated.len() > 0 {
-    _entry-lastmod(dated.sorted(key: e => date-sort-key(_entry-lastmod(e))).last())
+    _entry-lastmod(
+      dated.sorted(key: e => date-sort-key(_entry-lastmod(e))).last(),
+    )
   } else {
     none
   }
@@ -55,7 +64,12 @@
 
 #let _resolve-feed-url(dest-str, site-url, doc-path) = {
   let s = str(dest-str).trim()
-  if s.starts-with("http://") or s.starts-with("https://") or s.starts-with("mailto:") or s.starts-with("#") {
+  if (
+    s.starts-with("http://")
+      or s.starts-with("https://")
+      or s.starts-with("mailto:")
+      or s.starts-with("#")
+  ) {
     s
   } else if site-url == none {
     s
@@ -98,7 +112,9 @@
         continue
       }
       let body = if fn == table.cell { c.body } else { c }
-      cur.push("<" + cell-tag + ">" + render-cell(body).trim() + "</" + cell-tag + ">")
+      cur.push(
+        "<" + cell-tag + ">" + render-cell(body).trim() + "</" + cell-tag + ">",
+      )
       if cur.len() >= ncols {
         rows.push("<tr>" + _join-strs(cur) + "</tr>")
         cur = ()
@@ -123,7 +139,12 @@
     }
   }
   let body-html = render-rows(body-cells, "td")
-  "<table>" + (if head-html != "" { "<thead>" + head-html + "</thead>" } else { "" }) + (if body-html != "" { "<tbody>" + body-html + "</tbody>" } else { "" }) + "</table>"
+  (
+    "<table>"
+      + (if head-html != "" { "<thead>" + head-html + "</thead>" } else { "" })
+      + (if body-html != "" { "<tbody>" + body-html + "</tbody>" } else { "" })
+      + "</table>"
+  )
 }
 
 /// Serialize a Typst `content` AST into clean, reader-friendly semantic HTML
@@ -205,7 +226,9 @@
         "<sub>" + go-inline(n.body) + "</sub>"
       } else if fn == raw {
         if n.at("block", default: false) {
-          let cls = if n.has("lang") and n.lang != none { " class=\"language-" + _escape-html(n.lang) + "\"" } else { "" }
+          let cls = if n.has("lang") and n.lang != none {
+            " class=\"language-" + _escape-html(n.lang) + "\""
+          } else { "" }
           "<pre><code" + cls + ">" + _escape-html(n.text) + "</code></pre>"
         } else {
           "<code>" + _escape-html(n.text) + "</code>"
@@ -227,7 +250,17 @@
           _escape-html(tgt-str.replace("-", " "))
         }
         if site-url != none or tgt-str in label-urls {
-          "<a href=\"" + _escape-html(_resolve-label-feed-url(tgt-str, site-url, label-urls)) + "\">" + txt + "</a>"
+          (
+            "<a href=\""
+              + _escape-html(_resolve-label-feed-url(
+                tgt-str,
+                site-url,
+                label-urls,
+              ))
+              + "\">"
+              + txt
+              + "</a>"
+          )
         } else {
           txt
         }
@@ -289,7 +322,9 @@
     let fn = ch.func()
     if fn == parbreak {
       if list-tag != none and list-items.len() > 0 {
-        out.push("<" + list-tag + ">" + _join-strs(list-items) + "</" + list-tag + ">")
+        out.push(
+          "<" + list-tag + ">" + _join-strs(list-items) + "</" + list-tag + ">",
+        )
       }
       list-tag = none
       list-items = ()
@@ -298,7 +333,9 @@
       para-buf = ()
     } else if fn == heading {
       if list-tag != none and list-items.len() > 0 {
-        out.push("<" + list-tag + ">" + _join-strs(list-items) + "</" + list-tag + ">")
+        out.push(
+          "<" + list-tag + ">" + _join-strs(list-items) + "</" + list-tag + ">",
+        )
       }
       list-tag = none
       list-items = ()
@@ -306,14 +343,24 @@
       if txt != "" { out.push("<p>" + txt + "</p>") }
       para-buf = ()
       let lvl = calc.min(6, ch.at("depth", default: 1) + 1)
-      out.push("<h" + str(lvl) + ">" + go-inline(ch.body) + "</h" + str(lvl) + ">")
+      out.push(
+        "<h" + str(lvl) + ">" + go-inline(ch.body) + "</h" + str(lvl) + ">",
+      )
     } else if fn == list.item {
       let txt = _join-strs(para-buf).trim()
       if txt != "" { out.push("<p>" + txt + "</p>") }
       para-buf = ()
       if list-tag != "ul" {
         if list-tag != none and list-items.len() > 0 {
-          out.push("<" + list-tag + ">" + _join-strs(list-items) + "</" + list-tag + ">")
+          out.push(
+            "<"
+              + list-tag
+              + ">"
+              + _join-strs(list-items)
+              + "</"
+              + list-tag
+              + ">",
+          )
         }
         list-tag = "ul"
         list-items = ()
@@ -325,7 +372,15 @@
       para-buf = ()
       if list-tag != "ol" {
         if list-tag != none and list-items.len() > 0 {
-          out.push("<" + list-tag + ">" + _join-strs(list-items) + "</" + list-tag + ">")
+          out.push(
+            "<"
+              + list-tag
+              + ">"
+              + _join-strs(list-items)
+              + "</"
+              + list-tag
+              + ">",
+          )
         }
         list-tag = "ol"
         list-items = ()
@@ -333,7 +388,9 @@
       list-items.push("<li>" + go-inline(ch.body).trim() + "</li>")
     } else if fn == table {
       if list-tag != none and list-items.len() > 0 {
-        out.push("<" + list-tag + ">" + _join-strs(list-items) + "</" + list-tag + ">")
+        out.push(
+          "<" + list-tag + ">" + _join-strs(list-items) + "</" + list-tag + ">",
+        )
       }
       list-tag = none
       list-items = ()
@@ -343,7 +400,9 @@
       out.push(_table-to-feed-html(ch, go-inline))
     } else if fn == raw and ch.at("block", default: false) {
       if list-tag != none and list-items.len() > 0 {
-        out.push("<" + list-tag + ">" + _join-strs(list-items) + "</" + list-tag + ">")
+        out.push(
+          "<" + list-tag + ">" + _join-strs(list-items) + "</" + list-tag + ">",
+        )
       }
       list-tag = none
       list-items = ()
@@ -353,7 +412,9 @@
       out.push(go-inline(ch))
     } else if fn == quote and ch.at("block", default: false) {
       if list-tag != none and list-items.len() > 0 {
-        out.push("<" + list-tag + ">" + _join-strs(list-items) + "</" + list-tag + ">")
+        out.push(
+          "<" + list-tag + ">" + _join-strs(list-items) + "</" + list-tag + ">",
+        )
       }
       list-tag = none
       list-items = ()
@@ -368,7 +429,9 @@
       out.push("<blockquote>" + recurse(ch.body) + attr + "</blockquote>")
     } else if fn == math.equation and ch.at("block", default: false) {
       if list-tag != none and list-items.len() > 0 {
-        out.push("<" + list-tag + ">" + _join-strs(list-items) + "</" + list-tag + ">")
+        out.push(
+          "<" + list-tag + ">" + _join-strs(list-items) + "</" + list-tag + ">",
+        )
       }
       list-tag = none
       list-items = ()
@@ -376,13 +439,25 @@
       if txt != "" { out.push("<p>" + txt + "</p>") }
       para-buf = ()
       out.push(go-inline(ch))
-    } else if fn == metadata and type(ch.value) == dictionary and ch.value.at("thyme-feed-node", default: false) {
+    } else if (
+      fn == metadata
+        and type(ch.value) == dictionary
+        and ch.value.at("thyme-feed-node", default: false)
+    ) {
       let k = ch.value.at("kind", default: "")
       if k == "sidenote" {
         para-buf.push(go-inline(ch))
       } else {
         if list-tag != none and list-items.len() > 0 {
-          out.push("<" + list-tag + ">" + _join-strs(list-items) + "</" + list-tag + ">")
+          out.push(
+            "<"
+              + list-tag
+              + ">"
+              + _join-strs(list-items)
+              + "</"
+              + list-tag
+              + ">",
+          )
         }
         list-tag = none
         list-items = ()
@@ -397,27 +472,49 @@
           } else {
             ""
           }
-          out.push("<blockquote>" + recurse(ch.value.body) + src + "</blockquote>")
+          out.push(
+            "<blockquote>" + recurse(ch.value.body) + src + "</blockquote>",
+          )
         } else if k in ("sbox", "proof", "callout") {
           let label = ch.value.at("label", default: none)
           let title = ch.value.at("title", default: none)
           let head-parts = ()
-          if label != none { head-parts.push("<strong>" + _escape-html(str(label)) + ".</strong>") }
-          if title != none { head-parts.push("<em>" + go-inline(title) + "</em>") }
-          let head-html = if head-parts.len() > 0 { "<p>" + _join-strs(head-parts, sep: " ") + "</p>" } else { "" }
+          if label != none {
+            head-parts.push(
+              "<strong>" + _escape-html(str(label)) + ".</strong>",
+            )
+          }
+          if title != none {
+            head-parts.push("<em>" + go-inline(title) + "</em>")
+          }
+          let head-html = if head-parts.len() > 0 {
+            "<p>" + _join-strs(head-parts, sep: " ") + "</p>"
+          } else { "" }
           let qed = if k == "proof" { "<p>◻</p>" } else { "" }
-          out.push("<blockquote>" + head-html + recurse(ch.value.body) + qed + "</blockquote>")
+          out.push(
+            "<blockquote>"
+              + head-html
+              + recurse(ch.value.body)
+              + qed
+              + "</blockquote>",
+          )
         } else {
           out.push(recurse(ch.value.body))
         }
       }
     } else if fn == metadata or repr(fn) == "context" {
-      if fn == metadata and type(ch.value) == dictionary and ch.value.at("thyme-tr", default: false) {
+      if (
+        fn == metadata
+          and type(ch.value) == dictionary
+          and ch.value.at("thyme-tr", default: false)
+      ) {
         para-buf.push(go-inline(ch))
       }
     } else if fn == par or fn == block {
       if list-tag != none and list-items.len() > 0 {
-        out.push("<" + list-tag + ">" + _join-strs(list-items) + "</" + list-tag + ">")
+        out.push(
+          "<" + list-tag + ">" + _join-strs(list-items) + "</" + list-tag + ">",
+        )
       }
       list-tag = none
       list-items = ()
@@ -429,7 +526,9 @@
       // Preserve active `<ul>` / `<ol>` across inter-item newline spaces
     } else {
       if list-tag != none and list-items.len() > 0 {
-        out.push("<" + list-tag + ">" + _join-strs(list-items) + "</" + list-tag + ">")
+        out.push(
+          "<" + list-tag + ">" + _join-strs(list-items) + "</" + list-tag + ">",
+        )
       }
       list-tag = none
       list-items = ()
@@ -438,7 +537,9 @@
   }
 
   if list-tag != none and list-items.len() > 0 {
-    out.push("<" + list-tag + ">" + _join-strs(list-items) + "</" + list-tag + ">")
+    out.push(
+      "<" + list-tag + ">" + _join-strs(list-items) + "</" + list-tag + ">",
+    )
   }
   let txt = _join-strs(para-buf).trim()
   if txt != "" { out.push("<p>" + txt + "</p>") }
@@ -474,7 +575,10 @@
     if title-str != none {
       html.elem("meta", attrs: (property: "og:title", content: title-str))
     }
-    html.elem("meta", attrs: (property: "og:type", content: if is-article { "article" } else { "website" }))
+    html.elem("meta", attrs: (
+      property: "og:type",
+      content: if is-article { "article" } else { "website" },
+    ))
     if canonical-url != none {
       html.elem("meta", attrs: (property: "og:url", content: canonical-url))
     }
@@ -486,13 +590,22 @@
     }
     if is-article {
       if created-iso != none {
-        html.elem("meta", attrs: (property: "article:published_time", content: created-iso))
+        html.elem("meta", attrs: (
+          property: "article:published_time",
+          content: created-iso,
+        ))
       }
       if modified-iso != none {
-        html.elem("meta", attrs: (property: "article:modified_time", content: modified-iso))
+        html.elem("meta", attrs: (
+          property: "article:modified_time",
+          content: modified-iso,
+        ))
       }
       if author-str != none {
-        html.elem("meta", attrs: (property: "article:author", content: author-str))
+        html.elem("meta", attrs: (
+          property: "article:author",
+          content: author-str,
+        ))
       }
       for t in tags {
         html.elem("meta", attrs: (property: "article:tag", content: str(t)))
@@ -508,13 +621,22 @@
       html.meta(name: "citation_author", content: author-str)
     }
     if created-iso != none {
-      html.meta(name: "citation_publication_date", content: created-iso.replace("-", "/"))
+      html.meta(name: "citation_publication_date", content: created-iso.replace(
+        "-",
+        "/",
+      ))
     }
     if modified-iso != none {
-      html.meta(name: "citation_online_date", content: modified-iso.replace("-", "/"))
+      html.meta(name: "citation_online_date", content: modified-iso.replace(
+        "-",
+        "/",
+      ))
     }
     if monograph != none {
-      html.meta(name: "citation_technical_report_number", content: to-plain-text(monograph, lang: lang))
+      html.meta(
+        name: "citation_technical_report_number",
+        content: to-plain-text(monograph, lang: lang),
+      )
     }
     if tags.len() > 0 {
       html.meta(name: "citation_keywords", content: tags.map(str).join("; "))
@@ -562,7 +684,10 @@
     .map(e => sitemap-url(
       canonical-page-url(site-url, e.html-path),
       lastmod: _entry-lastmod(e),
-      alternates: normalize-alternates(e.at("alternates", default: none), site-url: site-url),
+      alternates: normalize-alternates(
+        e.at("alternates", default: none),
+        site-url: site-url,
+      ),
     ))
 
   sitemap-encode(urls: root-urls + page-urls)
@@ -591,9 +716,16 @@
   if type(explicit-epoch) == datetime {
     return explicit-epoch
   }
-  let dated = posts.filter(p => type(p.at("created", default: none)) == datetime or type(p.at("modified", default: none)) == datetime)
+  let dated = posts.filter(p => (
+    type(p.at("created", default: none)) == datetime
+      or type(p.at("modified", default: none)) == datetime
+  ))
   if dated.len() > 0 {
-    let sorted = dated.sorted(key: p => date-sort-key(if p.at("created", default: none) != none { p.created } else { p.modified }))
+    let sorted = dated.sorted(key: p => date-sort-key(if p.at(
+      "created",
+      default: none,
+    )
+      != none { p.created } else { p.modified }))
     let earliest = sorted.first()
     if type(earliest.at("created", default: none)) == datetime {
       earliest.created
@@ -608,7 +740,10 @@
 #let _build-post-label-urls(clean-url, posts, extra: (:)) = {
   let out = extra
   for p in posts {
-    if p.at("slug", default: none) != none and p.at("html-path", default: none) != none {
+    if (
+      p.at("slug", default: none) != none
+        and p.at("html-path", default: none) != none
+    ) {
       out.insert(str(p.slug), canonical-page-url(clean-url, p.html-path))
     }
   }
@@ -658,7 +793,11 @@
   }
   let epoch = _infer-feed-epoch(posts, feed-epoch)
   let include-full = feed-content == "full"
-  let merged-label-urls = _build-post-label-urls(clean-url, posts, extra: label-urls)
+  let merged-label-urls = _build-post-label-urls(
+    clean-url,
+    posts,
+    extra: label-urls,
+  )
 
   let entries = posts.map(p => {
     let pub-dt = p.at("created", default: none)
@@ -678,7 +817,9 @@
     } else {
       ()
     }
-    let html-body = if include-full and p.at("raw-body", default: none) != none {
+    let html-body = if (
+      include-full and p.at("raw-body", default: none) != none
+    ) {
       content-to-feed-html(
         p.raw-body,
         site-url: clean-url,
@@ -700,7 +841,9 @@
       updated: mod-dt,
       published: pub-dt,
       summary: _entry-summary(p, lang: p-lang),
-      content: if html-body != none and html-body != "" { html-body } else { none },
+      content: if html-body != none and html-body != "" { html-body } else {
+        none
+      },
       authors: entry-authors,
       categories: p.at("tags", default: ()),
     )
@@ -754,12 +897,18 @@
 ) = {
   let clean-url = str(site-url).trim("/", at: end)
   let include-full = feed-content == "full"
-  let merged-label-urls = _build-post-label-urls(clean-url, posts, extra: label-urls)
+  let merged-label-urls = _build-post-label-urls(
+    clean-url,
+    posts,
+    extra: label-urls,
+  )
   let latest = _latest-lastmod(posts)
 
   let items = posts.map(p => {
     let p-lang = p.at("primary-lang", default: none)
-    let html-body = if include-full and p.at("raw-body", default: none) != none {
+    let html-body = if (
+      include-full and p.at("raw-body", default: none) != none
+    ) {
       content-to-feed-html(
         p.raw-body,
         site-url: clean-url,
@@ -775,7 +924,9 @@
       link: canonical-page-url(clean-url, p.html-path),
       published: p.at("created", default: none),
       summary: _entry-summary(p, lang: p-lang),
-      content: if html-body != none and html-body != "" { html-body } else { none },
+      content: if html-body != none and html-body != "" { html-body } else {
+        none
+      },
       categories: p.at("tags", default: ()),
     )
   })

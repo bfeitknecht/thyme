@@ -25,7 +25,9 @@ repos:
   - repo: local
     hooks:
       - id: typstyle
-        name: Typst format (typstyle)
+        name: Typst format (typstyle 0.15.1)
+        # Keep in sync with `.github/actions/setup/action.yaml`; a version skew makes
+        # local formatting and CI disagree. Bumping the pin means re-running `just fmt`.
         entry: typstyle --inplace
         language: system
         types: [typ]

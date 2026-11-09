@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Unopinionated Core SSG (`#import "@preview/thyme:0.1.0": *`)**:
   - Pure-Typst `bundle`, `html`, and `paged` compilation driven exclusively by standard `typst compile` and `typst watch` (zero external wrapper CLI, zero client-side JavaScript runtime).
-  - `site(...)` (with order-independent `blog.site` delegation), `webpage(...)`, `mount(path(...))`, `file(...)`, `page-asset(...)`, `query-pages()`, and `backlinks(...)` with $O(1)$ enclosing-document lookup, cross-bundle `@label` links, collision-free heading anchor `id`s (`h1`–`h6`, `-2`/`-3` deduplication + `"section"` symbol fallback) + optional `§` permalinks (`heading-permalinks`), `404.html`, `robots.txt`, `sitemap.xml`, and optional `rss.xml` / `atom.xml`.
+  - `site(...)` (with `blog.site` delegation), `webpage(...)`, `mount(path(...))`, `file(...)`, `page-asset(...)`, `query-pages()`, and `backlinks(...)` with $O(1)$ enclosing-document lookup, cross-bundle `@label` links, collision-free heading anchor `id`s (`h1`–`h6`, `-2`/`-3` deduplication + `"section"` symbol fallback) + optional `§` permalinks (`heading-permalinks`), `404.html`, `robots.txt`, `sitemap.xml`, and optional `rss.xml` / `atom.xml`.
   - **Shared AST Traversal (`src/tree.typ`)**: `find-content`, `any-content`, `collect-content`, and subtree-short-circuiting `map-containers` across layout blocks and `html.elem` wrappers.
   - **Typed Hypertagged HTML & Hyperscript (`src/htm.typ`)**: `htm(...)` (`developit/htm`-style HTML fragments with `{slot}` Typst `content` interpolation) and `h(...)` CSS-selector hyperscript (delegating numeric/fractional spacing to `std.h`) with $O(n)$ cluster slicing, `<pre>`/`<textarea>` whitespace preservation, inline-boundary newline space preservation across tags, empty-element `[]` safety, prose word-count hints, 55+ named + decimal `&#...;` + hex `&#x...;` HTML entity decoding, HTML5 optional-close unwinding (`<li>`, `<p>`, `<dt>`/`<dd>`, `<tr>`/`<td>`), explicit tag-mismatch diagnostics, `"false"` boolean attribute omission, and typed `html.*` construction.
   - **Syntactic HTML MathML Normalizer (`with-html-math`)**: Pure AST `show` rules (zero `measure()`, zero SVG) unwrapping single-line auto-`math.lr` delimiters (`$F(e)$`) while keeping tall delimiters stretchy (`$F(union.sq.big_n d_n)$`) and coercing lone operator glyphs in scripts (`$d^*$`) to `math.class("normal", ...)`.
@@ -56,6 +56,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   always empty and the `typst/packages` PR step would have failed on its first use.
 - **CI's Python lint was a silent no-op.** `just lint` only invokes `ruff` when it is on `PATH`,
   and the runner does not ship it; CI now installs it explicitly.
+- **`just fmt-check` never checked anything, and the tree was never formatted.** The recipe
+  formatted each file into a temporary tree with a `typstyle --output` flag that does not exist
+  and swallowed the failure with `|| cp`, so `cmp` always compared a file against itself and the
+  `Format` job passed unconditionally. It now uses `typstyle --check` directly. Nineteen of
+  twenty-six `.typ` files were in fact unformatted; `just fmt` has been applied to all of them and
+  the whole suite (`tests/unit.typ`, all three bundles, both template posts, the manual) still
+  compiles and every content assertion still passes.
+- **Release notes could silently publish a placeholder.** `release.yaml` extracted the upcoming
+  section with an inline regex that fell back to the single line `Release v<version>` when the
+  heading was missing, produced empty notes for an empty section, and matched `[v0.1.0rc1]` for a
+  `v0.1.0` query. Extraction and validation now live in `scripts/changelog.py`, which fails the
+  job instead, and the `verify` job uses the same parser so "the section exists" and "the notes
+  are publishable" cannot disagree.
+- **`scripts/manifest.py` replaces eleven copies of a `sed` TOML parse.** The pattern had already
+  been got wrong once (`release.yaml` could never have run). TOML is now read by a TOML parser,
+  with one `get`/`env` interface for the justfile, `stage-universe.sh` and both workflows.
+- **The formatter is pinned to `typstyle` 0.15.1** in the CI setup action and `.pre-commit-config`
+  (and `typst-package-check` to `v0.7.0`, which was previously installed from whatever `master`
+  happened to be at release time). typstyle's output changes between releases, so a floating
+  version makes local `just fmt` and CI `just fmt-check` disagree.
+- **`src/lib.typ` documented a guarantee Typst does not provide.** It claimed `site` is "always
+  the core engine" and that "import order never matters"; a star import of the preset
+  (`#import blog: *`) does rebind `site`, which is ordinary Typst scoping. The comment now states
+  the real rule (import the preset after the core); the corresponding overclaim in this file's
+  own `[0.1.0]` entry is corrected too.
 
 ### Changed
 - **`docs/manual.pdf` builds are reproducible.** `just docs` now pins
@@ -64,8 +89,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **CI and release workflows restructured.** The seven copy-pasted toolchain install blocks are
   now one composite action (`.github/actions/setup`). Release is `verify` → `github-release` →
   `universe-pr`, with the Universe job gated on a repository variable so an early tag does not
-  fail solely because `vendor/` still holds an unpublished dependency. Added `concurrency` to CI
-  and a stale-`docs/manual.pdf` check.
+  fail solely because `vendor/` still holds an unpublished dependency. Added `concurrency` to CI.
+  (A stale-`docs/manual.pdf` byte comparison was tried and removed: Typst embeds `/CreationDate`
+  in an uncompressed object stream, so a content-identical rebuild never matches byte-for-byte.)
 - **`scripts/stage-universe.sh` is now committed executable** (mode `100755`); the release
   workflow invokes it directly.
 - **Documentation.** Added `docs/api.md` — the complete 88-name exported surface, core and

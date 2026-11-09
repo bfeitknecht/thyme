@@ -10,8 +10,8 @@ _link-pkg dir=".tmp-pkg":
     for manifest in typst.toml vendor/*/typst.toml; do
         [ -f "$manifest" ] || continue
         p_dir="$(cd "$(dirname "$manifest")" && pwd)"
-        p_name="$(sed -n 's/^name = "\(.*\)"$/\1/p' "$manifest")"
-        p_ver="$(sed -n 's/^version = "\(.*\)"$/\1/p' "$manifest")"
+        p_name="$(python3 scripts/manifest.py get name --file "$manifest")"
+        p_ver="$(python3 scripts/manifest.py get version --file "$manifest")"
         mkdir -p "{{dir}}/preview/$p_name"
         ln -s "$p_dir" "{{dir}}/preview/$p_name/$p_ver"
     done
@@ -21,9 +21,10 @@ fmt:
     #!/usr/bin/env sh
     set -eu
     # The Typst CLI has no `fmt` subcommand (0.15.x ships compile/watch/init/query/
-    # eval/fonts/update/completions/info). `typstyle` is the community formatter.
+    # eval/fonts/update/completions/info). `typstyle` is the community formatter; it
+    # takes paths as positional input and has no `--output`, only `--inplace`/`--check`/`--diff`.
     if ! command -v typstyle >/dev/null 2>&1; then
-        echo "fmt: typstyle not found — cargo install typstyle --locked" >&2
+        echo "typstyle not found — install it with: cargo install typstyle --version 0.15.1 --locked" >&2
         exit 1
     fi
     typstyle --inplace $(find src template examples tests docs -name '*.typ' 2>/dev/null)
@@ -34,21 +35,12 @@ fmt-check:
     #!/usr/bin/env sh
     set -eu
     if ! command -v typstyle >/dev/null 2>&1; then
-        echo "fmt-check: typstyle not found — cargo install typstyle --locked" >&2
+        echo "typstyle not found — install it with: cargo install typstyle --version 0.15.1 --locked" >&2
         exit 1
     fi
-    tmp="$(mktemp -d)"
-    trap 'rm -rf "$tmp"' EXIT
-    stale=""
-    for f in $(find src template examples tests docs -name '*.typ' 2>/dev/null); do
-        mkdir -p "$tmp/$(dirname "$f")"
-        typstyle --inplace "$f" --output "$tmp/$f" 2>/dev/null || cp "$f" "$tmp/$f"
-        if ! cmp -s "$f" "$tmp/$f"; then
-            stale="$stale $f"
-        fi
-    done
-    if [ -n "$stale" ]; then
-        echo "unformatted Typst files:$stale" >&2
+    # typstyle exits non-zero and prints a unified diff when input is not formatted.
+    if ! typstyle --check $(find src template examples tests docs -name '*.typ' 2>/dev/null); then
+        echo "unformatted Typst files listed above" >&2
         echo "run 'just fmt' and commit the result" >&2
         exit 1
     fi
@@ -203,8 +195,8 @@ check:
     # 4. Dry-run Universe directory staging
     sh ./scripts/stage-universe.sh --allow-vendored "$tmp_stage"
 
-    pkg_name="$(sed -n 's/^name = "\(.*\)"$/\1/p' typst.toml)"
-    pkg_ver="$(sed -n 's/^version = "\(.*\)"$/\1/p' typst.toml)"
+    pkg_name="$(python3 scripts/manifest.py get name)"
+    pkg_ver="$(python3 scripts/manifest.py get version)"
     if command -v typst-package-check >/dev/null 2>&1 && [ ! -d vendor/exemel ]; then
         typst-package-check check "$tmp_stage/packages/preview/$pkg_name/$pkg_ver"
     fi
@@ -394,9 +386,12 @@ bump version:
     new_ver = "{{version}}".lstrip("v")
     if not re.fullmatch(r"\d+\.\d+\.\d+", new_ver):
         raise SystemExit(f"invalid semver: {new_ver!r}")
+    import subprocess
     toml = pathlib.Path("typst.toml")
-    old_m = re.search(r'^version = "([^"]+)"', toml.read_text(), re.M)
-    old_ver = old_m.group(1)
+    old_ver = subprocess.run(
+        ["python3", "scripts/manifest.py", "get", "version"],
+        check=True, capture_output=True, text=True,
+    ).stdout.strip()
     toml.write_text(re.sub(r'^version = "[^"]+"', f'version = "{new_ver}"', toml.read_text(), count=1, flags=re.M))
     targets = (
         list(pathlib.Path("template").rglob("*.typ"))
@@ -437,7 +432,7 @@ release $tag="" $message="":
         *) echo "release: tag must start with 'v' (e.g. v0.1.0)" >&2; exit 1 ;;
     esac
 
-    toml_ver="$(sed -n 's/^version = "\(.*\)"$/\1/p' typst.toml)"
+    toml_ver="$(python3 scripts/manifest.py get version)"
     if [ "$ver" != "$toml_ver" ]; then
         echo "release: tag $tag does not match typst.toml version $toml_ver (run 'just bump $ver' first)" >&2
         exit 1

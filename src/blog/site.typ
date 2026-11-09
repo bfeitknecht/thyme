@@ -7,31 +7,22 @@
 // `rss.xml`, and `atom.xml`.
 
 #import "../core.typ": (
-  backlinks as render-backlinks,
-  extract-first-h1,
-  query-pages,
-  render-top-bar,
-  resolve-core-mount,
-  site as core-site,
+  backlinks as render-backlinks, extract-first-h1, query-pages, render-top-bar,
+  resolve-core-mount, site as core-site,
 )
 #import "../i18n.typ": resolve-page-langs
 #import "../paths.typ": (
-  date-sort-key,
-  emit-doc-marker,
-  format-date,
-  join-path,
-  post-html-path,
-  rel-href,
-  resolve-bundle-label,
-  route-html-path,
-  slugify,
-  unwrap-typ-path,
+  date-sort-key, emit-doc-marker, format-date, join-path, post-html-path,
+  rel-href, resolve-bundle-label, route-html-path, slugify, unwrap-typ-path,
   with-html-headings,
 )
 #import "../text.typ": count-words
 #import "html.typ": render-html-shell, render-not-found-page
 #import "post.typ": post
-#import "theme.typ": active-theme, stylesheet-css, resolve-theme, stylesheet-asset-path, stylesheet-href
+#import "theme.typ": (
+  active-theme, resolve-theme, stylesheet-asset-path, stylesheet-css,
+  stylesheet-href,
+)
 
 // Shared entry card renderer for both inline `#post(...)` mounts and `#post-list()`.
 #let _render-entry-card(
@@ -50,7 +41,11 @@
       html.div(class: "entry-head", {
         html.h3(if dest != none { link(dest, title) } else { title })
         if created-str != none {
-          html.elem("time", attrs: (datetime: created-str, class: "when"), created-str)
+          html.elem(
+            "time",
+            attrs: (datetime: created-str, class: "when"),
+            created-str,
+          )
         }
       })
       if show-summary and desc != none {
@@ -138,7 +133,9 @@
         let tg-slug = slugify(tg)
         let lbl-el = resolve-bundle-label(label("thyme-tag-" + tg-slug))
         let target-path = join-path(tags-dir, join-path(tg-slug, "index.html"))
-        let fallback-docs = if lbl-el == none { enc-docs.filter(d => d.path == target-path) } else { () }
+        let fallback-docs = if lbl-el == none {
+          enc-docs.filter(d => d.path == target-path)
+        } else { () }
         html.li({
           if lbl-el != none {
             link(lbl-el.location(), "#" + tg)
@@ -160,16 +157,31 @@
 }
 
 // Render an inline `#post(...)` mount as a homepage entry card right where `#post(...)` sits.
-#let _render-mounted-entry(rec, site-typ-path: none, default-route-fn: none, show-summary: true) = {
-  let m = resolve-core-mount(rec, site-typ-path: site-typ-path, default-route-fn: default-route-fn)
+#let _render-mounted-entry(
+  rec,
+  site-typ-path: none,
+  default-route-fn: none,
+  show-summary: true,
+) = {
+  let m = resolve-core-mount(
+    rec,
+    site-typ-path: site-typ-path,
+    default-route-fn: default-route-fn,
+  )
   let pm = m.meta
   let is-post = pm.at("collection", default: "posts") == "posts"
-  if not is-post or pm.at("draft", default: false) or pm.at("unlisted", default: false) {
+  if (
+    not is-post
+      or pm.at("draft", default: false)
+      or pm.at("unlisted", default: false)
+  ) {
     return []
   }
   context {
     let t = active-theme()
-    let target-el = if target() == "html" { resolve-bundle-label(m.label) } else { none }
+    let target-el = if target() == "html" {
+      resolve-bundle-label(m.label)
+    } else { none }
     _render-entry-card(
       title: m.title,
       dest: if target-el != none { target-el.location() } else { none },
@@ -291,7 +303,9 @@
   let theme-config = resolve-theme(theme)
   let built-css = stylesheet-css(theme: theme-config)
   let built-css-href = stylesheet-href(css: built-css, theme: theme-config)
-  let site-typ-path = if type(src) == path { unwrap-typ-path(src) } else { none }
+  let site-typ-path = if type(src) == path { unwrap-typ-path(src) } else {
+    none
+  }
   let source-label = if expose-source == false or expose-source == none {
     none
   } else if expose-source == true {
@@ -342,7 +356,12 @@
   )
 
   let merged-stylesheets = (
-    (path: stylesheet-asset-path, href: built-css-href, data: built-css, label: <stylesheet>),
+    (
+      path: stylesheet-asset-path,
+      href: built-css-href,
+      data: built-css,
+      label: <stylesheet>,
+    ),
     ..stylesheets,
   )
 
@@ -428,7 +447,11 @@
         inner-body,
       )
     },
-    _not-found-fn: (res-title, primary-lang, sheet-hrefs) => render-not-found-page(
+    _not-found-fn: (
+      res-title,
+      primary-lang,
+      sheet-hrefs,
+    ) => render-not-found-page(
       site-title: res-title,
       lang: primary-lang,
       stylesheet-paths: sheet-hrefs,
@@ -452,7 +475,11 @@
         let pg-path = pg.at("path", default: join-path(slug, "index.html"))
         let pg-created = pg.at("created", default: none)
         let pg-modified = pg.at("modified", default: none)
-        let pg-langs = resolve-page-langs(auto, default-lang: lang, scan-nodes: (pg-title, pg.body))
+        let pg-langs = resolve-page-langs(
+          auto,
+          default-lang: lang,
+          scan-nodes: (pg-title, pg.body),
+        )
         let pg-meta = (
           title: pg-title,
           subtitle: none,
@@ -480,50 +507,55 @@
           is-wrapped-page: true,
         )
         [#document(
-          pg-path,
-          title: pg-title,
-          {
-            emit-doc-marker(pg-path, pg-lbl)
-            [#metadata(pg-meta)<thyme-page-meta>]
-            context {
-              let pg-el = resolve-bundle-label(pg-lbl)
-              let home-docs = query(<site>)
-              let back-node = if home-docs.len() > 0 { link(home-docs.first().location(), "/..") } else { html.a(href: "/", "/..") }
-              render-html-shell(
-                title: pg-title,
-                site-title: resolved-title,
-                description: pg.at("description", default: none),
-                author: author,
-                site-url: site-url,
-                doc-path: pg-path,
-                doc-el: pg-el,
-                langs: pg-langs,
-                alternates: pg.at("alternates", default: none),
-                stylesheet-paths: sheet-hrefs,
-                favicon-href: favicon-href,
-                favicon-type: favicon-type,
-                back-content: back-node,
-                render-topbar: true,
-                theme-config: theme-config,
-                copy-button: copy-button,
-                include-feeds: false,
-                created: pg-created,
-                modified: pg-modified,
-                open-graph: open-graph,
-                {
-                  show: with-html-headings.with(shift: 0, permalinks: heading-permalinks)
-                  set text(lang: pg-langs.first())
-                  [#metadata(none)<thyme-body-start>]
-                  pg.body
-                  [#metadata(none)<thyme-body-end>]
-                  if backlinks {
-                    render-backlinks()
-                  }
-                },
-              )
-            }
-          },
-        )#pg-lbl]
+            pg-path,
+            title: pg-title,
+            {
+              emit-doc-marker(pg-path, pg-lbl)
+              [#metadata(pg-meta)<thyme-page-meta>]
+              context {
+                let pg-el = resolve-bundle-label(pg-lbl)
+                let home-docs = query(<site>)
+                let back-node = if home-docs.len() > 0 {
+                  link(home-docs.first().location(), "/..")
+                } else { html.a(href: "/", "/..") }
+                render-html-shell(
+                  title: pg-title,
+                  site-title: resolved-title,
+                  description: pg.at("description", default: none),
+                  author: author,
+                  site-url: site-url,
+                  doc-path: pg-path,
+                  doc-el: pg-el,
+                  langs: pg-langs,
+                  alternates: pg.at("alternates", default: none),
+                  stylesheet-paths: sheet-hrefs,
+                  favicon-href: favicon-href,
+                  favicon-type: favicon-type,
+                  back-content: back-node,
+                  render-topbar: true,
+                  theme-config: theme-config,
+                  copy-button: copy-button,
+                  include-feeds: false,
+                  created: pg-created,
+                  modified: pg-modified,
+                  open-graph: open-graph,
+                  {
+                    show: with-html-headings.with(
+                      shift: 0,
+                      permalinks: heading-permalinks,
+                    )
+                    set text(lang: pg-langs.first())
+                    [#metadata(none)<thyme-body-start>]
+                    pg.body
+                    [#metadata(none)<thyme-body-end>]
+                    if backlinks {
+                      render-backlinks()
+                    }
+                  },
+                )
+              }
+            },
+          )#pg-lbl]
       }
 
       // 2. Static `/tags/index.html` and `/tags/<slug>/index.html` archive pages
@@ -531,7 +563,11 @@
         let unique-tags = ()
         for m in all-mounts {
           let pm = m.meta
-          if pm.at("collection", default: "posts") == "posts" and not pm.at("draft", default: false) and not pm.at("unlisted", default: false) {
+          if (
+            pm.at("collection", default: "posts") == "posts"
+              and not pm.at("draft", default: false)
+              and not pm.at("unlisted", default: false)
+          ) {
             for t in pm.at("tags", default: ()) {
               let t-str = str(t)
               if t-str not in unique-tags {
@@ -550,7 +586,9 @@
               emit-doc-marker(idx-path, <tags>)
               context {
                 let home-docs = query(<site>)
-                let back-node = if home-docs.len() > 0 { link(home-docs.first().location(), "/..") } else { html.a(href: "/", "/..") }
+                let back-node = if home-docs.len() > 0 {
+                  link(home-docs.first().location(), "/..")
+                } else { html.a(href: "/", "/..") }
                 render-html-shell(
                   title: [Tags],
                   site-title: resolved-title,
@@ -581,45 +619,52 @@
             let tg-path = join-path(tags-dir, join-path(tg-slug, "index.html"))
             let tg-title = "#" + tg
             [#document(
-              tg-path,
-              title: tg-title,
-              {
-                emit-doc-marker(tg-path, tg-lbl)
-                context {
-                  let tag-idx-docs = query(<tags>)
-                  let back-node = if tag-idx-docs.len() > 0 {
-                    link(tag-idx-docs.first().location(), "/tags")
-                  } else {
-                    html.a(href: "/", "/..")
+                tg-path,
+                title: tg-title,
+                {
+                  emit-doc-marker(tg-path, tg-lbl)
+                  context {
+                    let tag-idx-docs = query(<tags>)
+                    let back-node = if tag-idx-docs.len() > 0 {
+                      link(tag-idx-docs.first().location(), "/tags")
+                    } else {
+                      html.a(href: "/", "/..")
+                    }
+                    render-html-shell(
+                      title: raw(tg-title),
+                      site-title: resolved-title,
+                      author: author,
+                      site-url: site-url,
+                      doc-path: tg-path,
+                      langs: (default-lang,),
+                      stylesheet-paths: sheet-hrefs,
+                      favicon-href: favicon-href,
+                      favicon-type: favicon-type,
+                      back-content: back-node,
+                      render-topbar: true,
+                      theme-config: theme-config,
+                      copy-button: false,
+                      include-feeds: false,
+                      {
+                        html.h1(html.code(tg-title))
+                        post-list(tag: tg)
+                      },
+                    )
                   }
-                  render-html-shell(
-                    title: raw(tg-title),
-                    site-title: resolved-title,
-                    author: author,
-                    site-url: site-url,
-                    doc-path: tg-path,
-                    langs: (default-lang,),
-                    stylesheet-paths: sheet-hrefs,
-                    favicon-href: favicon-href,
-                    favicon-type: favicon-type,
-                    back-content: back-node,
-                    render-topbar: true,
-                    theme-config: theme-config,
-                    copy-button: false,
-                    include-feeds: false,
-                    {
-                      html.h1(html.code(tg-title))
-                      post-list(tag: tg)
-                    },
-                  )
-                }
-              },
-            )#tg-lbl]
+                },
+              )#tg-lbl]
           }
         }
       }
     },
-    _paged-fallback-fn: (all-mounts, pre-els, primary-lang, emit-auto-h1, res-title, clean-body) => {
+    _paged-fallback-fn: (
+      all-mounts,
+      pre-els,
+      primary-lang,
+      emit-auto-h1,
+      res-title,
+      clean-body,
+    ) => {
       if all-mounts.len() > 0 {
         all-mounts.first().body
         for m in all-mounts.slice(1) {

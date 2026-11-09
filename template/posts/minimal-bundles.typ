@@ -43,8 +43,14 @@ When a table or figure benefits from the full width of prose plus margin, wrap i
 #example[Single-Source Fan-Out][
   Vector diagrams authored in Typst render natively in editor previews and as crisp inline `<svg>` in HTML (automatically inverted in dark mode):
 
-  #diagram(caption: [One Typst source tree compiling to HTML, raw .typ sources, sitemap.xml, and RSS / Atom feeds.])[
-    #set text(font: default-theme.mono-fonts, size: 8.5pt, fill: default-theme.text-light)
+  #diagram(
+    caption: [One Typst source tree compiling to HTML, raw .typ sources, sitemap.xml, and RSS / Atom feeds.],
+  )[
+    #set text(
+      font: default-theme.mono-fonts,
+      size: 8.5pt,
+      fill: default-theme.text-light,
+    )
     #let node(lbl) = box(
       fill: default-theme.surface-1-light,
       stroke: 0.75pt + default-theme.frame-light,
