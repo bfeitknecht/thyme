@@ -5,90 +5,56 @@ on:
     branches: [main, master]
   pull_request:
 
+# A newer push to the same branch supersedes an in-flight run.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
 jobs:
   format:
-    name: Format Check
+    name: Format
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Read typst.toml metadata
-        id: meta
-        run: |
-          echo "compiler=$(sed -n 's/^compiler = "\(.*\)"$/\1/p' typst.toml)" >> "$GITHUB_OUTPUT"
-
-      - name: Install Typst ${{ steps.meta.outputs.compiler }}, STIX Two, Commit Mono & just
-        run: |
-          mkdir -p "$HOME/.local/bin" "$HOME/.local/share/fonts"
-          curl -fsSL "https://github.com/typst/typst/releases/download/v${{ steps.meta.outputs.compiler }}/typst-x86_64-unknown-linux-musl.tar.xz" \
-            | tar -xJ -C "$HOME/.local/bin" --strip-components=1 "typst-x86_64-unknown-linux-musl/typst"
-          curl -fsSL "https://just.systems/install.sh" | bash -s -- --to "$HOME/.local/bin"
-          for f in STIXTwoText-Regular.otf STIXTwoText-Italic.otf STIXTwoText-SemiBold.otf STIXTwoText-SemiBoldItalic.otf STIXTwoText-Bold.otf STIXTwoText-BoldItalic.otf STIXTwoMath-Regular.otf; do
-            curl -fsSL "https://cdn.jsdelivr.net/gh/stipub/stixfonts@v2.13b171/fonts/static_otf/${f}" -o "$HOME/.local/share/fonts/${f}"
-          done
-          curl -fsSL "https://github.com/eigilnikolajsen/commit-mono/releases/download/v1.143/CommitMono-1.143.zip" -o /tmp/cm.zip
-          unzip -j -q /tmp/cm.zip "*.otf" -d "$HOME/.local/share/fonts/"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          echo "TYPST_FONT_PATHS=$HOME/.local/share/fonts" >> "$GITHUB_ENV"
-
-      - name: Run formatting check
-        run: just fmt-check
+      - uses: ./.github/actions/setup
+      - run: just fmt-check
 
   lint:
-    name: Lint Check
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
 
-      - name: Read typst.toml metadata
-        id: meta
-        run: |
-          echo "compiler=$(sed -n 's/^compiler = "\(.*\)"$/\1/p' typst.toml)" >> "$GITHUB_OUTPUT"
+      # ruff is not preinstalled on the runner, and `just lint` only runs it when
+      # present — without this the Python half of the lint job silently passes.
+      - name: Install ruff
+        run: pipx install ruff
 
-      - name: Install Typst ${{ steps.meta.outputs.compiler }}, STIX Two, Commit Mono & just
-        run: |
-          mkdir -p "$HOME/.local/bin" "$HOME/.local/share/fonts"
-          curl -fsSL "https://github.com/typst/typst/releases/download/v${{ steps.meta.outputs.compiler }}/typst-x86_64-unknown-linux-musl.tar.xz" \
-            | tar -xJ -C "$HOME/.local/bin" --strip-components=1 "typst-x86_64-unknown-linux-musl/typst"
-          curl -fsSL "https://just.systems/install.sh" | bash -s -- --to "$HOME/.local/bin"
-          for f in STIXTwoText-Regular.otf STIXTwoText-Italic.otf STIXTwoText-SemiBold.otf STIXTwoText-SemiBoldItalic.otf STIXTwoText-Bold.otf STIXTwoText-BoldItalic.otf STIXTwoMath-Regular.otf; do
-            curl -fsSL "https://cdn.jsdelivr.net/gh/stipub/stixfonts@v2.13b171/fonts/static_otf/${f}" -o "$HOME/.local/share/fonts/${f}"
-          done
-          curl -fsSL "https://github.com/eigilnikolajsen/commit-mono/releases/download/v1.143/CommitMono-1.143.zip" -o /tmp/cm.zip
-          unzip -j -q /tmp/cm.zip "*.otf" -d "$HOME/.local/share/fonts/"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          echo "TYPST_FONT_PATHS=$HOME/.local/share/fonts" >> "$GITHUB_ENV"
-
-      - name: Run linting check
-        run: just lint
+      - run: just lint
 
   check:
-    name: Build & Verify (Typst ${{ steps.meta.outputs.compiler }})
+    name: Build & verify
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Read typst.toml metadata
-        id: meta
-        run: |
-          echo "compiler=$(sed -n 's/^compiler = "\(.*\)"$/\1/p' typst.toml)" >> "$GITHUB_OUTPUT"
-
-      - name: Install Typst ${{ steps.meta.outputs.compiler }}, STIX Two, Commit Mono & just
-        run: |
-          mkdir -p "$HOME/.local/bin" "$HOME/.local/share/fonts"
-          curl -fsSL "https://github.com/typst/typst/releases/download/v${{ steps.meta.outputs.compiler }}/typst-x86_64-unknown-linux-musl.tar.xz" \
-            | tar -xJ -C "$HOME/.local/bin" --strip-components=1 "typst-x86_64-unknown-linux-musl/typst"
-          curl -fsSL "https://just.systems/install.sh" | bash -s -- --to "$HOME/.local/bin"
-          for f in STIXTwoText-Regular.otf STIXTwoText-Italic.otf STIXTwoText-SemiBold.otf STIXTwoText-SemiBoldItalic.otf STIXTwoText-Bold.otf STIXTwoText-BoldItalic.otf STIXTwoMath-Regular.otf; do
-            curl -fsSL "https://cdn.jsdelivr.net/gh/stipub/stixfonts@v2.13b171/fonts/static_otf/${f}" -o "$HOME/.local/share/fonts/${f}"
-          done
-          curl -fsSL "https://github.com/eigilnikolajsen/commit-mono/releases/download/v1.143/CommitMono-1.143.zip" -o /tmp/cm.zip
-          unzip -j -q /tmp/cm.zip "*.otf" -d "$HOME/.local/share/fonts/"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          echo "TYPST_FONT_PATHS=$HOME/.local/share/fonts" >> "$GITHUB_ENV"
+      - uses: ./.github/actions/setup
 
       - name: Run full check suite
-        run: just check
+        run: |
+          set -o pipefail
+          just check 2>&1 | tee check.log
+
+      # Job logs are not always reachable (they redirect to storage that some
+      # environments cannot fetch), so surface the failure as an annotation too.
+      - name: Annotate failure
+        if: failure()
+        run: |
+          echo "::error::just check failed — tail follows"
+          tail -n 40 check.log || true
+          grep -nE '^(error|Error|Traceback|[A-Za-z]*Error)|error:' check.log | tail -n 8 | while IFS= read -r line; do
+            echo "::error::${line}"
+          done

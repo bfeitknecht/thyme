@@ -1,9 +1,8 @@
-name: Release & Submit to Typst Universe
+name: Release & submit to Typst Universe
 
 on:
   push:
-    tags:
-      - "v*.*.*"
+    tags: ["v*.*.*"]
   workflow_dispatch:
     inputs:
       tag:
@@ -15,144 +14,90 @@ concurrency:
   group: release-${{ github.ref_name }}
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 jobs:
-  format-check:
-    name: Verify Formatting Before Release
+  verify:
+    name: Verify tag & checks
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.tag || github.ref }}
-
-      - name: Read typst.toml metadata
-        id: meta
-        run: |
-          echo "compiler=$(sed -n 's/^compiler = "\(.*\)"$/\1/p' typst.toml)" >> "$GITHUB_OUTPUT"
-
-      - name: Install Typst ${{ steps.meta.outputs.compiler }}, STIX Two, Commit Mono & just
-        run: |
-          mkdir -p "$HOME/.local/bin" "$HOME/.local/share/fonts"
-          curl -fsSL "https://github.com/typst/typst/releases/download/v${{ steps.meta.outputs.compiler }}/typst-x86_64-unknown-linux-musl.tar.xz" \
-            | tar -xJ -C "$HOME/.local/bin" --strip-components=1 "typst-x86_64-unknown-linux-musl/typst"
-          curl -fsSL "https://just.systems/install.sh" | bash -s -- --to "$HOME/.local/bin"
-          for f in STIXTwoText-Regular.otf STIXTwoText-Italic.otf STIXTwoText-SemiBold.otf STIXTwoText-SemiBoldItalic.otf STIXTwoText-Bold.otf STIXTwoText-BoldItalic.otf STIXTwoMath-Regular.otf; do
-            curl -fsSL "https://cdn.jsdelivr.net/gh/stipub/stixfonts@v2.13b171/fonts/static_otf/${f}" -o "$HOME/.local/share/fonts/${f}"
-          done
-          curl -fsSL "https://github.com/eigilnikolajsen/commit-mono/releases/download/v1.143/CommitMono-1.143.zip" -o /tmp/cm.zip
-          unzip -j -q /tmp/cm.zip "*.otf" -d "$HOME/.local/share/fonts/"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          echo "TYPST_FONT_PATHS=$HOME/.local/share/fonts" >> "$GITHUB_ENV"
-
-      - name: Run formatting check
-        run: just fmt-check
-
-  lint-check:
-    name: Verify Linting Before Release
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.tag || github.ref }}
-
-      - name: Read typst.toml metadata
-        id: meta
-        run: |
-          echo "compiler=$(sed -n 's/^compiler = "\(.*\)"$/\1/p' typst.toml)" >> "$GITHUB_OUTPUT"
-
-      - name: Install Typst ${{ steps.meta.outputs.compiler }}, STIX Two, Commit Mono & just
-        run: |
-          mkdir -p "$HOME/.local/bin" "$HOME/.local/share/fonts"
-          curl -fsSL "https://github.com/typst/typst/releases/download/v${{ steps.meta.outputs.compiler }}/typst-x86_64-unknown-linux-musl.tar.xz" \
-            | tar -xJ -C "$HOME/.local/bin" --strip-components=1 "typst-x86_64-unknown-linux-musl/typst"
-          curl -fsSL "https://just.systems/install.sh" | bash -s -- --to "$HOME/.local/bin"
-          for f in STIXTwoText-Regular.otf STIXTwoText-Italic.otf STIXTwoText-SemiBold.otf STIXTwoText-SemiBoldItalic.otf STIXTwoText-Bold.otf STIXTwoText-BoldItalic.otf STIXTwoMath-Regular.otf; do
-            curl -fsSL "https://cdn.jsdelivr.net/gh/stipub/stixfonts@v2.13b171/fonts/static_otf/${f}" -o "$HOME/.local/share/fonts/${f}"
-          done
-          curl -fsSL "https://github.com/eigilnikolajsen/commit-mono/releases/download/v1.143/CommitMono-1.143.zip" -o /tmp/cm.zip
-          unzip -j -q /tmp/cm.zip "*.otf" -d "$HOME/.local/share/fonts/"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          echo "TYPST_FONT_PATHS=$HOME/.local/share/fonts" >> "$GITHUB_ENV"
-
-      - name: Run linting check
-        run: just lint
-
-  github-release:
-    name: Verify & Publish GitHub Release
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
     outputs:
       pkg_name: ${{ steps.meta.outputs.pkg_name }}
       pkg_version: ${{ steps.meta.outputs.pkg_version }}
-      compiler: ${{ steps.meta.outputs.compiler }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.tag || github.ref }}
 
-      - name: Validate tag & manifest metadata
+      - uses: ./.github/actions/setup
+
+      - name: Validate tag against typst.toml & CHANGELOG
         id: meta
         env:
           RAW_TAG: ${{ inputs.tag || github.ref_name }}
         run: |
           set -eu
-          TAG_VER="${RAW_TAG#v}"
-          PKG_NAME="$(sed -n 's/^name = "\(.*\)":' typst.toml)"
-          PKG_VER="$(sed -n 's/^version = "\(.*\)":' typst.toml)"
-          COMPILER="$(sed -n 's/^compiler = "\(.*\)"$/\1/p' typst.toml)"
+          tag_version="${RAW_TAG#v}"
+          pkg_name="$(sed -n 's/^name = "\(.*\)"$/\1/p' typst.toml)"
+          pkg_version="$(sed -n 's/^version = "\(.*\)"$/\1/p' typst.toml)"
 
-          if [ "$TAG_VER" != "$PKG_VER" ]; then
-            echo "::error::Tag ${RAW_TAG} does not match typst.toml version ${PKG_VER}"
+          if [ -z "$pkg_name" ] || [ -z "$pkg_version" ]; then
+            echo "::error::could not read name/version from typst.toml"
             exit 1
           fi
-          if ! grep -Eq "^## \[${PKG_VER}\]" CHANGELOG.md; then
-            echo "::error::Missing '## [${PKG_VER}]' section in CHANGELOG.md"
+          if [ "$tag_version" != "$pkg_version" ]; then
+            echo "::error::tag ${RAW_TAG} does not match typst.toml version ${pkg_version}"
+            exit 1
+          fi
+          if ! grep -Eq "^## \[${pkg_version}\]" CHANGELOG.md; then
+            echo "::error::missing '## [${pkg_version}]' section in CHANGELOG.md"
             exit 1
           fi
 
-          echo "pkg_name=${PKG_NAME}" >> "$GITHUB_OUTPUT"
-          echo "pkg_version=${PKG_VER}" >> "$GITHUB_OUTPUT"
-          echo "compiler=${COMPILER}" >> "$GITHUB_OUTPUT"
+          echo "pkg_name=${pkg_name}" >> "$GITHUB_OUTPUT"
+          echo "pkg_version=${pkg_version}" >> "$GITHUB_OUTPUT"
 
-      - name: Install Typst ${{ steps.meta.outputs.compiler }}, STIX Two, Commit Mono & just
-        run: |
-          mkdir -p "$HOME/.local/bin" "$HOME/.local/share/fonts"
-          curl -fsSL "https://github.com/typst/typst/releases/download/v${{ steps.meta.outputs.compiler }}/typst-x86_64-unknown-linux-musl.tar.xz" \
-            | tar -xJ -C "$HOME/.local/bin" --strip-components=1 "typst-x86_64-unknown-linux-musl/typst"
-          curl -fsSL "https://just.systems/install.sh" | bash -s -- --to "$HOME/.local/bin"
-          for f in STIXTwoText-Regular.otf STIXTwoText-Italic.otf STIXTwoText-SemiBold.otf STIXTwoText-SemiBoldItalic.otf STIXTwoText-Bold.otf STIXTwoText-BoldItalic.otf STIXTwoMath-Regular.otf; do
-            curl -fsSL "https://cdn.jsdelivr.net/gh/stipub/stixfonts@v2.13b171/fonts/static_otf/${f}" -o "$HOME/.local/share/fonts/${f}"
-          done
-          curl -fsSL "https://github.com/eigilnikolajsen/commit-mono/releases/download/v1.143/CommitMono-1.143.zip" -o /tmp/cm.zip
-          unzip -j -q /tmp/cm.zip "*.otf" -d "$HOME/.local/share/fonts/"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          echo "TYPST_FONT_PATHS=$HOME/.local/share/fonts" >> "$GITHUB_ENV"
-
-      - name: Build manual & run full checks
+      - name: Run full check suite
         run: |
           just docs
           just check
+          just fmt-check
+          just lint
 
-      - name: Extract Keep a Changelog release notes & publish GitHub Release
+  github-release:
+    name: Publish GitHub release
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - uses: ./.github/actions/setup
+
+      - name: Build manual
+        run: just docs
+
+      - name: Extract Keep a Changelog notes & publish
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ inputs.tag || github.ref_name }}
-          VER: ${{ steps.meta.outputs.pkg_version }}
+          VER: ${{ needs.verify.outputs.pkg_version }}
         run: |
-          python3 - "$VER" <<'PY' > /tmp/release-notes.md
+          set -eu
+          python3 - "$VER" <<'PY' > release-notes.md
           import pathlib, re, sys
-          ver = sys.argv[1]
+
+          version = sys.argv[1]
           text = pathlib.Path("CHANGELOG.md").read_text()
-          m = re.search(
-              rf"^## \[{re.escape(ver)}\][^\n]*\n(.*?)(?=^## \[|^\\[[^\\]]+\\]:|\\Z)",
+          match = re.search(
+              rf"^## \[{re.escape(version)}\][^\n]*\n(.*?)(?=^## \[|^\[[^\]]+\]:|\Z)",
               text,
               re.M | re.S,
           )
-          body = m.group(1).strip() if m else f"Release v{ver}"
+          body = match.group(1).strip() if match else f"Release v{version}"
           footer = (
               "\n\n---\n"
               "_Release notes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) "
@@ -160,25 +105,26 @@ jobs:
           )
           print(body + footer)
           PY
+
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" docs/manual.pdf --clobber
-            gh release edit "$TAG" --notes-file /tmp/release-notes.md
+            gh release edit "$TAG" --notes-file release-notes.md
           else
             gh release create "$TAG" docs/manual.pdf \
-              --title "${TAG}" \
-              --notes-file /tmp/release-notes.md
+              --title "$TAG" \
+              --notes-file release-notes.md
           fi
 
-  universe-draft-pr:
-    name: Open Draft PR on typst/packages
-    needs: [format-check, lint-check, github-release]
+  universe-pr:
+    name: Open Typst Universe PR
+    needs: [verify, github-release]
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
+    # Skipped while an unpublished dependency is still vendored, or before
+    # UNIVERSE_TOKEN is configured, so a tag never fails for those reasons.
+    if: ${{ vars.UNIVERSE_SUBMIT == 'true' }}
     env:
-      PKG_NAME: ${{ needs.github-release.outputs.pkg_name }}
-      PKG_VER: ${{ needs.github-release.outputs.pkg_version }}
-      COMPILER: ${{ needs.github-release.outputs.compiler }}
+      PKG_NAME: ${{ needs.verify.outputs.pkg_name }}
+      PKG_VER: ${{ needs.verify.outputs.pkg_version }}
       UPSTREAM_REPO: typst/packages
       FORK_REPO: ${{ vars.UNIVERSE_FORK || 'bfeitknecht/packages' }}
     steps:
@@ -186,38 +132,37 @@ jobs:
         with:
           ref: ${{ inputs.tag || github.ref }}
 
-      - name: Ensure no unpublished dependencies remain in vendor/
+      - name: Ensure no unpublished dependency is still vendored
         run: |
           if [ -d vendor ] && [ -n "$(find vendor -mindepth 1 -maxdepth 2 -name typst.toml 2>/dev/null)" ]; then
-            echo "::error::vendor/ still contains unpublished dependencies (e.g. @preview/exemel:0.3.0). Wait for upstream Universe release, remove vendor/, and re-run."
+            echo "::error::vendor/ still contains unpublished dependencies (e.g. @preview/exemel:0.3.0). Wait for the upstream Universe release, remove vendor/, and re-run."
             exit 1
           fi
 
-      - name: Verify UNIVERSE_TOKEN secret is configured
+      - name: Require UNIVERSE_TOKEN
         env:
           GH_TOKEN: ${{ secrets.UNIVERSE_TOKEN }}
         run: |
           if [ -z "$GH_TOKEN" ]; then
-            echo "::error::Missing UNIVERSE_TOKEN secret. Add a PAT with push access to ${FORK_REPO} and PR access to ${UPSTREAM_REPO}."
+            echo "::error::missing UNIVERSE_TOKEN secret — add a PAT with push access to ${FORK_REPO} and PR access to ${UPSTREAM_REPO}."
             exit 1
           fi
 
-      - name: Stage Universe payload (fail fast before building typst-package-check)
-        run: |
-          chmod +x ./scripts/stage-universe.sh
-          ./scripts/stage-universe.sh /tmp/universe-stage
+      - name: Stage Universe payload
+        run: ./scripts/stage-universe.sh universe-stage
 
-      - name: Cache typst-package-check binary
-        id: cache-tpc
+      - name: Cache typst-package-check
         uses: actions/cache@v4
         with:
           path: ~/.cargo/bin/typst-package-check
           key: typst-package-check-${{ runner.os }}-v1
 
-      - name: Install Typst ${{ env.COMPILER }} & typst-package-check
+      - name: Install Typst & typst-package-check
         run: |
+          set -eu
           mkdir -p "$HOME/.local/bin"
-          curl -fsSL "https://github.com/typst/typst/releases/download/v${COMPILER}/typst-x86_64-unknown-linux-musl.tar.xz" \
+          typst_version="$(sed -n 's/^compiler = "\(.*\)"$/\1/p' typst.toml)"
+          curl -fsSL "https://github.com/typst/typst/releases/download/v${typst_version}/typst-x86_64-unknown-linux-musl.tar.xz" \
             | tar -xJ -C "$HOME/.local/bin" --strip-components=1 "typst-x86_64-unknown-linux-musl/typst"
           if [ ! -x "$HOME/.cargo/bin/typst-package-check" ]; then
             cargo install --locked --git https://github.com/typst/package-check.git typst-package-check
@@ -225,36 +170,39 @@ jobs:
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
 
-      - name: Verify staged payload against live Typst Universe & run typst-package-check
+      - name: Compile the staged payload as Universe would
         run: |
-          CACHE_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/typst/packages"
-          mkdir -p "${CACHE_DIR}/preview/${PKG_NAME}"
-          cp -R "/tmp/universe-stage/packages/preview/${PKG_NAME}/${PKG_VER}" "${CACHE_DIR}/preview/${PKG_NAME}/${PKG_VER}"
+          set -eu
+          cache="${XDG_DATA_HOME:-$HOME/.local/share}/typst/packages"
+          staged="universe-stage/packages/preview/${PKG_NAME}/${PKG_VER}"
+          mkdir -p "${cache}/preview/${PKG_NAME}"
+          cp -R "$staged" "${cache}/preview/${PKG_NAME}/${PKG_VER}"
+          trap 'rm -rf "${cache}/preview/${PKG_NAME}"' EXIT
           typst compile --features html,bundle --format bundle \
-            "/tmp/universe-stage/packages/preview/${PKG_NAME}/${PKG_VER}/template/site.typ" /tmp/live-bundle-check
-          rm -rf "${CACHE_DIR}/preview/${PKG_NAME}"
+            "${cache}/preview/${PKG_NAME}/${PKG_VER}/template/site.typ" bundle-check
 
-          cd /tmp/universe-stage
-          typst-package-check check "packages/preview/${PKG_NAME}/${PKG_VER}"
+      - name: Run typst-package-check
+        run: typst-package-check check "universe-stage/packages/preview/${PKG_NAME}/${PKG_VER}"
 
-      - name: Push branch to ${{ env.FORK_REPO }} & open Draft PR on ${{ env.UPSTREAM_REPO }}
+      - name: Push branch to fork & open Draft PR
         env:
           GH_TOKEN: ${{ secrets.UNIVERSE_TOKEN }}
         run: |
           set -eu
-          BRANCH="${PKG_NAME}-${PKG_VER}"
-          FORK_OWNER="${FORK_REPO%%/*}"
+          branch="${PKG_NAME}-${PKG_VER}"
+          fork_owner="${FORK_REPO%%/*}"
+          staged="$(pwd)/universe-stage/packages/preview/${PKG_NAME}/${PKG_VER}"
 
           git clone --depth 1 --no-checkout --filter=blob:none \
-            "https://github.com/${UPSTREAM_REPO}.git" /tmp/typst-packages
-          cd /tmp/typst-packages
+            "https://github.com/${UPSTREAM_REPO}.git" packages-checkout
+          cd packages-checkout
           git sparse-checkout init --cone
           git sparse-checkout set "packages/preview/${PKG_NAME}"
-          git checkout -B "${BRANCH}" origin/main
+          git checkout -B "$branch" origin/main
 
           rm -rf "packages/preview/${PKG_NAME}/${PKG_VER}"
           mkdir -p "packages/preview/${PKG_NAME}"
-          cp -R "/tmp/universe-stage/packages/preview/${PKG_NAME}/${PKG_VER}" "packages/preview/${PKG_NAME}/${PKG_VER}"
+          cp -R "$staged" "packages/preview/${PKG_NAME}/${PKG_VER}"
 
           git config user.name "${GITHUB_ACTOR}"
           git config user.email "${GITHUB_ACTOR_ID}+${GITHUB_ACTOR}@users.noreply.github.com"
@@ -262,9 +210,9 @@ jobs:
           git commit -m "${PKG_NAME}:${PKG_VER}"
 
           git remote add fork "https://x-access-token:${GH_TOKEN}@github.com/${FORK_REPO}.git"
-          git push --force fork "HEAD:refs/heads/${BRANCH}"
+          git push --force fork "HEAD:refs/heads/${branch}"
 
-          cat <<EOF > /tmp/pr-body.md
+          cat > ../pr-body.md <<EOF
           I am submitting \`${PKG_NAME}:${PKG_VER}\` from https://github.com/${GITHUB_REPOSITORY}/releases/tag/v${PKG_VER}.
 
           - [x] Added a \`typst.toml\` file with all required keys
@@ -274,16 +222,15 @@ jobs:
           - [x] Excluded documentation PDFs, preview images, and \`examples/\` from the compiler download archive
           EOF
 
-          EXISTING_PR="$(gh pr list --repo "${UPSTREAM_REPO}" --head "${FORK_OWNER}:${BRANCH}" --state open --json url --jq '.[0].url // empty')"
-          if [ -n "$EXISTING_PR" ]; then
-            echo "Updated existing Draft PR: ${EXISTING_PR}"
+          existing="$(gh pr list --repo "${UPSTREAM_REPO}" --head "${fork_owner}:${branch}" --state open --json url --jq '.[0].url // empty')"
+          if [ -n "$existing" ]; then
+            echo "Updated existing Draft PR: ${existing}"
           else
-            PR_URL="$(gh pr create \
+            gh pr create \
               --draft \
               --repo "${UPSTREAM_REPO}" \
               --base main \
-              --head "${FORK_OWNER}:${BRANCH}" \
+              --head "${fork_owner}:${branch}" \
               --title "${PKG_NAME}:${PKG_VER}" \
-              --body-file /tmp/pr-body.md)"
-            echo "Opened Draft PR: ${PR_URL}"
+              --body-file ../pr-body.md
           fi
