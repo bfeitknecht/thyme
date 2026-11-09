@@ -3,3 +3,4 @@ dist/
 .tmp-check/
 .tmp-stage/
 .DS_Store
+preview/
