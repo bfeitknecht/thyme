@@ -4,7 +4,7 @@
 #import "../src/paths.typ": heading-anchor-id
 #import "../src/htm.typ": _tokenize-htm
 #import "../src/text.typ": query-body-words
-#import "../src/blog/theme.typ": stylesheet-css, theme-override-css, default-woff2-files, stylesheet-href
+#import "../src/blog/theme.typ": css-hex, stylesheet-css, theme-override-css, default-woff2-files, stylesheet-href
 #import "../src/blog/notes.typ": is-sidenote-link
 #import "@preview/exemel:0.3.0": format-rfc3339, rss-encode, rss-post
 
@@ -66,6 +66,13 @@
 #assert.eq(css-hex(rgb("#000000")), "#000000")
 #assert.eq(css-hex(default-theme.paper-light), css-hex(default-theme.paper-light))
 #assert.eq(css-hex(default-theme.text-light).len(), 7)
+
+// `theme-color` must follow the *active* theme, not a pinned hex. A preset that resolves
+// its own theme and then drops it on the way to the shell would emit the default here.
+#let _probe-theme = default-theme + (paper-light: oklch(50%, 0, 0deg), paper-dark: oklch(30%, 0, 0deg))
+#assert.eq(css-hex(_probe-theme.paper-light), "#636363")
+#assert.eq(css-hex(_probe-theme.paper-dark), "#2e2e2e")
+#assert.ne(css-hex(_probe-theme.paper-light), css-hex(default-theme.paper-light))
 
 #assert.eq(source-path-for("posts/foo/index.html"), "posts/foo.typ")
 #assert.eq(canonical-page-url("https://blog.example.org", "posts/foo/index.html"), "https://blog.example.org/posts/foo/")

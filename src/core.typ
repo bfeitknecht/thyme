@@ -1346,7 +1346,20 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
         {
           emit-doc-marker("404.html", <thyme-not-found>)
           if type(not-found-page) == content {
-            not-found-page
+            // A user-supplied body is not a document, so it gets no `<head>` of its own;
+            // wrap it so it still carries the stylesheet, meta and `theme-color` tags.
+            render-core-shell(
+              title: "404",
+              site-title: resolved-title,
+              doc-path: "404.html",
+              langs: home-langs,
+              stylesheet-paths: sheet-hrefs,
+              favicon-href: if norm-fav != none { norm-fav.path } else { none },
+              favicon-type: if norm-fav != none { norm-fav.mime } else { none },
+              wrap-main: true,
+              theme-config: shell-theme,
+              not-found-page,
+            )
           } else if not-found-hook != none {
             not-found-hook(resolved-title, home-langs.first(), sheet-hrefs)
           } else {
@@ -1356,6 +1369,16 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
                 html.meta(name: "viewport", content: "width=device-width, initial-scale=1")
                 html.meta(name: "robots", content: "noindex")
                 html.title("404 - " + to-plain-text(resolved-title, lang: home-langs.first()))
+                html.meta(
+                  name: "theme-color",
+                  content: css-hex(shell-theme.paper-light),
+                  media: "(prefers-color-scheme: light)",
+                )
+                html.meta(
+                  name: "theme-color",
+                  content: css-hex(shell-theme.paper-dark),
+                  media: "(prefers-color-scheme: dark)",
+                )
                 for css-p in sheet-hrefs {
                   html.link(rel: "stylesheet", href: "/" + str(css-p).trim("/"))
                 }
@@ -1407,6 +1430,7 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
               source-label: source-label,
               back-content: html.a(href: rel-root(m.path) + "index.html", "/.."),
               open-graph: open-graph,
+              theme-config: shell-theme,
               {
                 show: with-html-headings.with(shift: 0, permalinks: heading-permalinks)
                 m.body

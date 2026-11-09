@@ -1,26 +1,25 @@
 repos:
-  - repo: https://github.com/psf/black
-    rev: 24.1.1
-    hooks:
-      - id: black
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.4.4
     hooks:
       - id: ruff
       - id: ruff-format
-  - repo: https://github.com/pycqa/isort
-    rev: 5.13.2
-    hooks:
-      - id: isort
+
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-yaml
+        # `!reference` etc. are not used, but action files are valid YAML only
+        # when parsed as plain documents — keep the default parser.
+        files: ^\.github/.*\.ya?ml$
       - id: check-json
       - id: check-toml
       - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ["--maxkb=1024"]
+
   - repo: https://github.com/typst/typst
     rev: v0.15.1
     hooks:
