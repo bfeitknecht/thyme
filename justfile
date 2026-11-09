@@ -285,7 +285,7 @@ preview:
         <footer>Live reload: <code>typst watch --features html,bundle -f bundle template/site.typ preview/template --serve</code></footer>
       </body>
     </html>
-    
+
     HTML
     } > "$out/index.html"
     echo "preview written to $out/index.html"
