@@ -1,6 +1,9 @@
 # `thyme` — Release & Full Rollout Scratchpad
 
 > Local maintainer scratch file (excluded from the Typst Universe package archive via `typst.toml` `exclude`).
+>
+> **Actionable step-by-step sequence: [`docs/release-checklist.md`](docs/release-checklist.md).**
+> This file is the broader rollout context (glob, apex, infra); that one is the shortlist.
 
 ## 1. End-to-End Rollout Checklist (`exemel` → `thyme` → `glob` → `apex`)
 
