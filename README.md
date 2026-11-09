@@ -168,8 +168,8 @@ single PR that either goes fully green or does not merge.
 ### Hacking on thyme
 
 ```sh
-just fmt        # format every .typ file (typstyle, pinned to 0.15.1)
-just fmt-check  # verify formatting without writing
+just fmt           # format every .typ file (typstyle, pinned to 0.15.1)
+just fmt --check   # verify formatting without writing
 just lint       # ruff over Python, typstyle over Typst
 just check      # the full gate; run this before opening a PR
 just preview    # build template/ + examples/ into a browsable preview/

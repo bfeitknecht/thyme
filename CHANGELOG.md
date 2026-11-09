@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Conditional copy-button JavaScript (`copy-button: auto | bool`) injected only on pages containing `#zebraw` code blocks (zero `<script>` on codeless pages).
   - Right-margin sidenotes via `@preview/marge:0.1.0` (`sidenote`, `#footnote` redirect, `mcite` & `citations-as-sidenotes` margin bibliography citations, `wide` clearance, and superscript-baseline underlines in paged PDF output via `typographic: false` + `is-sidenote-link`), static `/tags/` & `/tags/<tag>/` archive pages (`tag-pages`, live `tag-cloud` links), `#toc()`, compile-time `#backlinks()`, chronological `#post-nav()`, semantic `<time datetime>` Obsidian `<dl>` frontmatter (`author`, optional `monograph`, `created`, `modified`, prose-only `words` & `reading`, linked `#tag`s), Reader-Mode-safe `spicky`-style math environments (`div.blog-sbox`: `definition`, `theorem`, `lemma`, `proposition`, `corollary`, `example`, `recipe`, `remark`; `proof` with hollow QED `□`; `div.blog-callout[role="note"]`), `#diagram(invert-dark: bool)`, `zebraw`, `tablem`, and `cheq`.
 - **Documentation, Tests & Tooling**:
-  - `@preview/tidy:0.4.3`-generated reference manual (`docs/manual.pdf`), unit & integration test suite (`tests/unit.typ` + `just check`), `template/`, `examples/{portfolio,blog}/`, `scripts/stage-universe.sh`, `justfile`, and CI + automated Typst Universe Draft PR workflow.
+  - `@preview/tidy:0.4.3`-generated reference manual (`docs/manual.pdf`), unit & integration test suite (`tests/unit.typ` + `just check`), `template/`, `examples/{portfolio,blog}/`, `justfile`, and CI + automated Typst Universe Draft PR workflow.
 
 ### Fixed
 - **`robots.txt` was never emitted.** It is documented in the README, the manual and
@@ -34,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   public option — but nothing ever called the function, so no bundle contained a `robots.txt` at
   all and `Sitemap:` discovery silently did not work. Now emitted whenever `robots` is `auto` and a
   sitemap is produced. Regression assertions added to `tests/unit.typ`.
-- **`just fmt` / `just fmt-check` / the pre-commit hook called a command that does not exist.**
+- **`just fmt` / the pre-commit hook called a command that does not exist.**
   The Typst CLI has no `fmt` subcommand — 0.15.x ships `compile`, `watch`, `init`, `query`,
   `eval`, `fonts`, `update`, `completions`, `info` — so every invocation exited 2 (clap usage
   error) and the CI `Format` job failed on its first real run. All three call sites now use
@@ -56,26 +56,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   always empty and the `typst/packages` PR step would have failed on its first use.
 - **CI's Python lint was a silent no-op.** `just lint` only invokes `ruff` when it is on `PATH`,
   and the runner does not ship it; CI now installs it explicitly.
-- **`just fmt-check` never checked anything, and the tree was never formatted.** The recipe
-  formatted each file into a temporary tree with a `typstyle --output` flag that does not exist
-  and swallowed the failure with `|| cp`, so `cmp` always compared a file against itself and the
-  `Format` job passed unconditionally. It now uses `typstyle --check` directly. Nineteen of
-  twenty-six `.typ` files were in fact unformatted; `just fmt` has been applied to all of them and
-  the whole suite (`tests/unit.typ`, all three bundles, both template posts, the manual) still
-  compiles and every content assertion still passes.
+- **The format check never checked anything, and the tree was never formatted.** It formatted
+  each file into a temporary tree with a `typstyle --output` flag that does not exist and swallowed
+  the failure with `|| cp`, so `cmp` always compared a file against itself and the CI `Format` job
+  passed unconditionally. `just fmt` now takes typstyle's own flags, so `just fmt --check` verifies.
+  Nineteen of twenty-six `.typ` files were in fact unformatted; `just fmt` has been applied to all
+  of them and the whole suite (`tests/unit.typ`, all three bundles, both template posts, the
+  manual) still compiles and every content assertion still passes.
 - **Release notes could silently publish a placeholder.** `release.yaml` extracted the upcoming
   section with an inline regex that fell back to the single line `Release v<version>` when the
   heading was missing, produced empty notes for an empty section, and matched `[v0.1.0rc1]` for a
-  `v0.1.0` query. Extraction and validation now live in `scripts/changelog.py`, which fails the
-  job instead, and the `verify` job uses the same parser so "the section exists" and "the notes
-  are publishable" cannot disagree.
-- **`scripts/manifest.py` replaces eleven copies of a `sed` TOML parse.** The pattern had already
-  been got wrong once (`release.yaml` could never have run). TOML is now read by a TOML parser,
-  with one `get`/`env` interface for the justfile, `stage-universe.sh` and both workflows.
+  `v0.1.0` query. The `verify` job now requires a dated `## [<version>] - YYYY-MM-DD` heading, and
+  the notes step fails on a missing or empty body instead of substituting one, so "the section
+  exists" and "the notes are publishable" cannot disagree.
+- **One way to read `typst.toml`, not eleven.** The same `sed -n 's/^version = "…"/\1/p'` was
+  copied across the justfile, a shell script and both workflows, and one copy had already been got
+  wrong badly enough that `release.yaml` could never have run. Everything now uses `tomllib`.
 - **The formatter is pinned to `typstyle` 0.15.1** in the CI setup action and `.pre-commit-config`
   (and `typst-package-check` to `v0.7.0`, which was previously installed from whatever `master`
   happened to be at release time). typstyle's output changes between releases, so a floating
-  version makes local `just fmt` and CI `just fmt-check` disagree.
+  version makes local `just fmt` and CI `just fmt --check` disagree.
 - **`src/lib.typ` documented a guarantee Typst does not provide.** It claimed `site` is "always
   the core engine" and that "import order never matters"; a star import of the preset
   (`#import blog: *`) does rebind `site`, which is ordinary Typst scoping. The comment now states
@@ -92,8 +92,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   fail solely because `vendor/` still holds an unpublished dependency. Added `concurrency` to CI.
   (A stale-`docs/manual.pdf` byte comparison was tried and removed: Typst embeds `/CreationDate`
   in an uncompressed object stream, so a content-identical rebuild never matches byte-for-byte.)
-- **`scripts/stage-universe.sh` is now committed executable** (mode `100755`); the release
-  workflow invokes it directly.
+- **`just stage-universe` replaces `scripts/stage-universe.sh`,** and there is no `scripts/`
+  directory any more: the staging recipe, the release-notes extraction and the `typst.toml` reads
+  are all in the justfile and the workflows that use them.
 - **Documentation.** Added `docs/api.md` — the complete 88-name exported surface, core and
   preset — since two thirds of it appeared in neither the manual nor the README. Added a
   README *Stability & Versioning* section defining what the version number guarantees, and
