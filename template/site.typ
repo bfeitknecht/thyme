@@ -12,7 +12,8 @@
 
 Notes on programming languages, formal methods, mathematics, and systems.
 
-#links-row(
+#links(
+  direction: "row",
   link("https://example.org")[example.org],
   link("https://github.com/example")[github],
   [@rss[rss]],

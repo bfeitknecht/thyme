@@ -15,6 +15,7 @@
   query-doc-tr-codes,
   query-pages,
   render-top-bar,
+  site-config,
 )
 #import "../i18n.typ": resolve-page-langs
 #import "../paths.typ": (
@@ -206,7 +207,7 @@
 }
 
 /// Dual-purpose scholarly post template and inline capability-path mounter:
-/// - In a post file (`posts/foo.typ` or `posts/foo/index.typ`):
+/// - In a post file (`posts/foo.typ` or `posts/foo/site.typ`):
 ///   `#show: post.with(title: [...], author: "...", created: ..., modified: ...)`
 /// - In `site.typ`:
 ///   `#post(path("posts/foo.typ")) <foo>` (evaluates the post AND exposes `/posts/foo.typ` as Tadi Web plaintext source; `include "posts/foo.typ"` is also accepted).
@@ -382,16 +383,14 @@
   context {
     let enc-doc = find-doc-containing(here())
     let doc-path = if enc-doc != none { enc-doc.path } else { none }
-    let core-cfgs = query(<thyme-site-cfg>)
-    let core-cfg = if core-cfgs.len() > 0 { core-cfgs.first().value } else { none }
-    let site-cfgs = query(<blog-site-cfg>)
-    let site-cfg = if site-cfgs.len() > 0 { site-cfgs.first().value } else { none }
+    // Merged preset + core site metadata (preset keys win).
+    let site-cfg = site-config()
     let base-theme = if site-cfg != none { site-cfg.theme } else { default-theme }
     let has-post-theme = theme != none and theme != (:)
     let merged-theme = resolve-theme(base-theme + (if has-post-theme { theme } else { (:) }))
-    let site-title = if site-cfg != none { site-cfg.title } else if core-cfg != none { core-cfg.title } else { none }
-    let site-url = if site-cfg != none { site-cfg.url } else if core-cfg != none { core-cfg.url } else { none }
-    let site-lang = if site-cfg != none { site-cfg.lang } else if core-cfg != none { core-cfg.lang } else { "en" }
+    let site-title = if site-cfg != none { site-cfg.title } else { none }
+    let site-url = if site-cfg != none { site-cfg.url } else { none }
+    let site-lang = if site-cfg != none { site-cfg.lang } else { "en" }
     let eff-langs = resolve-page-langs(
       lang,
       default-lang: site-lang,
@@ -402,9 +401,7 @@
     let eff-author = if author != none {
       author
     } else if site-cfg != none {
-      site-cfg.author
-    } else if core-cfg != none {
-      core-cfg.author
+      site-cfg.at("author", default: none)
     } else {
       none
     }
@@ -473,10 +470,10 @@
       } else {
         none
       }
-      let src-label = if core-cfg != none { core-cfg.source-label } else if site-cfg != none { site-cfg.source-label } else { none }
+      let src-label = if site-cfg != none { site-cfg.at("source-label", default: none) } else { none }
       let src-href = if src-label != none { lookup-source-href(doc-path) } else { none }
-      let sheet-paths = if core-cfg != none {
-        core-cfg.at("stylesheet-paths", default: auto)
+      let sheet-paths = if site-cfg != none {
+        site-cfg.at("stylesheet-paths", default: auto)
       } else {
         auto
       }
@@ -498,8 +495,8 @@
         alternates: alternates,
         stylesheet-paths: sheet-paths,
         theme-override-css: theme-override-css,
-        favicon-href: if core-cfg != none { core-cfg.at("favicon-href", default: none) } else { none },
-        favicon-type: if core-cfg != none { core-cfg.at("favicon-type", default: none) } else { none },
+        favicon-href: if site-cfg != none { site-cfg.at("favicon-href", default: none) } else { none },
+        favicon-type: if site-cfg != none { site-cfg.at("favicon-type", default: none) } else { none },
         source-href: src-href,
         source-label: src-label,
         theme-cfg: merged-theme,

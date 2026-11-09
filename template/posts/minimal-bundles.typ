@@ -34,7 +34,7 @@ When a table or figure benefits from the full width of prose plus margin, wrap i
   #tablem[
     | *Command* | *Target* | *Result* |
     | :--- | :--- | :--- |
-    | `typst compile --features html,bundle -f bundle site.typ public` | `bundle` | `index.html`, `posts/`, `.typ` sources, `sitemap.xml`, `rss.xml`, `atom.xml` |
+    | `typst compile --features html,bundle -f bundle site.typ public` | `bundle` | `index.html`, `posts/`, `.typ` sources, `sitemap.xml`, `robots.txt`, `rss.xml`, `atom.xml` |
     | `typst watch --features html,bundle -f bundle site.typ public` | `bundle` | Built-in live-reloading HTTP dev server |
     | `typst watch posts/fixed-points.typ` | `paged` | Instant `height: auto` editor preview |
   ]
