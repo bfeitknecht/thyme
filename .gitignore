@@ -4,3 +4,4 @@ dist/
 .tmp-stage/
 .DS_Store
 preview/
+.tmp-lint/

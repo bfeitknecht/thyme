@@ -29,7 +29,7 @@ jobs:
       - name: Read typst.toml metadata
         id: meta
         run: |
-          echo "compiler=$(sed -n 's/^compiler = "\(.*\)":' typst.toml)" >> "$GITHUB_OUTPUT"
+          echo "compiler=$(sed -n 's/^compiler = "\(.*\)"$/\1/p' typst.toml)" >> "$GITHUB_OUTPUT"
 
       - name: Install Typst ${{ steps.meta.outputs.compiler }}, STIX Two, Commit Mono & just
         run: |
@@ -46,7 +46,7 @@ jobs:
           echo "TYPST_FONT_PATHS=$HOME/.local/share/fonts" >> "$GITHUB_ENV"
 
       - name: Run formatting check
-        run: just fmt
+        run: just fmt-check
 
   lint-check:
     name: Verify Linting Before Release
@@ -61,7 +61,7 @@ jobs:
       - name: Read typst.toml metadata
         id: meta
         run: |
-          echo "compiler=$(sed -n 's/^compiler = "\(.*\)":' typst.toml)" >> "$GITHUB_OUTPUT"
+          echo "compiler=$(sed -n 's/^compiler = "\(.*\)"$/\1/p' typst.toml)" >> "$GITHUB_OUTPUT"
 
       - name: Install Typst ${{ steps.meta.outputs.compiler }}, STIX Two, Commit Mono & just
         run: |
@@ -103,7 +103,7 @@ jobs:
           TAG_VER="${RAW_TAG#v}"
           PKG_NAME="$(sed -n 's/^name = "\(.*\)":' typst.toml)"
           PKG_VER="$(sed -n 's/^version = "\(.*\)":' typst.toml)"
-          COMPILER="$(sed -n 's/^compiler = "\(.*\)":' typst.toml)"
+          COMPILER="$(sed -n 's/^compiler = "\(.*\)"$/\1/p' typst.toml)"
 
           if [ "$TAG_VER" != "$PKG_VER" ]; then
             echo "::error::Tag ${RAW_TAG} does not match typst.toml version ${PKG_VER}"

@@ -18,7 +18,7 @@ jobs:
       - name: Read typst.toml metadata
         id: meta
         run: |
-          echo "compiler=$(sed -n 's/^compiler = "\(.*\)":' typst.toml)" >> "$GITHUB_OUTPUT"
+          echo "compiler=$(sed -n 's/^compiler = "\(.*\)"$/\1/p' typst.toml)" >> "$GITHUB_OUTPUT"
 
       - name: Install Typst ${{ steps.meta.outputs.compiler }}, STIX Two, Commit Mono & just
         run: |
@@ -35,7 +35,7 @@ jobs:
           echo "TYPST_FONT_PATHS=$HOME/.local/share/fonts" >> "$GITHUB_ENV"
 
       - name: Run formatting check
-        run: just fmt
+        run: just fmt-check
 
   lint:
     name: Lint Check
@@ -46,7 +46,7 @@ jobs:
       - name: Read typst.toml metadata
         id: meta
         run: |
-          echo "compiler=$(sed -n 's/^compiler = "\(.*\)":' typst.toml)" >> "$GITHUB_OUTPUT"
+          echo "compiler=$(sed -n 's/^compiler = "\(.*\)"$/\1/p' typst.toml)" >> "$GITHUB_OUTPUT"
 
       - name: Install Typst ${{ steps.meta.outputs.compiler }}, STIX Two, Commit Mono & just
         run: |
@@ -74,7 +74,7 @@ jobs:
       - name: Read typst.toml metadata
         id: meta
         run: |
-          echo "compiler=$(sed -n 's/^compiler = "\(.*\)":' typst.toml)" >> "$GITHUB_OUTPUT"
+          echo "compiler=$(sed -n 's/^compiler = "\(.*\)"$/\1/p' typst.toml)" >> "$GITHUB_OUTPUT"
 
       - name: Install Typst ${{ steps.meta.outputs.compiler }}, STIX Two, Commit Mono & just
         run: |
