@@ -171,7 +171,7 @@ single PR that either goes fully green or does not merge.
 just fmt           # format every .typ file
 just fmt --check   # verify formatting without writing
 just lint          # ruff over the Python, typstyle over the Typst
-just check         # the full gate, including rebuilding docs/manual.pdf
+just check         # the full gate; read-only, writes nothing
 just preview       # template/ + examples/ into a browsable preview/
 ```
 

@@ -1,14 +1,16 @@
 default:
     @just --list
 
-# Populate a temporary local @preview package directory from typst.toml and vendor/*
+# Populate a throwaway @preview package directory from typst.toml, plus vendor/* while it lasts
 [private]
 _link-pkg dir=".tmp-pkg":
     #!/usr/bin/env sh
     set -eu
-    # Throwaway package path for `typst compile --package-path`: map this checkout (and
-    # vendor/*) to @preview/thyme and @preview/exemel so the sources resolve without a
-    # published release. Nothing here touches the real OS package cache.
+    # Throwaway package path for `typst compile --package-path`: map this checkout to
+    # @preview/thyme so the sources resolve without a published release. Nothing here
+    # touches the real OS package cache. The vendor/* glob below is the only line in this
+    # repo that still knows vendoring exists; it disappears the moment @preview/exemel:0.3.0
+    # is on Typst Universe, which is the one thing blocking this release.
     rm -rf "{{dir}}"
     mkdir -p "{{dir}}/preview"
     for manifest in typst.toml vendor/*/typst.toml; do
@@ -49,15 +51,14 @@ lint:
     fi
     echo "linting passed"
 
-# Run full compilation, XML/sitemap/link/source verification, and Universe staging checks
+# Verify the whole repository: compiles everything, checks XML/links/sources. Reads only.
 check:
     #!/usr/bin/env sh
     set -eu
     tmp_pkg=".tmp-pkg"
     tmp_check=".tmp-check"
-    tmp_stage=".tmp-stage"
-    rm -rf "$tmp_pkg" "$tmp_check" "$tmp_stage"
-    trap 'rm -rf "$tmp_pkg" "$tmp_check" "$tmp_stage"' EXIT
+    rm -rf "$tmp_pkg" "$tmp_check"
+    trap 'rm -rf "$tmp_pkg" "$tmp_check"' EXIT
 
     just _link-pkg "$tmp_pkg"
     mkdir -p "$tmp_check"
@@ -74,10 +75,9 @@ check:
     typst compile --package-path "$tmp_pkg" --features html --format html template/posts/fixed-points.typ "$tmp_check/fixed-points.html"
     typst compile --package-path "$tmp_pkg" template/posts/fixed-points.typ "$tmp_check/fixed-points.pdf"
     typst compile --package-path "$tmp_pkg" template/posts/minimal-bundles.typ "$tmp_check/minimal-bundles.pdf"
-    # The manual is generated from the `///` comments in src/, so it is part of the gate.
-    # SOURCE_DATE_EPOCH pins the PDF creation date, keeping the committed copy stable.
-    SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-0}" \
-        typst compile --root . --package-path "$tmp_pkg" docs/manual.typ docs/manual.pdf
+    # The manual is generated from the `///` comments in src/, so it has to build. It is
+    # compiled into the scratch directory: `just check` reports, it does not write.
+    typst compile --root . --package-path "$tmp_pkg" docs/manual.typ "$tmp_check/manual.pdf"
 
     # 3. Validate generated sitemap.xml, robots.txt, RSS/Atom XML, .typ sources, tags, backlinks, a11y, and internal href targets
     python3 - "$tmp_check" <<'PY'
@@ -182,28 +182,6 @@ check:
     print("verified unit tests, sitemap.xml, robots.txt, full-HTML feeds, live tag-cloud links, Reader-Mode divs, a11y controls, .typ sources, and internal hrefs across all 3 bundles")
     PY
 
-    # 4. Regenerate the Universe thumbnail: it is a committed artefact, and a stale one
-    #    ships in the package archive.
-    typst compile --package-path "$tmp_pkg" -f png --pages 1 --ppi 250 \
-        template/posts/fixed-points.typ thumbnail.png
-    if command -v oxipng >/dev/null 2>&1; then
-        oxipng -o 4 --strip safe thumbnail.png
-    fi
-
-    # 5. Stage for Typst Universe. Skipped while vendor/ holds an unpublished dependency,
-    #    which is exactly the state that blocks the release.
-    if [ -z "$(find vendor -mindepth 1 -maxdepth 2 -name typst.toml 2>/dev/null)" ]; then
-        just stage-universe "$tmp_stage"
-    else
-        echo "note: skipping the Universe staging dry run; vendor/ still holds:" >&2
-        find vendor -mindepth 1 -maxdepth 2 -name typst.toml >&2
-    fi
-
-    if [ -d "$tmp_stage" ] && command -v typst-package-check >/dev/null 2>&1; then
-        pkg_name="$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml", "rb"))["package"]["name"])')"
-        pkg_version="$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml", "rb"))["package"]["version"])')"
-        typst-package-check check "$tmp_stage/packages/preview/$pkg_name/$pkg_version"
-    fi
     echo "all checks passed"
 
 # Compile template + examples into a browsable preview/ site (open preview/index.html)
@@ -340,23 +318,13 @@ preview:
     echo "preview written to $out/index.html"
     echo "live reload: typst watch --features html,bundle -f bundle template/site.typ preview/template --serve"
 
-# Stage the exact directory submitted to typst/packages -> dist/universe/...
-stage-universe out="dist/universe":
+# Build the exact directory submitted to typst/packages. Called by `release` and by CI.
+[private]
+_stage out name version:
     #!/usr/bin/env python3
-    import pathlib, re, shutil, subprocess, sys, tomllib
+    import pathlib, shutil, subprocess, sys
 
-    package = tomllib.loads(pathlib.Path("typst.toml").read_text())["package"]
-    name, version = package["name"], package["version"]
-
-    # What is staged is what is submitted, so unpublished dependencies are a hard stop:
-    # Typst Universe cannot resolve a vendored `@preview/` import.
-    vendored = sorted(p.parent for p in pathlib.Path("vendor").glob("*/typst.toml"))
-    if vendored:
-        sys.exit(
-            "stage-universe: vendor/ holds unpublished dependencies ("
-            + ", ".join(str(v) for v in vendored)
-            + "). Remove vendor/ once they are on Typst Universe; nothing is staged."
-        )
+    name, version = "{{name}}", "{{version}}"
 
     # Every @preview/<name>:<version> import must name the version being staged.
     expected = f"@preview/{name}:{version}"
@@ -367,24 +335,21 @@ stage-universe out="dist/universe":
     ).stdout
     stale = chr(10).join(l for l in stale.splitlines() if expected not in l)
     if stale:
-        sys.exit(f"stage-universe: imports do not name {expected}:" + chr(10) + stale)
+        sys.exit(f"stage: imports do not name {expected}:" + chr(10) + stale)
 
     dest = pathlib.Path("{{out}}") / "packages" / "preview" / name / version
     shutil.rmtree(dest, ignore_errors=True)
     (dest / "docs").mkdir(parents=True)
     (dest / "assets").mkdir()
-
     for item in ("typst.toml", "LICENSE", "README.md", "thumbnail.png"):
         shutil.copy2(item, dest)
     for item in ("src", "template", "examples"):
         shutil.copytree(item, dest / item)
     shutil.copy2("docs/manual.pdf", dest / "docs" / "manual.pdf")
-    for item in ("assets/preview-light.png", "assets/preview-dark.png"):
-        shutil.copy2(item, dest / "assets" / pathlib.Path(item).name)
-
+    for item in ("preview-light.png", "preview-dark.png"):
+        shutil.copy2(pathlib.Path("assets") / item, dest / "assets" / item)
     for stray in dest.rglob(".DS_Store"):
         stray.unlink()
-    print(f"staged {name}:{version} -> {dest}")
 
 # Bump package version across typst.toml, template/, examples/, tests/unit.typ, docs/manual.typ, and README.md
 bump version:
@@ -412,7 +377,7 @@ bump version:
 # Cut a release: `just release [TAG]`, `just release TAG --check`, `just release --notes`
 release *args:
     #!/usr/bin/env python3
-    import pathlib, re, subprocess, sys, tomllib
+    import os, pathlib, re, subprocess, sys, tomllib
 
     package = tomllib.loads(pathlib.Path("typst.toml").read_text())["package"]
     version = package["version"]
@@ -474,10 +439,29 @@ release *args:
         print(f"{tag} is ready: typst.toml, CHANGELOG.md and the tag agree")
         sys.exit(0)
 
-    # The full gate. `check` rewrites `thumbnail.png` and `docs/manual.pdf`, so they are
-    # committed below along with everything else: the archive never carries a stale artefact.
+    # The full gate. `check` is read-only; the artefacts it verifies are regenerated here,
+    # just before the commit, so the tag can never carry a stale manual or thumbnail.
     for gate in (["check"], ["fmt", "--check"], ["lint"]):
         subprocess.run(["just", *gate], check=True)
+
+    subprocess.run(
+        ["just", "_link-pkg", ".tmp-pkg"],
+        check=True,
+    )
+    # SOURCE_DATE_EPOCH pins the PDF creation date so the committed manual is reproducible.
+    subprocess.run(
+        ["typst", "compile", "--root", ".", "--package-path", ".tmp-pkg",
+         "docs/manual.typ", "docs/manual.pdf"],
+        check=True,
+        env={**os.environ, "SOURCE_DATE_EPOCH": "0"},
+    )
+    subprocess.run(
+        ["typst", "compile", "--package-path", ".tmp-pkg", "-f", "png",
+         "--pages", "1", "--ppi", "250",
+         "template/posts/fixed-points.typ", "thumbnail.png"],
+        check=True,
+    )
+    subprocess.run(["just", "_stage", "dist/universe", package["name"], version], check=True)
 
     try:
         message = input(f"release message [{tag}]: ").strip() or tag

@@ -34,14 +34,13 @@ rm -rf vendor
 
 Also delete the TODO at the top of `src/seo.typ` (lines 5–6) that asks for exactly this.
 
-Guard rails that will make you do this anyway, which is the point of them:
-`just stage-universe` and the `universe-pr` CI job both refuse to stage while
-`vendor/*/typst.toml` exists. `just check` skips its staging dry run in that state and says so.
+`just release` stages the payload itself and `universe-pr` refuses to *submit* while
+`vendor/*/typst.toml` exists, so an incomplete archive cannot reach `typst/packages`.
 
 ## 2. Re-verify against Universe, with no local safety net
 
 ```sh
-just check          # all 3 bundles, unit tests, PDFs (incl. manual.pdf), staging dry run
+just check          # all 3 bundles, unit tests and PDFs; read-only
 just fmt --check
 just lint
 ```

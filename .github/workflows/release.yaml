@@ -84,8 +84,7 @@ jobs:
     name: Open Typst Universe PR
     needs: [verify, github-release]
     runs-on: ubuntu-latest
-    # Skipped while an unpublished dependency is still vendored, or before
-    # UNIVERSE_TOKEN is configured, so a tag never fails for those reasons.
+    # Off until UNIVERSE_TOKEN is configured, so a tag never fails for that reason.
     if: ${{ vars.UNIVERSE_SUBMIT == 'true' }}
     env:
       PKG_NAME: ${{ needs.verify.outputs.pkg_name }}
@@ -97,13 +96,6 @@ jobs:
         with:
           ref: ${{ inputs.tag || github.ref }}
 
-      - name: Ensure no unpublished dependency is still vendored
-        run: |
-          if [ -d vendor ] && [ -n "$(find vendor -mindepth 1 -maxdepth 2 -name typst.toml 2>/dev/null)" ]; then
-            echo "::error::vendor/ still contains unpublished dependencies (e.g. @preview/exemel:0.3.0). Wait for the upstream Universe release, remove vendor/, and re-run."
-            exit 1
-          fi
-
       - name: Require UNIVERSE_TOKEN
         env:
           GH_TOKEN: ${{ secrets.UNIVERSE_TOKEN }}
@@ -114,7 +106,7 @@ jobs:
           fi
 
       - name: Stage Universe payload
-        run: just stage-universe universe-stage
+        run: just _stage universe-stage "$PKG_NAME" "$PKG_VER"
 
       - name: Cache typst-package-check
         uses: actions/cache@v4
