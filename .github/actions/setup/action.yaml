@@ -53,3 +53,14 @@ runs:
 
         echo "$HOME/.local/bin" >> "$GITHUB_PATH"
         echo "TYPST_FONT_PATHS=${fonts}" >> "$GITHUB_ENV"
+
+    - name: Install typstyle
+      shell: bash
+      run: |
+        set -eu
+        # The Typst CLI has no `fmt` subcommand; typstyle is the community formatter
+        # and is what `just fmt` / `just fmt-check` drive.
+        if ! command -v typstyle >/dev/null 2>&1; then
+          cargo install typstyle --locked
+        fi
+        echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"

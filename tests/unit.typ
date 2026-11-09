@@ -199,4 +199,3 @@
 #let parsed-inline = _tokenize-htm("<p>\n  <a href=\"#a\">alpha</a>\n  or\n  <a href=\"#b\">beta</a>\n</p>", (:), ())
 #assert.eq(parsed-inline.prose-pieces.map(to-plain-text).join(), "alpha or beta")
 #htm("<p class=\"multiline-inline\">\n  <a href=\"#a\">alpha</a>\n  or\n  <a href=\"#b\">beta</a>\n</p>")
-
