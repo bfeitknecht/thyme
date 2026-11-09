@@ -36,16 +36,34 @@
   }
 }
 
+// `font-weight` and `font-style` are CSS keywords/numbers, not strings: quoting
+// them (`font-weight: "400"`) is an invalid declaration the browser discards, so
+// every face loses its weight and style descriptor and the family degrades to a
+// single face. Only `font-family` and `src` take quoted values.
+/// Format any Typst `color` as a lowercase `#rrggbb` hex string, for contexts that
+/// need a plain sRGB literal rather than `oklch(...)` (e.g. `<meta name="theme-color">`).
+/// -> str
+#let css-hex(col) = {
+  let (r, g, b, ..) = rgb(col).components()
+  let h(v) = {
+    // Channels are ratios in 0..1. Scale to an integer 0..255, then print it in
+    // base 16 and pad to two digits so low channels do not collapse to `#f22`.
+    let digits = str(int(calc.round(float(v) * 255)), base: 16)
+    if digits.len() == 1 { "0" + digits } else { digits }
+  }
+  "#" + h(r) + h(g) + h(b)
+}
+
 #let _font-face-rule(family, url, weight, style) = (
   "@font-face {\n  font-family: \""
     + family
     + "\";\n  src: url(\""
     + url
-    + "\") format(\"woff2\");\n  font-weight: \""
+    + "\") format(\"woff2\");\n  font-weight: "
     + str(weight)
-    + "\";\n  font-style: \""
+    + ";\n  font-style: "
     + style
-    + "\";\n  font-display: swap;\n}"
+    + ";\n  font-display: swap;\n}"
 )
 
 // Build deterministic `@font-face` rules without `local(...)` so OS-installed stripped
@@ -122,22 +140,20 @@
 /// _Helvetica Neue_ + _Commit Mono_ font stacks, and paged preview geometry.
 /// -> dictionary
 #let default-theme = (
-  // Lightness values are exact: each one renders the sRGB hex noted beside it,
-  // so `light-dark()` output matches the documented palette byte for byte.
-  paper-light: oklch(96.12%, 0, 0deg), // #f2f2f2
-  text-light: oklch(21.34%, 0, 0deg), // #191919
-  muted-light: oklch(47.48%, 0, 0deg), // #5c5c5c
-  border-light: oklch(47.48%, 0, 0deg), // #5c5c5c
-  frame-light: oklch(21.34%, 0, 0deg), // #191919
-  surface-1-light: oklch(96.12%, 0, 0deg), // #f2f2f2
-  surface-2-light: oklch(91.89%, 0, 0deg), // #e4e4e4
-  paper-dark: oklch(17.3%, 0, 0deg), // #101010
-  text-dark: oklch(94.61%, 0, 0deg), // #ededed
-  muted-dark: oklch(69.93%, 0, 0deg), // #9e9e9e
-  border-dark: oklch(69.93%, 0, 0deg), // #9e9e9e
-  frame-dark: oklch(94.61%, 0, 0deg), // #ededed
-  surface-1-dark: oklch(17.3%, 0, 0deg), // #101010
-  surface-2-dark: oklch(26.86%, 0, 0deg), // #262626
+  paper-light: oklch(96%, 0, 0deg),
+  text-light: oklch(21%, 0, 0deg),
+  muted-light: oklch(47%, 0, 0deg),
+  border-light: oklch(47%, 0, 0deg),
+  frame-light: oklch(21%, 0, 0deg),
+  surface-1-light: oklch(96%, 0, 0deg),
+  surface-2-light: oklch(92%, 0, 0deg),
+  paper-dark: oklch(17%, 0, 0deg),
+  text-dark: oklch(95%, 0, 0deg),
+  muted-dark: oklch(70%, 0, 0deg),
+  border-dark: oklch(70%, 0, 0deg),
+  frame-dark: oklch(95%, 0, 0deg),
+  surface-1-dark: oklch(17%, 0, 0deg),
+  surface-2-dark: oklch(27%, 0, 0deg),
   serif-fonts: (
     "STIX Two Text",
     "Libertinus Serif",

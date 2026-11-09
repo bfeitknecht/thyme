@@ -40,6 +40,7 @@
   active-theme,
   stylesheet-css,
   theme-override-css,
+  css-hex,
   css-oklch,
   default-theme,
   default-woff2-files,
@@ -102,7 +103,7 @@
 // Public surface of `blog` (everything imported above is re-exported by this module).
 //
 //   engine      site, webpage, mount, file, page-asset, query-pages, backlinks
-//   theme       default-theme, resolve-theme, active-theme, css-oklch,
+//   theme       default-theme, resolve-theme, active-theme, css-oklch, css-hex,
 //               stylesheet-css, stylesheet-href, stylesheet-asset-path,
 //               theme-override-css, default-woff2-files
 //   typography  htm, h, enable-htm, with-html-math

@@ -376,7 +376,18 @@
     return base
   }
   let used = ()
+  let it-loc = it.location()
   for ph in prior-headings {
+    // Callers derive `prior-headings` with `before(here())`, and Typst's
+    // `before` is inclusive: the heading being processed is itself in the
+    // list. Skipping it keeps that heading from being treated as a duplicate
+    // of itself, which otherwise suffixed every auto-slugged heading with -2.
+    // Detached headings (not placed in a document) have no location; two of
+    // those compare equal as `none`, so only compare real locations.
+    let ph-loc = ph.location()
+    if it-loc != none and ph-loc != none and ph-loc == it-loc {
+      continue
+    }
     let pb = _base-heading-slug(ph, auto-slug: true)
     if pb == none {
       continue
