@@ -37,6 +37,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and the runner does not ship it; CI now installs it explicitly.
 
 ### Changed
+- **`docs/manual.pdf` builds are reproducible.** `just docs` now pins
+  `SOURCE_DATE_EPOCH` (default `0`, the Unix epoch), which Typst honours natively for the
+  embedded creation date, so the committed manual is a pure function of the sources.
 - **CI and release workflows restructured.** The seven copy-pasted toolchain install blocks are
   now one composite action (`.github/actions/setup`). Release is `verify` → `github-release` →
   `universe-pr`, with the Universe job gated on a repository variable so an early tag does not

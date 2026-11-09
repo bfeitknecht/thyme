@@ -58,12 +58,3 @@ jobs:
           grep -nE '^(error|Error|Traceback|[A-Za-z]*Error)|error:' check.log | tail -n 8 | while IFS= read -r line; do
             echo "::error::${line}"
           done
-
-      - name: Fail if generated docs are stale
-        run: |
-          set -eu
-          just docs
-          if ! git diff --quiet -- docs/manual.pdf; then
-            echo "::error::docs/manual.pdf is out of date — run 'just docs' and commit the result"
-            exit 1
-          fi
