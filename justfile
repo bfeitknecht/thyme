@@ -6,45 +6,37 @@ default:
 _link-pkg dir=".tmp-pkg":
     #!/usr/bin/env sh
     set -eu
-    rm -rf "{{dir}}"
+    # Create only what is missing: `install-packages` points this at the real OS package
+    # cache, and the old unconditional `rm -rf` would wipe it (and tidy, cheq, … with it).
+    mkdir -p "{{dir}}/preview"
     for manifest in typst.toml vendor/*/typst.toml; do
         [ -f "$manifest" ] || continue
         p_dir="$(cd "$(dirname "$manifest")" && pwd)"
-        p_name="$(python3 scripts/manifest.py get name --file "$manifest")"
-        p_ver="$(python3 scripts/manifest.py get version --file "$manifest")"
+        p_name="$(python3 -c 'import tomllib, sys; print(tomllib.load(open(sys.argv[1], "rb"))["package"]["name"])' "$manifest")"
+        p_ver="$(python3 -c 'import tomllib, sys; print(tomllib.load(open(sys.argv[1], "rb"))["package"]["version"])' "$manifest")"
         mkdir -p "{{dir}}/preview/$p_name"
-        ln -s "$p_dir" "{{dir}}/preview/$p_name/$p_ver"
+        link="{{dir}}/preview/$p_name/$p_ver"
+        if [ -d "$link" ] && [ ! -L "$link" ]; then
+            # A real directory here was installed from Typst Universe. Leave it: replacing
+            # it would silently swap a published package for this checkout.
+            echo "  $link is a real directory; leaving it alone" >&2
+        else
+            ln -sfn "$p_dir" "$link"
+        fi
     done
 
-# Format all Typst files in the repository in place (`just fmt-check` to verify)
-fmt:
+# Format every .typ file (`just fmt --check` verifies without writing)
+fmt args="--inplace":
     #!/usr/bin/env sh
     set -eu
     # The Typst CLI has no `fmt` subcommand (0.15.x ships compile/watch/init/query/
-    # eval/fonts/update/completions/info). `typstyle` is the community formatter; it
-    # takes paths as positional input and has no `--output`, only `--inplace`/`--check`/`--diff`.
+    # eval/fonts/update/completions/info); `typstyle` is the community formatter. It
+    # takes paths positionally and has no `--output`, only `--inplace`/`--check`/`--diff`.
     if ! command -v typstyle >/dev/null 2>&1; then
         echo "typstyle not found — install it with: cargo install typstyle --version 0.15.1 --locked" >&2
         exit 1
     fi
-    typstyle --inplace $(find src template examples tests docs -name '*.typ' 2>/dev/null)
-    echo "formatted all .typ files"
-
-# Check that every Typst file is already formatted (does not modify the tree)
-fmt-check:
-    #!/usr/bin/env sh
-    set -eu
-    if ! command -v typstyle >/dev/null 2>&1; then
-        echo "typstyle not found — install it with: cargo install typstyle --version 0.15.1 --locked" >&2
-        exit 1
-    fi
-    # typstyle exits non-zero and prints a unified diff when input is not formatted.
-    if ! typstyle --check $(find src template examples tests docs -name '*.typ' 2>/dev/null); then
-        echo "unformatted Typst files listed above" >&2
-        echo "run 'just fmt' and commit the result" >&2
-        exit 1
-    fi
-    echo "all Typst files are formatted"
+    typstyle {{args}} $(find src template examples tests docs -name '*.typ' 2>/dev/null)
 
 # Lint Typst files and Python scripts
 lint:
@@ -193,10 +185,10 @@ check:
     PY
 
     # 4. Dry-run Universe directory staging
-    sh ./scripts/stage-universe.sh --allow-vendored "$tmp_stage"
+    just stage-universe "$tmp_stage" --allow-vendored
 
-    pkg_name="$(python3 scripts/manifest.py get name)"
-    pkg_ver="$(python3 scripts/manifest.py get version)"
+    pkg_name="$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml", "rb"))["package"]["name"])')"
+    pkg_version="$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml", "rb"))["package"]["version"])')"
     if command -v typst-package-check >/dev/null 2>&1 && [ ! -d vendor/exemel ]; then
         typst-package-check check "$tmp_stage/packages/preview/$pkg_name/$pkg_ver"
     fi
@@ -363,9 +355,57 @@ thumbnail:
     fi
     echo "updated thumbnail.png"
 
-# Stage clean Typst Universe directory -> dist/universe/packages/preview/thyme/<version>
-stage-universe out="dist/universe":
-    sh ./scripts/stage-universe.sh "{{out}}"
+# Stage a clean Typst Universe directory -> dist/universe/packages/preview/thyme/<version>
+stage-universe out="dist/universe" *flags:
+    #!/usr/bin/env sh
+    set -eu
+    allow_vendored=0
+    for flag in {{flags}}; do
+        case "$flag" in
+            --allow-vendored) allow_vendored=1 ;;
+            *) echo "stage-universe: unknown flag $flag" >&2; exit 1 ;;
+        esac
+    done
+
+    pkg_name="$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml", "rb"))["package"]["name"])')"
+    pkg_ver="$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml", "rb"))["package"]["version"])')"
+
+    # Refuse to stage for Universe while unpublished dependencies are still vendored.
+    if [ "$allow_vendored" -eq 0 ] && [ -d vendor ] \
+        && [ -n "$(find vendor -mindepth 1 -maxdepth 2 -name typst.toml 2>/dev/null)" ]; then
+        echo "stage-universe: vendor/ still contains unpublished dependencies:" >&2
+        find vendor -mindepth 1 -maxdepth 2 -name typst.toml >&2
+        echo "Wait for the upstream release on Typst Universe, remove vendor/, and re-run" >&2
+        echo "(or pass --allow-vendored for a local dry run)." >&2
+        exit 1
+    fi
+
+    # Every @preview/<name>:<version> import must name the version being staged.
+    expected="@preview/${pkg_name}:${pkg_ver}"
+    stale="$(grep -rn "@preview/${pkg_name}:" template examples tests/unit.typ docs/manual.typ README.md \
+        | grep -v "$expected" || true)"
+    if [ -n "$stale" ]; then
+        echo "stage-universe: version mismatch (expected $expected):" >&2
+        echo "$stale" >&2
+        exit 1
+    fi
+
+    dest="{{out}}/packages/preview/${pkg_name}/${pkg_ver}"
+    rm -rf "$dest"
+    mkdir -p "$dest/docs" "$dest/assets"
+
+    # Required package and template files (these land in the compiler archive).
+    cp typst.toml LICENSE README.md "$dest/"
+    cp -R src template "$dest/"
+    cp thumbnail.png "$dest/"
+
+    # Showcase files linked from README.md (`typst.toml` `exclude` keeps them out of the archive).
+    cp docs/manual.pdf "$dest/docs/manual.pdf"
+    cp assets/preview-light.png assets/preview-dark.png "$dest/assets/"
+    cp -R examples "$dest/"
+
+    find "$dest" -name '.DS_Store' -delete
+    echo "staged ${pkg_name}:${pkg_ver} -> $dest"
 
 # Link thyme (and any vendor/*) into the local OS @preview package cache for editor LSPs
 install-packages:
@@ -382,16 +422,12 @@ install-packages:
 # Bump package version across typst.toml, template/, examples/, tests/unit.typ, docs/manual.typ, and README.md
 bump version:
     #!/usr/bin/env python3
-    import pathlib, re
+    import pathlib, re, tomllib
     new_ver = "{{version}}".lstrip("v")
     if not re.fullmatch(r"\d+\.\d+\.\d+", new_ver):
         raise SystemExit(f"invalid semver: {new_ver!r}")
-    import subprocess
     toml = pathlib.Path("typst.toml")
-    old_ver = subprocess.run(
-        ["python3", "scripts/manifest.py", "get", "version"],
-        check=True, capture_output=True, text=True,
-    ).stdout.strip()
+    old_ver = tomllib.loads(toml.read_text())["package"]["version"]
     toml.write_text(re.sub(r'^version = "[^"]+"', f'version = "{new_ver}"', toml.read_text(), count=1, flags=re.M))
     targets = (
         list(pathlib.Path("template").rglob("*.typ"))
@@ -432,7 +468,7 @@ release $tag="" $message="":
         *) echo "release: tag must start with 'v' (e.g. v0.1.0)" >&2; exit 1 ;;
     esac
 
-    toml_ver="$(python3 scripts/manifest.py get version)"
+    toml_ver="$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml", "rb"))["package"]["version"])')"
     if [ "$ver" != "$toml_ver" ]; then
         echo "release: tag $tag does not match typst.toml version $toml_ver (run 'just bump $ver' first)" >&2
         exit 1
@@ -451,7 +487,7 @@ release $tag="" $message="":
     fi
 
     just check
-    just fmt-check
+    just fmt --check
     just lint
 
     git add -A

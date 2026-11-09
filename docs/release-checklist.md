@@ -42,7 +42,7 @@ Guard rails that will make you do this anyway, which is the point of them:
 
 ```sh
 just check          # all 3 bundles, unit tests, PDFs, staging dry run
-just fmt-check
+just fmt --check
 just lint
 just docs
 ```
@@ -86,7 +86,7 @@ tag is already public.
 just release v0.1.0 "Initial release v0.1.0"
 ```
 
-It runs `just check`, `just fmt-check`, `just lint`, then tags, pushes, and triggers
+It runs `just check`, `just fmt --check`, `just lint`, then tags, pushes, and triggers
 `release.yaml`.
 
 ## 6. Shepherd the upstream PR
@@ -136,12 +136,12 @@ section is the contract to hand to anyone downstream.
   release note that dropped its own headline fixes. Verified the extracted notes now
   contain all four. Keep `[Unreleased]` empty until the next cycle.
 - **The notes step now fails instead of guessing.** Extraction lives in
-  `scripts/changelog.py`; a missing, empty, undated, or subsection-less `## [<version>]`
-  section aborts the run before anything is published. To preview the notes without
-  tagging, run `python3 scripts/changelog.py notes 0.1.0`, and to check them
-  `python3 scripts/changelog.py check 0.1.0 v0.1.0`.
+  the notes step in `release.yaml`, which also requires the section to be dated
+  (`## [0.1.0] - YYYY-MM-DD`). A missing or empty section aborts the run before anything
+  is published — it never falls back to a placeholder. To preview the notes without
+  tagging, read the `## [0.1.0]` section; CI has already verified it is publishable.
 - **The formatter is pinned to `typstyle` 0.15.1.** `just check` runs in CI after
-  `just fmt-check`; if you bump the pin, run `just fmt` and commit the reformat in the
+  `just fmt --check`; if you bump the pin, run `just fmt` and commit the reformat in the
   same change, or `Format` goes red for the whole tree.
 - **Never re-point an existing tag at new commits.** `actions/checkout` uses
   `inputs.tag || github.ref`, and `github.ref` for a tag push is the tag. If you delete and

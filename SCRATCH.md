@@ -32,14 +32,13 @@
   *(Note: `./scripts/stage-universe.sh` intentionally aborts while `vendor/exemel/` exists so an incomplete archive can never be submitted by accident.)*
   ```sh
   rm -rf vendor
-  chmod +x scripts/*.sh
   ```
   - Remove the `// TODO` comment at the top of `src/seo.typ`.
   - Update the release date on `## [0.1.0] - YYYY-MM-DD` in `CHANGELOG.md` if needed.
 - [ ] **Verify & stage locally against live Typst Universe**
   ```sh
   just docs && just check
-  ./scripts/stage-universe.sh dist/universe
+  just stage-universe dist/universe
   ```
 - [ ] **Cut `v0.1.0` & open the Universe PR**
   ```sh
@@ -58,8 +57,7 @@
   - Clean the staging directories from `glob`:
     ```sh
     rm -rf infra public
-    chmod +x scripts/*.sh
-    ```
+      ```
 - [ ] **Push & tag `bfeitknecht/glob` (once both `exemel:0.3.0` and `thyme:0.1.0` are live on Universe)**
   ```sh
   just compile

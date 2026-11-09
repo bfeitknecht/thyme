@@ -37,20 +37,28 @@ jobs:
           RAW_TAG: ${{ inputs.tag || github.ref_name }}
         run: |
           set -eu
-          eval "$(python3 scripts/manifest.py env)"
-          # One parser asserts all of it: the version is plain X.Y.Z, the tag is exactly
-          # `v<version>`, and the matching CHANGELOG section exists, is dated, and is not
-          # empty. The same parser produces the release notes below, so "the section
-          # exists" and "the notes are publishable" can never disagree.
-          python3 scripts/changelog.py check "$PKG_VER" "$RAW_TAG"
-          echo "pkg_name=${PKG_NAME}" >> "$GITHUB_OUTPUT"
-          echo "pkg_version=${PKG_VER}" >> "$GITHUB_OUTPUT"
+          pkg_name="$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml","rb"))["package"]["name"])')"
+          pkg_version="$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml","rb"))["package"]["version"])')"
+
+          if [ "$RAW_TAG" != "v$pkg_version" ]; then
+            echo "::error::tag '$RAW_TAG' does not match typst.toml version '$pkg_version' (want 'v$pkg_version')"
+            exit 1
+          fi
+          # The release notes are the `## [<version>]` section of CHANGELOG.md. Check it
+          # here, with the same rules the notes step uses below, so "the section exists"
+          # and "the notes are publishable" cannot disagree.
+          if ! grep -Eq "^## \[${pkg_version}\] - [0-9]{4}-[0-9]{2}-[0-9]{2}" CHANGELOG.md; then
+            echo "::error::CHANGELOG.md needs a dated '## [${pkg_version}] - YYYY-MM-DD' section"
+            exit 1
+          fi
+          echo "pkg_name=${pkg_name}" >> "$GITHUB_OUTPUT"
+          echo "pkg_version=${pkg_version}" >> "$GITHUB_OUTPUT"
 
       - name: Run full check suite
         run: |
           just docs
           just check
-          just fmt-check
+          just fmt --check
           just lint
 
   github-release:
@@ -76,7 +84,26 @@ jobs:
           VER: ${{ needs.verify.outputs.pkg_version }}
         run: |
           set -eu
-          python3 scripts/changelog.py notes "$VER" > release-notes.md
+          # The notes are the `## [<version>]` section of CHANGELOG.md, up to the next
+          # `## [...]` heading or the `[x.y.z]: url` link definitions. A missing span is a
+          # hard failure: never publish a placeholder or an empty body.
+          python3 - "$VER" > release-notes.md <<'PY'
+          import pathlib, re, sys
+          version = sys.argv[1]
+          text = pathlib.Path("CHANGELOG.md").read_text()
+          match = re.search(
+              rf"^## \[{re.escape(version)}\][^\n]*\n(.*?)(?=^## \[|^\[[^\]]+\]:|\Z)",
+              text,
+              re.M | re.S,
+          )
+          body = match.group(1).strip() if match else ""
+          if not body:
+              sys.exit(
+                  f"::error::no publishable '## [{version}]' section in CHANGELOG.md "
+                  "(missing or empty) — refusing to publish empty release notes"
+              )
+          print(body)
+          PY
           cat >> release-notes.md <<'EOF'
 
           ---
@@ -126,7 +153,7 @@ jobs:
           fi
 
       - name: Stage Universe payload
-        run: ./scripts/stage-universe.sh universe-stage
+        run: just stage-universe universe-stage --allow-vendored
 
       - name: Cache typst-package-check
         uses: actions/cache@v4
@@ -138,7 +165,7 @@ jobs:
         run: |
           set -eu
           mkdir -p "$HOME/.local/bin"
-          typst_version="$(python3 scripts/manifest.py get compiler)"
+          typst_version="$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml","rb"))["package"]["compiler"])')"
           curl -fsSL "https://github.com/typst/typst/releases/download/v${typst_version}/typst-x86_64-unknown-linux-musl.tar.xz" \
             | tar -xJ -C "$HOME/.local/bin" --strip-components=1 "typst-x86_64-unknown-linux-musl/typst"
           # Pin the validator to a tag: `--git` without a rev installs whatever master
