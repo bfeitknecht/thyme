@@ -142,6 +142,16 @@ impossible to tell which spelling is canonical. The CHANGELOG records every rena
 downstream can simply stay pinned to its existing version — the compile-time package model makes a
 rename a non-event for anyone who is not actively upgrading.
 
+### Releasing
+
+Publishing a version is `just release vX.Y.Z "message"`; the push of the `v*.*.*` tag
+drives `.github/workflows/release.yaml`, which verifies the tag against `typst.toml` and
+`CHANGELOG.md`, runs the full check suite, publishes a GitHub Release with
+`docs/manual.pdf` attached, and opens the Typst Universe PR.
+
+The ordered, actionable sequence — including the gate that has to be opened first and the
+things to check on the upstream PR — is [`docs/release-checklist.md`](docs/release-checklist.md).
+
 ### Freezing a downstream
 
 To stabilise a site against upstream churn, pin the exact patch version and let CI hold it:
