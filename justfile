@@ -6,8 +6,10 @@ default:
 _link-pkg dir=".tmp-pkg":
     #!/usr/bin/env sh
     set -eu
-    # Create only what is missing: `install-packages` points this at the real OS package
-    # cache, and the old unconditional `rm -rf` would wipe it (and tidy, cheq, … with it).
+    # Throwaway package path for `typst compile --package-path`: map this checkout (and
+    # vendor/*) to @preview/thyme and @preview/exemel so the sources resolve without a
+    # published release. Nothing here touches the real OS package cache.
+    rm -rf "{{dir}}"
     mkdir -p "{{dir}}/preview"
     for manifest in typst.toml vendor/*/typst.toml; do
         [ -f "$manifest" ] || continue
@@ -15,14 +17,7 @@ _link-pkg dir=".tmp-pkg":
         p_name="$(python3 -c 'import tomllib, sys; print(tomllib.load(open(sys.argv[1], "rb"))["package"]["name"])' "$manifest")"
         p_ver="$(python3 -c 'import tomllib, sys; print(tomllib.load(open(sys.argv[1], "rb"))["package"]["version"])' "$manifest")"
         mkdir -p "{{dir}}/preview/$p_name"
-        link="{{dir}}/preview/$p_name/$p_ver"
-        if [ -d "$link" ] && [ ! -L "$link" ]; then
-            # A real directory here was installed from Typst Universe. Leave it: replacing
-            # it would silently swap a published package for this checkout.
-            echo "  $link is a real directory; leaving it alone" >&2
-        else
-            ln -sfn "$p_dir" "$link"
-        fi
+        ln -s "$p_dir" "{{dir}}/preview/$p_name/$p_ver"
     done
 
 # Format every .typ file (`just fmt --check` verifies without writing)
@@ -79,7 +74,10 @@ check:
     typst compile --package-path "$tmp_pkg" --features html --format html template/posts/fixed-points.typ "$tmp_check/fixed-points.html"
     typst compile --package-path "$tmp_pkg" template/posts/fixed-points.typ "$tmp_check/fixed-points.pdf"
     typst compile --package-path "$tmp_pkg" template/posts/minimal-bundles.typ "$tmp_check/minimal-bundles.pdf"
-    typst compile --root . --package-path "$tmp_pkg" docs/manual.typ "$tmp_check/manual.pdf"
+    # The manual is generated from the `///` comments in src/, so it is part of the gate.
+    # SOURCE_DATE_EPOCH pins the PDF creation date, keeping the committed copy stable.
+    SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-0}" \
+        typst compile --root . --package-path "$tmp_pkg" docs/manual.typ docs/manual.pdf
 
     # 3. Validate generated sitemap.xml, robots.txt, RSS/Atom XML, .typ sources, tags, backlinks, a11y, and internal href targets
     python3 - "$tmp_check" <<'PY'
@@ -190,7 +188,7 @@ check:
     pkg_name="$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml", "rb"))["package"]["name"])')"
     pkg_version="$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml", "rb"))["package"]["version"])')"
     if command -v typst-package-check >/dev/null 2>&1 && [ ! -d vendor/exemel ]; then
-        typst-package-check check "$tmp_stage/packages/preview/$pkg_name/$pkg_ver"
+        typst-package-check check "$tmp_stage/packages/preview/$pkg_name/$pkg_version"
     fi
     echo "all checks passed"
 
@@ -328,20 +326,6 @@ preview:
     echo "preview written to $out/index.html"
     echo "live reload: typst watch --features html,bundle -f bundle template/site.typ preview/template --serve"
 
-# Compile docs/manual.typ -> docs/manual.pdf
-docs:
-    #!/usr/bin/env sh
-    set -eu
-    tmp_pkg=".tmp-pkg"
-    trap 'rm -rf "$tmp_pkg"' EXIT
-    just _link-pkg "$tmp_pkg"
-    # Reproducible build: pin the PDF creation date so `docs/manual.pdf` is a pure function
-    # of the sources. Without this every rebuild rewrites /CreationDate and a
-    # "is the manual stale?" check can never pass. 0 = the Unix epoch.
-    SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-0}" \
-        typst compile --root . --package-path "$tmp_pkg" docs/manual.typ docs/manual.pdf
-    echo "built docs/manual.pdf"
-
 # Regenerate thumbnail.png (250 PPI) from template/posts/fixed-points.typ
 thumbnail:
     #!/usr/bin/env sh
@@ -407,18 +391,6 @@ stage-universe out="dist/universe" *flags:
     find "$dest" -name '.DS_Store' -delete
     echo "staged ${pkg_name}:${pkg_ver} -> $dest"
 
-# Link thyme (and any vendor/*) into the local OS @preview package cache for editor LSPs
-install-packages:
-    #!/usr/bin/env sh
-    set -eu
-    if [ "$(uname -s)" = "Darwin" ]; then
-        cache_root="$HOME/Library/Application Support/typst/packages"
-    else
-        cache_root="${XDG_DATA_HOME:-$HOME/.local/share}/typst/packages"
-    fi
-    just _link-pkg "$cache_root"
-    echo "linked local @preview packages into $cache_root"
-
 # Bump package version across typst.toml, template/, examples/, tests/unit.typ, docs/manual.typ, and README.md
 bump version:
     #!/usr/bin/env python3
@@ -440,111 +412,86 @@ bump version:
         if p.name == "manual.typ":
             txt = txt.replace(f"v{old_ver}", f"v{new_ver}")
         p.write_text(txt)
-    print(f"bumped thyme {old_ver} -> {new_ver} (remember to run `just docs` and update CHANGELOG.md)")
+    print(f"bumped thyme {old_ver} -> {new_ver} (then update CHANGELOG.md; `just check` rebuilds the manual)")
 
-# Print the release notes: the `## [<version>]` section of CHANGELOG.md
-notes version:
-    #!/usr/bin/env python3
-    import pathlib, re, sys
-    version = "{{version}}".lstrip("v")
-    text = pathlib.Path("CHANGELOG.md").read_text()
-    # The section runs to the next `## [...]` heading or the `[x.y.z]: url` link definitions.
-    match = re.search(
-        rf"^## \[{re.escape(version)}\][^\n]*\n(.*?)(?=^## \[|^\[[^\]]+\]:|\Z)",
-        text,
-        re.M | re.S,
-    )
-    body = match.group(1).strip() if match else ""
-    if not body:
-        sys.exit(
-            f"CHANGELOG.md has no publishable '## [{version}]' section "
-            "(missing or empty) — refusing to publish empty release notes"
-        )
-    print(body)
-
-# Validate a release tag against typst.toml and CHANGELOG.md before anything is published
-check-release tag:
+# Commit, tag (vX.Y.Z), and push; GitHub Actions cuts the release and opens a Draft PR to typst/packages
+# Cut a release: `just release [TAG]`, `just release TAG --check`, `just release --notes`
+release *args:
     #!/usr/bin/env python3
     import pathlib, re, subprocess, sys, tomllib
-    tag = "{{tag}}"
+
     package = tomllib.loads(pathlib.Path("typst.toml").read_text())["package"]
     version = package["version"]
+    changelog = pathlib.Path("CHANGELOG.md").read_text()
+
+    flags = [a for a in "{{args}}".split() if a.startswith("--")]
+    positional = [a for a in "{{args}}".split() if not a.startswith("--")]
+    unknown = [f for f in flags if f not in ("--check", "--notes")]
+    if unknown:
+        sys.exit(f"release: unknown flag {unknown[0]} (expected --check or --notes)")
+    if len(flags) > 1:
+        sys.exit(f"release: --check and --notes are mutually exclusive (got {flags})")
+    if len(positional) > 1:
+        sys.exit(
+            f"release: expected at most one argument (the tag), got {positional}. "
+            "The commit message is prompted for at cut time."
+        )
+    tag = positional[0] if positional else ""
+
+    # The release notes are this section of CHANGELOG.md. Both read-only modes need it,
+    # and so does the publish step, which is why it lives here rather than in the workflow.
+    match = re.search(
+        rf"^## \[{re.escape(version)}\][^\n]*\n(.*?)(?=^## \[|^\[[^\]]+\]:|\Z)",
+        changelog,
+        re.M | re.S,
+    )
+    notes = match.group(1).strip() if match else ""
+
+    if "--notes" in flags:
+        if not notes:
+            sys.exit(f"CHANGELOG.md has no '## [{version}]' section to publish")
+        print(notes)
+        sys.exit(0)
+
     problems = []
     if not re.fullmatch(r"\d+\.\d+\.\d+", version):
         problems.append(f"typst.toml version {version!r} is not plain X.Y.Z")
     if tag != f"v{version}":
-        problems.append(f"tag {tag!r} does not match typst.toml version (want 'v{version}')")
-    if not re.search(
-        rf"^## \[{re.escape(version)}\] - \d\d\d\d-\d\d-\d\d", pathlib.Path("CHANGELOG.md").read_text(), re.M
-    ):
+        problems.append(
+            f"tag {tag!r} does not match typst.toml version (want 'v{version}'; run `just bump` first)"
+        )
+    if not re.search(rf"^## \[{re.escape(version)}\] - \d\d\d\d-\d\d-\d\d", changelog, re.M):
         problems.append(f"CHANGELOG.md needs a dated '## [{version}] - YYYY-MM-DD' section")
+    elif not notes:
+        problems.append(f"'## [{version}]' in CHANGELOG.md is empty")
+    if "--check" not in flags:
+        if subprocess.run(["git", "check-ref-format", f"refs/tags/{tag}"], capture_output=True).returncode:
+            problems.append(f"{tag!r} is not a valid git tag")
+        elif not subprocess.run(["git", "rev-parse", "-q", "--verify", f"refs/tags/{tag}"], capture_output=True).returncode:
+            problems.append(f"tag {tag} already exists")
+        if subprocess.run(["git", "remote", "get-url", "origin"], capture_output=True).returncode:
+            problems.append("no 'origin' remote configured")
+
     for problem in problems:
         print(f"::error::{problem}")
     if problems:
         sys.exit(1)
-    # The notes themselves must be publishable, not just present.
-    subprocess.run(["just", "notes", version], check=True, stdout=subprocess.DEVNULL)
-    print(f"release {tag} is consistent with typst.toml and CHANGELOG.md")
+    if "--check" in flags:
+        print(f"{tag} is ready: typst.toml, CHANGELOG.md and the tag agree")
+        sys.exit(0)
 
-# Commit, tag (vX.Y.Z), and push; GitHub Actions cuts the release and opens a Draft PR to typst/packages
-release $tag="" $message="":
-    #!/usr/bin/env sh
-    set -eu
+    # The full gate, then tag and push; CI cuts the GitHub release and the Universe PR.
+    for gate in (["check"], ["fmt", "--check"], ["lint"]):
+        subprocess.run(["just", *gate], check=True)
 
-    tag="${tag:-}"
-    message="${message:-}"
-
-    if [ -z "$tag" ]; then
-        printf 'release tag (e.g. v0.1.0): '
-        read -r tag || tag=""
-    fi
-    if [ -z "$message" ]; then
-        printf 'release message: '
-        read -r message || message=""
-    fi
-
-    if [ -z "$tag" ] || [ -z "$message" ]; then
-        echo "release: both tag and message are required" >&2
-        exit 1
-    fi
-    case "$tag" in
-        v*) ver="${tag#v}" ;;
-        *) echo "release: tag must start with 'v' (e.g. v0.1.0)" >&2; exit 1 ;;
-    esac
-
-    toml_ver="$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml", "rb"))["package"]["version"])')"
-    if [ "$ver" != "$toml_ver" ]; then
-        echo "release: tag $tag does not match typst.toml version $toml_ver (run 'just bump $ver' first)" >&2
-        exit 1
-    fi
-    if ! git check-ref-format "refs/tags/$tag" >/dev/null 2>&1; then
-        echo "release: '$tag' is not a valid git tag" >&2
-        exit 1
-    fi
-    if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
-        echo "release: tag $tag already exists" >&2
-        exit 1
-    fi
-    if ! git remote get-url origin >/dev/null 2>&1; then
-        echo "release: no 'origin' remote configured" >&2
-        exit 1
-    fi
-
-    just check
-    just fmt --check
-    just lint
-
-    git add -A
-    if ! git diff --cached --quiet; then
-        git commit -m "$message"
-    elif git rev-parse -q --verify HEAD >/dev/null; then
-        echo "release: clean tree, tagging HEAD"
-    else
-        echo "release: nothing to commit and no commits yet" >&2
-        exit 1
-    fi
-
-    git tag -a "$tag" -m "$message"
-    git push origin HEAD
-    git push origin "$tag"
-    echo "release: pushed $tag"
+    try:
+        message = input(f"release message [{tag}]: ").strip() or tag
+    except EOFError:
+        message = tag
+    subprocess.run(["git", "add", "-A"], check=True)
+    if subprocess.run(["git", "diff", "--cached", "--quiet"], capture_output=True).returncode:
+        subprocess.run(["git", "commit", "-m", message], check=True)
+    subprocess.run(["git", "tag", "-a", tag, "-m", message], check=True)
+    subprocess.run(["git", "push", "origin", "HEAD"], check=True)
+    subprocess.run(["git", "push", "origin", tag], check=True)
+    print(f"released {tag}; CI is cutting the GitHub release and the Typst Universe PR")

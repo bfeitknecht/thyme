@@ -36,7 +36,7 @@ jobs:
         env:
           TAG: ${{ inputs.tag || github.ref_name }}
         run: |
-          just check-release "$TAG"
+          just release "$TAG" --check
           {
             echo "pkg_name=$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml","rb"))["package"]["name"])')"
             echo "pkg_version=$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml","rb"))["package"]["version"])')"
@@ -44,7 +44,6 @@ jobs:
 
       - name: Run full check suite
         run: |
-          just docs
           just check
           just fmt --check
           just lint
@@ -62,17 +61,13 @@ jobs:
 
       - uses: ./.github/actions/setup
 
-      - name: Build manual
-        run: just docs
-
       - name: Publish the GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ inputs.tag || github.ref_name }}
-          VER: ${{ needs.verify.outputs.pkg_version }}
         run: |
           set -eu
-          just notes "$VER" > release-notes.md
+          just release --notes > release-notes.md
           cat >> release-notes.md <<'EOF'
 
           ---
