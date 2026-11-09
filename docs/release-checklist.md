@@ -41,10 +41,9 @@ Guard rails that will make you do this anyway, which is the point of them:
 ## 2. Re-verify against Universe, with no local safety net
 
 ```sh
-just check          # all 3 bundles, unit tests, PDFs, staging dry run
+just check          # all 3 bundles, unit tests, PDFs (incl. manual.pdf), staging dry run
 just fmt --check
 just lint
-just docs
 ```
 
 `just check` matters more now than usual: with `vendor/` gone, every `@preview/*` import
@@ -122,7 +121,7 @@ section is the contract to hand to anyone downstream.
   archive. `thumbnail.png` is 772 KB.
 - **`docs/manual.pdf` is regenerated in CI before staging**, so the Universe payload and
   the GitHub Release always get a fresh manual even if the committed copy lags.
-- **`just docs` is now reproducible** (`SOURCE_DATE_EPOCH=0`), so repeated builds are
+- **`docs/manual.pdf` rebuilds reproducibly** (`SOURCE_DATE_EPOCH=0`), so repeated builds are
   byte-identical.
 - **`compiler = "0.15.1"`** while 0.15.2 is current. Not a blocker; bump deliberately if
   you want it, since CI installs exactly that version.

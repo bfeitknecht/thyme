@@ -37,7 +37,7 @@
   - Update the release date on `## [0.1.0] - YYYY-MM-DD` in `CHANGELOG.md` if needed.
 - [ ] **Verify & stage locally against live Typst Universe**
   ```sh
-  just docs && just check
+  just check
   just stage-universe dist/universe
   ```
 - [ ] **Cut `v0.1.0` & open the Universe PR**

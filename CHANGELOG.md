@@ -83,18 +83,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   own `[0.1.0]` entry is corrected too.
 
 ### Changed
-- **`docs/manual.pdf` builds are reproducible.** `just docs` now pins
-  `SOURCE_DATE_EPOCH` (default `0`, the Unix epoch), which Typst honours natively for the
-  embedded creation date, so the committed manual is a pure function of the sources.
+- **The manual is rebuilt by `just check`, reproducibly.** `docs/manual.pdf` is generated from
+  the `///` comments in `src/`, so it is part of the gate rather than a separate step, and the
+  build pins `SOURCE_DATE_EPOCH` (default `0`), which Typst honours for the embedded creation
+  date. The `just docs` recipe is gone: it existed to run one `typst compile`.
 - **CI and release workflows restructured.** The seven copy-pasted toolchain install blocks are
   now one composite action (`.github/actions/setup`). Release is `verify` → `github-release` →
   `universe-pr`, with the Universe job gated on a repository variable so an early tag does not
   fail solely because `vendor/` still holds an unpublished dependency. Added `concurrency` to CI.
   (A stale-`docs/manual.pdf` byte comparison was tried and removed: Typst embeds `/CreationDate`
   in an uncompressed object stream, so a content-identical rebuild never matches byte-for-byte.)
-- **`just stage-universe` replaces `scripts/stage-universe.sh`,** and there is no `scripts/`
-  directory any more: the staging recipe, the release-notes extraction and the `typst.toml` reads
-  are all in the justfile and the workflows that use them.
+- **The command surface is the justfile, not a pile of helper recipes.** `just release` is the
+  only release entry point, with `--check` (validate a tag against `typst.toml` and `CHANGELOG.md`
+  without writing) and `--notes` (print the section CI publishes) as read-only modes of the same
+  recipe. `stage-universe` is a recipe rather than a shell script, and `scripts/` is gone.
+- **`just install-packages` was removed.** It linked this checkout into the real OS `@preview`
+  cache for editor LSPs, but it assumed `@preview/exemel` was not on Typst Universe — the one
+  condition this release exists to end. Once exemel is live, `vendor/` goes and plain
+  `typst watch` resolves everything, so the recipe was a workaround for a state that is going
+  away.
 - **Documentation.** Added `docs/api.md` — the complete 88-name exported surface, core and
   preset — since two thirds of it appeared in neither the manual nor the README. Added a
   README *Stability & Versioning* section defining what the version number guarantees, and
