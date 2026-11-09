@@ -9,10 +9,22 @@
 - [ ] Wait until `exemel:0.3.0` is merged into [`typst/packages`](https://github.com/typst/packages) and live at `https://typst.app/universe/package/exemel`.
 
 ### Step 2 — Publish `bfeitknecht/thyme` & submit `@preview/thyme:0.1.0`
+
+> **The release pipeline is already wired, but gated.** Pushing a `v*.*.*` tag runs
+> `.github/workflows/release.yaml`: `verify` (tag vs `typst.toml` vs `CHANGELOG.md`, then the
+> full check suite) → `github-release` (GitHub Release with `docs/manual.pdf` attached) →
+> `universe-pr` (stage, `typst-package-check`, push to the fork, open the Draft PR).
+>
+> `universe-pr` is **skipped unless the repository variable `UNIVERSE_SUBMIT` is `true`**, so
+> tagging while `vendor/exemel` still exists does not produce a red run. Flip the variable only
+> after Step 1 is done and `vendor/` is gone. Note the variable must be a *variable*
+> (`vars.UNIVERSE_SUBMIT`), not a secret — secrets cannot gate a job-level `if`.
+
 - [ ] **Configure GitHub repo & Universe fork**
   - Create `bfeitknecht/thyme` on GitHub.
   - Fork `https://github.com/typst/packages` to `https://github.com/bfeitknecht/packages` (or set repo variable `UNIVERSE_FORK` if using another owner/fork).
   - Add repository secret `UNIVERSE_TOKEN` on `bfeitknecht/thyme` (fine-grained PAT with `Contents: Read and write` on `bfeitknecht/packages` and `Pull requests: Read and write` on `typst/packages`).
+  - Leave repository variable `UNIVERSE_SUBMIT` unset (or `false`) until Step 1 completes.
 - [ ] **Remove temporary `exemel` vendoring once `exemel:0.3.0` is live**
   *(Note: `./scripts/stage-universe.sh` intentionally aborts while `vendor/exemel/` exists so an incomplete archive can never be submitted by accident.)*
   ```sh

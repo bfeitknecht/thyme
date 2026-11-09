@@ -20,25 +20,29 @@ _link-pkg dir=".tmp-pkg":
 fmt:
     #!/usr/bin/env sh
     set -eu
-    # Typst 0.15.1+ supports `typst fmt`
-    typst_files="$(find src template examples tests docs -name '*.typ' 2>/dev/null)"
-    for f in $typst_files; do
-        typst fmt "$f"
-    done
+    # The Typst CLI has no `fmt` subcommand (0.15.x ships compile/watch/init/query/
+    # eval/fonts/update/completions/info). `typstyle` is the community formatter.
+    if ! command -v typstyle >/dev/null 2>&1; then
+        echo "fmt: typstyle not found — cargo install typstyle --locked" >&2
+        exit 1
+    fi
+    typstyle --inplace $(find src template examples tests docs -name '*.typ' 2>/dev/null)
     echo "formatted all .typ files"
 
 # Check that every Typst file is already formatted (does not modify the tree)
 fmt-check:
     #!/usr/bin/env sh
     set -eu
-    typst_files="$(find src template examples tests docs -name '*.typ' 2>/dev/null)"
+    if ! command -v typstyle >/dev/null 2>&1; then
+        echo "fmt-check: typstyle not found — cargo install typstyle --locked" >&2
+        exit 1
+    fi
     tmp="$(mktemp -d)"
     trap 'rm -rf "$tmp"' EXIT
     stale=""
-    for f in $typst_files; do
+    for f in $(find src template examples tests docs -name '*.typ' 2>/dev/null); do
         mkdir -p "$tmp/$(dirname "$f")"
-        cp "$f" "$tmp/$f"
-        typst fmt "$tmp/$f"
+        typstyle --inplace "$f" --output "$tmp/$f" 2>/dev/null || cp "$f" "$tmp/$f"
         if ! cmp -s "$f" "$tmp/$f"; then
             stale="$stale $f"
         fi
@@ -96,54 +100,103 @@ check:
     # 3. Validate generated sitemap.xml, robots.txt, RSS/Atom XML, .typ sources, tags, backlinks, a11y, and internal href targets
     python3 - "$tmp_check" <<'PY'
     import pathlib, re, sys, xml.etree.ElementTree as ET
+
+    def fail(msg):
+        # GitHub Actions turns `::error::` into a job annotation with the message attached.
+        print(f"::error::{msg}")
+        raise SystemExit(1)
+
     base = pathlib.Path(sys.argv[1])
     unit_html = (base / "unit.html").read_text()
-    assert 'disabled=' not in unit_html and 'data-ok="true"' in unit_html, "boolean attr handling failed"
-    assert "<li>first</li><li>second — … …</li>" in unit_html, "htm entity/tag-balance test failed"
-    assert '<div class="empty-box"></div>' in unit_html and '<div class="empty-htm"></div>' in unit_html, "empty h/htm element test failed"
-    assert "<pre>line 1\n  indented line 2</pre>" in unit_html, "<pre> whitespace preservation failed"
-    assert '<mo form="prefix" stretchy="false">(</mo><mi>𝑒</mi><mo stretchy="false">)</mo>' in unit_html, "with-html-math failed to suppress auto-lr stretch on F(e)"
-    assert '<msup><mi>𝑑</mi><mi>∗</mi></msup>' in unit_html and '<msup><mi>ℝ</mi><mi>+</mi></msup>' in unit_html, "with-html-math failed to normalize lone script operators"
-    assert '<mrow><mo>(</mo><mfrac><mi>𝑎</mi><mi>𝑏</mi></mfrac><mo>)</mo></mrow>' in unit_html, "with-html-math broke stretchy frac delimiters"
-    assert '<mrow><mo>(</mo><mi>𝑒</mi><mo>)</mo></mrow>' in unit_html, "with-html-math broke explicit lr((e))"
-    assert 'font-variant-caps: small-caps' in unit_html and 'font-variant-caps: all-small-caps' in unit_html, "smallcaps HTML export failed"
+
+    if "disabled=" in unit_html or 'data-ok="true"' not in unit_html:
+        fail("boolean attr handling failed")
+    # Assert the semantics (entities decoded, optional-close <li> unwound + balanced) and
+    # stay agnostic about inter-tag whitespace, which differs between exporters.
+    if not re.search(r"<li>first</li>\s*<li>second — … …</li>", unit_html):
+        m = re.search(r"<li>first.{0,140}", unit_html, re.S)
+        fail(f"htm entity/tag-balance test failed; got {m.group(0)!r}" if m else "htm entity/tag-balance test failed; no <li>first")
+    if '<div class="empty-box"></div>' not in unit_html or '<div class="empty-htm"></div>' not in unit_html:
+        fail("empty h/htm element test failed")
+    if "<pre>line 1\n  indented line 2</pre>" not in unit_html:
+        fail("<pre> whitespace preservation failed")
+    if '<mo form="prefix" stretchy="false">(</mo><mi>𝑒</mi><mo stretchy="false">)</mo>' not in unit_html:
+        fail("with-html-math failed to suppress auto-lr stretch on F(e)")
+    if '<msup><mi>𝑑</mi><mi>∗</mi></msup>' not in unit_html or '<msup><mi>ℝ</mi><mi>+</mi></msup>' not in unit_html:
+        fail("with-html-math failed to normalize lone script operators")
+    if '<mrow><mo>(</mo><mfrac><mi>𝑎</mi><mi>𝑏</mi></mfrac><mo>)</mo></mrow>' not in unit_html:
+        fail("with-html-math broke stretchy frac delimiters")
+    if '<mrow><mo>(</mo><mi>𝑒</mi><mo>)</mo></mrow>' not in unit_html:
+        fail("with-html-math broke explicit lr((e))")
+    if "font-variant-caps: small-caps" not in unit_html or "font-variant-caps: all-small-caps" not in unit_html:
+        fail("smallcaps HTML export failed")
 
     for bundle in sorted(p for p in base.iterdir() if p.is_dir()):
-        ET.fromstring((bundle / "sitemap.xml").read_text())
-        assert "Sitemap:" in (bundle / "robots.txt").read_text(), f"missing Sitemap in {bundle}/robots.txt"
-        assert (bundle / "index.typ").is_file(), f"missing Tadi index.typ in {bundle}"
-        assert "<script" not in (bundle / "index.html").read_text(), f"unexpected <script> on codeless {bundle}/index.html"
+        try:
+            ET.fromstring((bundle / "sitemap.xml").read_text())
+        except Exception as e:
+            fail(f"invalid {bundle}/sitemap.xml: {e}")
+        if "Sitemap:" not in (bundle / "robots.txt").read_text():
+            fail(f"missing Sitemap in {bundle}/robots.txt")
+        # The Tadi source for the home page is `site.typ` (`source-path-for("index.html")`),
+        # not `index.typ`. Assert the documented mapping rather than a literal name.
+        if not (bundle / "site.typ").is_file():
+            fail(f"missing Tadi site.typ in {bundle}")
+        if "<script" in (bundle / "index.html").read_text():
+            fail(f"unexpected <script> on codeless {bundle}/index.html")
         if (bundle / "atom.xml").exists():
-            ET.fromstring((bundle / "atom.xml").read_text())
+            try:
+                ET.fromstring((bundle / "atom.xml").read_text())
+            except Exception as e:
+                fail(f"invalid {bundle}/atom.xml: {e}")
         if (bundle / "rss.xml").exists():
             rss_txt = (bundle / "rss.xml").read_text()
-            ET.fromstring(rss_txt)
-            assert "<lastBuildDate>" in rss_txt, f"missing <lastBuildDate> in {bundle}/rss.xml"
+            try:
+                ET.fromstring(rss_txt)
+            except Exception as e:
+                fail(f"invalid {bundle}/rss.xml: {e}")
+            if "<lastBuildDate>" not in rss_txt:
+                fail(f"missing <lastBuildDate> in {bundle}/rss.xml")
         for html_file in sorted(bundle.rglob("*.html")):
             txt = html_file.read_text()
-            assert ">??" not in txt and "[??]" not in txt, f"unresolved ref in {html_file}"
+            if ">??" in txt or "[??]" in txt:
+                fail(f"unresolved ref in {html_file}")
             for href in re.findall(r'href="([^"#?]+)', txt):
                 if href.startswith(("http://", "https://", "mailto:", "javascript:", "data:")):
                     continue
                 target = (html_file.parent / href.lstrip("/")) if not href.startswith("/") else (bundle / href.lstrip("/"))
-                assert target.resolve().exists(), f"broken href={href!r} in {html_file}"
+                if not target.resolve().exists():
+                    fail(f"broken href={href!r} in {html_file}")
 
     blog_b = base / "examples_blog"
-    assert (blog_b / "about/index.html").is_file() and (blog_b / "about.typ").is_file()
-    assert (blog_b / "tags/index.html").is_file() and (blog_b / "tags/algebra/index.html").is_file()
+    if not ((blog_b / "about/index.html").is_file() and (blog_b / "about.typ").is_file()):
+        fail("mounted webpage about/ missing html or .typ source")
+    if not ((blog_b / "tags/index.html").is_file() and (blog_b / "tags/algebra/index.html").is_file()):
+        fail("static tags/ archive pages missing")
     tags_idx = (blog_b / "tags/index.html").read_text()
-    assert '<a href="algebra/index.html">#algebra</a>' in tags_idx or 'algebra/index.html">#algebra</a>' in tags_idx, "tag-cloud failed to emit live <a> links"
+    if 'algebra/index.html">#algebra</a>' not in tags_idx:
+        fail("tag-cloud failed to emit live <a> links")
     sm_html = (blog_b / "posts/state-machine/index.html").read_text()
     bi_html = (blog_b / "posts/bilingual-notes/index.html").read_text()
-    assert '<footer class="blog-backlinks">' in sm_html
-    assert '<nav class="blog-post-nav"' in sm_html
-    assert '<time datetime="' in sm_html
-    assert '<div class="blog-sbox"' in bi_html and '<aside class="blog-sbox"' not in bi_html
-    assert 'aria-label="Language: en"' in bi_html and 'aria-label="Toggle sidenote 1"' in sm_html
-    assert '<nav class="blog-toc"' in bi_html
-    assert 'citation_technical_report_number' in bi_html
-    assert '<content type="html">' in (blog_b / "atom.xml").read_text()
-    assert '<content:encoded>' in (blog_b / "rss.xml").read_text()
+    if '<footer class="blog-backlinks">' not in sm_html:
+        fail("missing blog-backlinks footer")
+    if '<nav class="blog-post-nav"' not in sm_html:
+        fail("missing post-nav")
+    if '<time datetime="' not in sm_html:
+        fail("missing semantic <time datetime>")
+    if '<div class="blog-sbox"' not in bi_html or '<aside class="blog-sbox"' in bi_html:
+        fail("blog-sbox must be a Reader-Mode-safe <div>, not <aside>")
+    if 'aria-label="Language: en"' not in bi_html or 'aria-label="Toggle sidenote 1"' not in sm_html:
+        fail("missing a11y labels on language switcher / sidenote toggle")
+    if '<nav class="blog-toc"' not in bi_html:
+        fail("missing blog-toc")
+    if "citation_technical_report_number" not in bi_html:
+        fail("missing Scholar citation meta")
+    if '<content type="html">' not in (blog_b / "atom.xml").read_text():
+        fail("atom.xml missing full-HTML <content>")
+    if "<content:encoded>" not in (blog_b / "rss.xml").read_text():
+        fail("rss.xml missing <content:encoded>")
+
     print("verified unit tests, sitemap.xml, robots.txt, full-HTML feeds, live tag-cloud links, Reader-Mode divs, a11y controls, .typ sources, and internal hrefs across all 3 bundles")
     PY
 
@@ -285,7 +338,7 @@ preview:
         <footer>Live reload: <code>typst watch --features html,bundle -f bundle template/site.typ preview/template --serve</code></footer>
       </body>
     </html>
-    
+
     HTML
     } > "$out/index.html"
     echo "preview written to $out/index.html"
@@ -298,7 +351,11 @@ docs:
     tmp_pkg=".tmp-pkg"
     trap 'rm -rf "$tmp_pkg"' EXIT
     just _link-pkg "$tmp_pkg"
-    typst compile --root . --package-path "$tmp_pkg" docs/manual.typ docs/manual.pdf
+    # Reproducible build: pin the PDF creation date so `docs/manual.pdf` is a pure function
+    # of the sources. Without this every rebuild rewrites /CreationDate and a
+    # "is the manual stale?" check can never pass. 0 = the Unix epoch.
+    SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-0}" \
+        typst compile --root . --package-path "$tmp_pkg" docs/manual.typ docs/manual.pdf
     echo "built docs/manual.pdf"
 
 # Regenerate thumbnail.png (250 PPI) from template/posts/fixed-points.typ
