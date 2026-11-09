@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **`just fmt` / `just fmt-check` / the pre-commit hook called a command that does not exist.**
+  The Typst CLI has no `fmt` subcommand — 0.15.x ships `compile`, `watch`, `init`, `query`,
+  `eval`, `fonts`, `update`, `completions`, `info` — so every invocation exited 2 (clap usage
+  error) and the CI `Format` job failed on its first real run. All three call sites now use
+  `typstyle`, the community formatter, installed by the CI setup action.
 - **`theme-color` now follows the active theme everywhere.** `render-core-shell` gained a
   `theme-config` parameter, but three paths never threaded it through: the `blog` preset
   (`render-html-shell` dropped the caller's resolved theme, so a site overriding `paper-light`
