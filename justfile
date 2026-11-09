@@ -172,35 +172,122 @@ preview:
     typst compile --package-path "$tmp_pkg" --features html,bundle --format bundle examples/blog/site.typ "$out/blog"
     typst compile --package-path "$tmp_pkg" --features html,bundle --format bundle examples/portfolio/site.typ "$out/portfolio"
 
-    cat > "$out/index.html" <<'HTML'
+    # The landing page reuses the `theme-color` tags thyme itself emitted for the
+    # template build, so the palette has exactly one source of truth (src/blog/theme.typ).
+    {
+    cat <<'HTML'
     <!DOCTYPE html>
     <html lang="en">
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>thyme &mdash; preview</title>
-        <meta name="theme-color" content="#f2f2f2" media="(prefers-color-scheme: light)">
-        <meta name="theme-color" content="#101010" media="(prefers-color-scheme: dark)">
+    HTML
+      grep -o '<meta name="theme-color"[^>]*>' "$out/template/index.html"
+    cat <<'HTML'
         <style>
-          :root { color-scheme: light dark; --paper: light-dark(#f2f2f2, #101010); --text: light-dark(#191919, #ededed); --muted: light-dark(#5c5c5c, #9e9e9e); }
-          body { max-width: 40rem; margin: 0 auto; padding: 4rem 1.5rem; background: var(--paper); color: var(--text); font: 17px/1.6 "STIX Two Text", Georgia, serif; }
-          h1 { font-family: ui-monospace, Menlo, monospace; font-size: 1.9rem; letter-spacing: -0.02em; margin: 0 0 2.5rem; }
-          ul { list-style: none; padding: 0; } li { border-top: 1px solid var(--muted); } li:last-child { border-bottom: 1px solid var(--muted); }
-          a { display: block; padding: 1rem 0.5rem; color: inherit; text-decoration: none; }
-          a:hover { text-decoration: underline; text-underline-offset: 0.2em; }
-          span { display: block; font: 0.72rem ui-monospace, Menlo, monospace; color: var(--muted); }
+          :root {
+            color-scheme: light dark;
+            --paper: light-dark(oklch(96% 0 0), oklch(17% 0 0));
+            --surface: light-dark(oklch(92% 0 0), oklch(27% 0 0));
+            --text: light-dark(oklch(21% 0 0), oklch(95% 0 0));
+            --muted: light-dark(oklch(47% 0 0), oklch(70% 0 0));
+            --rule: color-mix(in oklab, var(--muted) 30%, var(--paper));
+          }
+          * { box-sizing: border-box; }
+          body {
+            max-width: 46rem;
+            margin: 0 auto;
+            padding: clamp(3rem, 8vw, 7rem) clamp(1.25rem, 4vw, 2rem);
+            background: var(--paper);
+            color: var(--text);
+            font: 1.0625rem/1.65 "STIX Two Text", Georgia, serif;
+            -webkit-font-smoothing: antialiased;
+          }
+          header { margin-bottom: clamp(2.5rem, 6vw, 4.5rem); }
+          h1 {
+            margin: 0 0 0.75rem;
+            font-family: ui-monospace, Menlo, monospace;
+            font-size: clamp(1.75rem, 4vw, 2.25rem);
+            font-weight: 500;
+            letter-spacing: -0.03em;
+          }
+          .tagline { margin: 0; max-width: 34ch; color: var(--muted); }
+          ul { margin: 0; padding: 0; list-style: none; }
+          li + li { border-top: 1px solid var(--rule); }
+          li:first-child { border-top: 1px solid var(--rule); }
+          li:last-child { border-bottom: 1px solid var(--rule); }
+          a {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 1.5rem;
+            padding: 1.15rem 0.25rem;
+            color: inherit;
+            text-decoration: none;
+          }
+          a:hover .name { text-decoration: underline; text-underline-offset: 0.25em; }
+          .name { font-weight: 500; }
+          .kind {
+            flex: none;
+            padding: 0.2rem 0.55rem;
+            border-radius: 999px;
+            background: var(--surface);
+            color: var(--muted);
+            font: 0.7rem/1 ui-monospace, Menlo, monospace;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+          }
+          .path {
+            display: block;
+            margin-top: 0.3rem;
+            color: var(--muted);
+            font: 0.75rem/1.4 ui-monospace, Menlo, monospace;
+          }
+          footer {
+            margin-top: clamp(3rem, 7vw, 5rem);
+            padding-top: 1.25rem;
+            border-top: 1px solid var(--rule);
+            color: var(--muted);
+            font: 0.8rem/1.6 ui-monospace, Menlo, monospace;
+          }
+          footer a { display: inline; padding: 0; }
+          @media (max-width: 30rem) {
+            a { flex-direction: column-reverse; align-items: flex-start; gap: 0.5rem; }
+          }
         </style>
       </head>
       <body>
-        <h1>thyme preview</h1>
+        <header>
+          <h1>thyme preview</h1>
+          <p class="tagline">A monochrome Typst &rarr; HTML static-site engine. Three builds, compiled locally.</p>
+        </header>
         <ul>
-          <li><a href="template/index.html">Template &mdash; folio<span>template/site.typ</span></a></li>
-          <li><a href="blog/index.html">Blog preset &mdash; noether<span>examples/blog/site.typ</span></a></li>
-          <li><a href="portfolio/index.html">Portfolio &mdash; zero built-in CSS<span>examples/portfolio/site.typ</span></a></li>
+          <li>
+            <a href="template/index.html">
+              <span><span class="name">Template</span> &mdash; folio<span class="path">template/site.typ</span></span>
+              <span class="kind">core</span>
+            </a>
+          </li>
+          <li>
+            <a href="blog/index.html">
+              <span><span class="name">Blog preset</span> &mdash; noether<span class="path">examples/blog/site.typ</span></span>
+              <span class="kind">blog</span>
+            </a>
+          </li>
+          <li>
+            <a href="portfolio/index.html">
+              <span><span class="name">Portfolio</span> &mdash; zero built-in CSS<span class="path">examples/portfolio/site.typ</span></span>
+              <span class="kind">core</span>
+            </a>
+          </li>
         </ul>
+        <footer>Live reload: <code>typst watch --features html,bundle -f bundle template/site.typ preview/template --serve</code></footer>
       </body>
     </html>
+    
     HTML
+    } > "$out/index.html"
     echo "preview written to $out/index.html"
     echo "live reload: typst watch --features html,bundle -f bundle template/site.typ preview/template --serve"
 
