@@ -133,6 +133,53 @@ check:
     fi
     echo "all checks passed"
 
+# Compile template + examples into a browsable preview/ site (open preview/index.html)
+preview:
+    #!/usr/bin/env sh
+    set -eu
+    tmp_pkg=".tmp-pkg"
+    out="preview"
+    trap 'rm -rf "$tmp_pkg"' EXIT
+    just _link-pkg "$tmp_pkg"
+
+    rm -rf "$out"
+    mkdir -p "$out"
+    typst compile --package-path "$tmp_pkg" --features html,bundle --format bundle template/site.typ "$out/template"
+    typst compile --package-path "$tmp_pkg" --features html,bundle --format bundle examples/blog/site.typ "$out/blog"
+    typst compile --package-path "$tmp_pkg" --features html,bundle --format bundle examples/portfolio/site.typ "$out/portfolio"
+
+    cat > "$out/index.html" <<'HTML'
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>thyme &mdash; preview</title>
+        <meta name="theme-color" content="#f2f2f2" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#101010" media="(prefers-color-scheme: dark)">
+        <style>
+          :root { color-scheme: light dark; --paper: light-dark(#f2f2f2, #101010); --text: light-dark(#191919, #ededed); --muted: light-dark(#5c5c5c, #9e9e9e); }
+          body { max-width: 40rem; margin: 0 auto; padding: 4rem 1.5rem; background: var(--paper); color: var(--text); font: 17px/1.6 "STIX Two Text", Georgia, serif; }
+          h1 { font-family: ui-monospace, Menlo, monospace; font-size: 1.9rem; letter-spacing: -0.02em; margin: 0 0 2.5rem; }
+          ul { list-style: none; padding: 0; } li { border-top: 1px solid var(--muted); } li:last-child { border-bottom: 1px solid var(--muted); }
+          a { display: block; padding: 1rem 0.5rem; color: inherit; text-decoration: none; }
+          a:hover { text-decoration: underline; text-underline-offset: 0.2em; }
+          span { display: block; font: 0.72rem ui-monospace, Menlo, monospace; color: var(--muted); }
+        </style>
+      </head>
+      <body>
+        <h1>thyme preview</h1>
+        <ul>
+          <li><a href="template/index.html">Template &mdash; folio<span>template/site.typ</span></a></li>
+          <li><a href="blog/index.html">Blog preset &mdash; noether<span>examples/blog/site.typ</span></a></li>
+          <li><a href="portfolio/index.html">Portfolio &mdash; zero built-in CSS<span>examples/portfolio/site.typ</span></a></li>
+        </ul>
+      </body>
+    </html>
+    HTML
+    echo "preview written to $out/index.html"
+    echo "live reload: typst watch --features html,bundle -f bundle template/site.typ preview/template --serve"
+
 # Compile docs/manual.typ -> docs/manual.pdf
 docs:
     #!/usr/bin/env sh
