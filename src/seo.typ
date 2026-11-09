@@ -529,7 +529,7 @@
 /// via `@preview/exemel` (`sitemap-encode`) covering `index.html`, all public pages/posts,
 /// and any `hreflang` alternate URLs.
 /// -> str
-#let build-sitemap(
+#let sitemap-xml(
   /// Canonical site origin URL (`"https://example.com"`).
   /// -> str
   site-url: "https://example.com",
@@ -570,7 +570,7 @@
 
 /// Generate a standard `robots.txt` pointing crawlers to `sitemap.xml`.
 /// -> str
-#let build-robots-txt(
+#let robots-txt(
   /// Canonical site origin URL (`"https://example.com"`).
   /// -> str
   site-url: "https://example.com",
@@ -619,7 +619,7 @@
 /// supporting both summary-only (`feed-content: "summary"`) and full semantic HTML
 /// (`feed-content: "full"`) entries.
 /// -> str
-#let build-atom-feed(
+#let atom-xml(
   /// Feed title.
   /// -> content | str
   site-title: [Site],
@@ -644,7 +644,7 @@
   /// Optional map of bundle `<label>` names to canonical URLs for cross-bundle links.
   /// -> dictionary
   label-urls: (:),
-  /// Page/post records returned by `query-pages()` or `query-all-posts()`.
+  /// Page/post records returned by `query-pages()`.
   /// -> array
   posts: (),
 ) = {
@@ -726,7 +726,7 @@
 /// supporting both `<description>` summaries (`feed-content: "summary"`) and full
 /// `<content:encoded>` HTML (`feed-content: "full"`).
 /// -> str
-#let build-rss-feed(
+#let rss-xml(
   /// Channel `<title>`.
   /// -> content | str
   site-title: [Site],
@@ -748,7 +748,7 @@
   /// Optional map of bundle `<label>` names to canonical URLs for cross-bundle links.
   /// -> dictionary
   label-urls: (:),
-  /// Page/post records returned by `query-pages()` or `query-all-posts()`.
+  /// Page/post records returned by `query-pages()`.
   /// -> array
   posts: (),
 ) = {

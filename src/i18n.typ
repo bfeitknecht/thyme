@@ -235,7 +235,7 @@
 /// Generate the minimal CSS stylesheet rules driving zero-JavaScript, keyboard-accessible
 /// `<input type="radio">` language switching for a bilingual/multilingual page's `langs` tuple.
 /// -> str
-#let build-i18n-css(
+#let i18n-css(
   /// Ordered list of active language codes on the page (e.g. `("en", "de")`).
   /// -> array
   langs,

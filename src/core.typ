@@ -5,7 +5,7 @@
 // Tadi Web sites) and as the single shared bundle engine underneath presets like `blog`.
 
 #import "i18n.typ": (
-  build-i18n-css,
+  i18n-css,
   lang-switcher,
   normalize-alternates,
   render-lang-inputs,
@@ -34,10 +34,10 @@
   with-smart-refs,
 )
 #import "seo.typ": (
-  build-atom-feed,
-  build-robots-txt,
-  build-rss-feed,
-  build-sitemap,
+  atom-xml,
+  robots-txt,
+  rss-xml,
+  sitemap-xml,
   render-seo-meta,
 )
 #import "text.typ": count-words, estimate-reading-minutes, to-plain-text
@@ -102,12 +102,12 @@
 
 // Resolve the active site configuration inside `context`.
 //
-// `site()` publishes exactly one `<site-cfg>` dictionary per bundle: the shared core
+// `site()` publishes exactly one `<site-config>` dictionary per bundle: the shared core
 // keys (title, url, lang, ...) merged with any preset-specific keys (`theme`,
 // `posts-dir`, ...). Post and page renderers read that single dictionary.
 // -> dictionary | none
 #let site-config() = {
-  let found = query(<site-cfg>)
+  let found = query(<site-config>)
   if found.len() > 0 { found.first().value } else { none }
 }
 
@@ -639,11 +639,11 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
     none
   }
   let norm-alts = normalize-alternates(alternates, site-url: site-url)
-  let i18n-css = build-i18n-css(langs)
+  let i18n-rules = i18n-css(langs)
   let style-blocks = (
     ..if include-core-topbar-css { (_core-topbar-css,) } else { () },
     ..inline-styles.filter(s => s != none and s != ""),
-    ..if i18n-css != "" { (i18n-css,) } else { () },
+    ..if i18n-rules != "" { (i18n-rules,) } else { () },
   )
 
   html.html(lang: primary-lang, {
@@ -872,34 +872,34 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
   [#metadata(meta-payload)<thyme-page-meta>]
 
   context {
-    let cfgs = query(<site-cfg>)
-    let site-cfg = if cfgs.len() > 0 { cfgs.first().value } else { none }
+    let found = query(<site-config>)
+    let site-config = if found.len() > 0 { found.first().value } else { none }
     let enc-doc = find-doc-containing(here())
     let doc-path = if enc-doc != none { enc-doc.path } else { none }
     let eff-langs = resolve-page-langs(
       lang,
-      default-lang: if site-cfg != none { site-cfg.lang } else { "en" },
+      default-lang: if site-config != none { site-config.lang } else { "en" },
       scan-nodes: (resolved-title, description, body),
       queried-codes: query-doc-tr-codes(enc-doc),
     )
     let eff-permalinks = if heading-permalinks != auto {
       heading-permalinks == true
-    } else if site-cfg != none {
-      site-cfg.at("heading-permalinks", default: false)
+    } else if site-config != none {
+      site-config.at("heading-permalinks", default: false)
     } else {
       false
     }
     let eff-backlinks = if show-backlinks != auto {
       show-backlinks == true
-    } else if site-cfg != none {
-      site-cfg.at("backlinks", default: false)
+    } else if site-config != none {
+      site-config.at("backlinks", default: false)
     } else {
       false
     }
     let eff-og = if open-graph != auto {
       open-graph == true
-    } else if site-cfg != none {
-      site-cfg.at("open-graph", default: false)
+    } else if site-config != none {
+      site-config.at("open-graph", default: false)
     } else {
       false
     }
@@ -915,26 +915,26 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
       } else {
         none
       }
-      let src-label = if site-cfg != none { site-cfg.source-label } else { none }
+      let src-label = if site-config != none { site-config.source-label } else { none }
       let src-href = if src-label != none { lookup-source-href(doc-path) } else { none }
-      let sheet-paths = if site-cfg != none { site-cfg.at("stylesheet-paths", default: ()) } else { () }
+      let sheet-paths = if site-config != none { site-config.at("stylesheet-paths", default: ()) } else { () }
       // A preset site (e.g. `blog`) styles its own top bar, so skip the built-in
       // monochrome rules; plain core sites get them.
-      let is-preset-site = site-cfg != none and site-cfg.at("is-preset", default: false)
+      let is-preset-site = site-config != none and site-config.at("is-preset", default: false)
 
       render-core-shell(
         title: resolved-title,
-        site-title: if site-cfg != none { site-cfg.title } else { none },
+        site-title: if site-config != none { site-config.title } else { none },
         description: description,
-        author: if author != none { author } else if site-cfg != none { site-cfg.author } else { none },
-        site-url: if site-cfg != none { site-cfg.url } else { none },
+        author: if author != none { author } else if site-config != none { site-config.author } else { none },
+        site-url: if site-config != none { site-config.url } else { none },
         doc-path: doc-path,
         langs: eff-langs,
         alternates: alternates,
         stylesheet-paths: sheet-paths,
         include-core-topbar-css: not is-preset-site,
-        favicon-href: if site-cfg != none { site-cfg.at("favicon-href", default: none) } else { none },
-        favicon-type: if site-cfg != none { site-cfg.at("favicon-type", default: none) } else { none },
+        favicon-href: if site-config != none { site-config.at("favicon-href", default: none) } else { none },
+        favicon-type: if site-config != none { site-config.at("favicon-type", default: none) } else { none },
         source-href: src-href,
         source-label: src-label,
         back-content: back-node,
@@ -970,8 +970,6 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
 
 // Alias for `webpage`.
 // -> function
-#let route = webpage
-
 // Normalize a `#mount(...)` record into its concrete bundle path, slug, label, and source mapping.
 #let resolve-core-mount(rec, site-typ-path: none, default-route-fn: none) = {
   let v = rec.val
@@ -1187,7 +1185,7 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
     none
   }
 
-  let site-cfg = (
+  let site-config = (
     title: resolved-title,
     description: description,
     url: url,
@@ -1205,10 +1203,10 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
     open-graph: open-graph,
     scholar-meta: scholar-meta,
     // A preset (e.g. `blog`) contributes extra keys and its own top-bar styling.
-    is-preset: ext.at("_preset-cfg", default: none) != none,
-    ..ext.at("_preset-cfg", default: (:)),
+    is-preset: ext.at("_preset-config", default: none) != none,
+    ..ext.at("_preset-config", default: (:)),
   )
-  [#metadata(site-cfg)<site-cfg>]
+  [#metadata(site-config)<site-config>]
 
   let body-mounts = extract-mounts(body)
   let body-raw-files = extract-raw-files(body)
@@ -1240,6 +1238,176 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
     }
     [#metadata(src-map)<thyme-source-map>]
 
+    // `document()` and bundle assets only exist in the `bundle` target. In `html` mode
+    // (single-page preview, `typst compile --format html`) fall back to rendering the
+    // home page inline so the site still previews instead of disappearing.
+    let single-page = target() != "bundle"
+    let home-src-href = if root-raw-source != none { "site.typ" } else { none }
+
+    let home-doc-content = {
+        emit-doc-marker("index.html", <site>)
+        context {
+          let site-docs = query(<site>)
+          let home-doc = if site-docs.len() > 0 { site-docs.first() } else { none }
+          let eff-home-langs = resolve-page-langs(
+            lang,
+            default-lang: lang,
+            scan-nodes: (resolved-title, description, body),
+            queried-codes: query-doc-tr-codes(home-doc),
+          )
+          let home-inner = {
+            show: with-html-headings.with(shift: if emit-auto-h1 { 1 } else { 0 }, permalinks: heading-permalinks)
+            set text(lang: eff-home-langs.first())
+            if emit-auto-h1 {
+              html.h1(resolved-title)
+            }
+            clean-home-body
+          }
+          if shell-hook != none {
+            shell-hook(
+              title: resolved-title,
+              site-title: resolved-title,
+              description: description,
+              author: author,
+              site-url: url,
+              doc-path: "index.html",
+              langs: eff-home-langs,
+              alternates: alternates,
+              stylesheet-paths: sheet-hrefs,
+              favicon-href: if norm-fav != none { norm-fav.path } else { none },
+              favicon-type: if norm-fav != none { norm-fav.mime } else { none },
+              source-href: home-src-href,
+              source-label: source-label,
+              include-feeds: true,
+              rss-path: rss-path,
+              atom-path: atom-path,
+              open-graph: open-graph,
+              extra-head: head,
+              home-inner,
+            )
+          } else {
+            render-core-shell(
+              title: resolved-title,
+              site-title: resolved-title,
+              description: description,
+              author: author,
+              site-url: url,
+              doc-path: "index.html",
+              langs: eff-home-langs,
+              alternates: alternates,
+              stylesheet-paths: sheet-hrefs,
+              favicon-href: if norm-fav != none { norm-fav.path } else { none },
+              favicon-type: if norm-fav != none { norm-fav.mime } else { none },
+              source-href: home-src-href,
+              source-label: source-label,
+              include-feeds: true,
+              rss-path: rss-path,
+              atom-path: atom-path,
+              open-graph: open-graph,
+              extra-head: head,
+              wrap-main: wrap-main,
+              home-inner,
+            )
+          }
+        }
+    }
+
+    if target() == "bundle" and not-found-page != false and not-found-page != none {
+      [#document(
+        "404.html",
+        title: [404],
+        {
+          emit-doc-marker("404.html", <thyme-not-found>)
+          if type(not-found-page) == content {
+            not-found-page
+          } else if not-found-hook != none {
+            not-found-hook(resolved-title, home-langs.first(), sheet-hrefs)
+          } else {
+            html.html(lang: home-langs.first(), {
+              html.head({
+                html.meta(charset: "utf-8")
+                html.meta(name: "viewport", content: "width=device-width, initial-scale=1")
+                html.meta(name: "robots", content: "noindex")
+                html.title("404 - " + to-plain-text(resolved-title, lang: home-langs.first()))
+                for css-p in sheet-hrefs {
+                  html.link(rel: "stylesheet", href: "/" + str(css-p).trim("/"))
+                }
+              })
+              html.body({
+                html.main(class: "notfound", {
+                  html.elem(
+                    "nav",
+                    attrs: (class: "back-home", "aria-label": "Site navigation"),
+                    html.a(href: "/", "/.."),
+                  )
+                  html.h1("404")
+                  html.p("No such page.")
+                })
+              })
+            })
+          }
+        },
+      )<thyme-not-found>]
+    }
+
+    // Mounted pages become extra bundle documents. In single-page (`html`) mode they
+    // are already inlined into the home body by `mount-card-hook` / the paged
+    // fallback, and the html target can only carry one `<html>` root anyway.
+    for m in (if target() == "bundle" { all-mounts } else { () }) {
+      let doc-body = {
+        emit-doc-marker(m.path, m.label)
+        if m.is-wrapped {
+          m.body
+        } else {
+          context {
+            let src-href = if source-label != none and m.raw-source != none {
+              rel-href(m.path, source-path-for(m.path))
+            } else {
+              none
+            }
+            render-core-shell(
+              title: m.title,
+              site-title: resolved-title,
+              author: author,
+              site-url: url,
+              doc-path: m.path,
+              langs: resolve-page-langs(auto, default-lang: lang, scan-nodes: (m.body,)),
+              stylesheet-paths: sheet-hrefs,
+              include-core-topbar-css: shell-hook == none,
+              favicon-href: if norm-fav != none { norm-fav.path } else { none },
+              favicon-type: if norm-fav != none { norm-fav.mime } else { none },
+              source-href: src-href,
+              source-label: source-label,
+              back-content: html.a(href: rel-root(m.path) + "index.html", "/.."),
+              open-graph: open-graph,
+              {
+                show: with-html-headings.with(shift: 0, permalinks: heading-permalinks)
+                m.body
+              },
+            )
+          }
+        }
+      }
+      [#document(m.path, title: m.title, doc-body)#m.label]
+      for pa in m.assets {
+        emit-bundle-asset(join-path(m.dir, pa.path), pa.data, lbl: pa.at("label", default: none))
+      }
+    }
+
+    // Preset-generated extra documents (tag archives, `pages:`) are bundle-only.
+    if target() == "bundle" and extra-docs-hook != none {
+      extra-docs-hook(
+        all-mounts: all-mounts,
+        resolved-title: resolved-title,
+        site-url: url,
+        author: author,
+        default-lang: home-langs.first(),
+        sheet-hrefs: sheet-hrefs,
+        favicon-href: if norm-fav != none { norm-fav.path } else { none },
+        favicon-type: if norm-fav != none { norm-fav.mime } else { none },
+      )
+    }
+
     if target() == "bundle" {
       for s in norm-sheets {
         emit-bundle-asset(s.path, s.data, lbl: s.label)
@@ -1265,177 +1433,16 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
         }
       }
 
-      let home-src-href = if root-raw-source != none { "site.typ" } else { none }
+    }
 
-      [#document(
-        "index.html",
-        title: resolved-title,
-        {
-          emit-doc-marker("index.html", <site>)
-          context {
-            let site-docs = query(<site>)
-            let home-doc = if site-docs.len() > 0 { site-docs.first() } else { none }
-            let eff-home-langs = resolve-page-langs(
-              lang,
-              default-lang: lang,
-              scan-nodes: (resolved-title, description, body),
-              queried-codes: query-doc-tr-codes(home-doc),
-            )
-            let home-inner = {
-              show: with-html-headings.with(shift: if emit-auto-h1 { 1 } else { 0 }, permalinks: heading-permalinks)
-              set text(lang: eff-home-langs.first())
-              if emit-auto-h1 {
-                html.h1(resolved-title)
-              }
-              clean-home-body
-            }
-            if shell-hook != none {
-              shell-hook(
-                title: resolved-title,
-                site-title: resolved-title,
-                description: description,
-                author: author,
-                site-url: url,
-                doc-path: "index.html",
-                langs: eff-home-langs,
-                alternates: alternates,
-                stylesheet-paths: sheet-hrefs,
-                favicon-href: if norm-fav != none { norm-fav.path } else { none },
-                favicon-type: if norm-fav != none { norm-fav.mime } else { none },
-                source-href: home-src-href,
-                source-label: source-label,
-                include-feeds: true,
-                rss-path: rss-path,
-                atom-path: atom-path,
-                open-graph: open-graph,
-                extra-head: head,
-                home-inner,
-              )
-            } else {
-              render-core-shell(
-                title: resolved-title,
-                site-title: resolved-title,
-                description: description,
-                author: author,
-                site-url: url,
-                doc-path: "index.html",
-                langs: eff-home-langs,
-                alternates: alternates,
-                stylesheet-paths: sheet-hrefs,
-                favicon-href: if norm-fav != none { norm-fav.path } else { none },
-                favicon-type: if norm-fav != none { norm-fav.mime } else { none },
-                source-href: home-src-href,
-                source-label: source-label,
-                include-feeds: true,
-                rss-path: rss-path,
-                atom-path: atom-path,
-                open-graph: open-graph,
-                extra-head: head,
-                wrap-main: wrap-main,
-                home-inner,
-              )
-            }
-          }
-        },
-      )<site>]
-
-      if not-found-page != false and not-found-page != none {
-        [#document(
-          "404.html",
-          title: [404],
-          {
-            emit-doc-marker("404.html", <thyme-not-found>)
-            if type(not-found-page) == content {
-              not-found-page
-            } else if not-found-hook != none {
-              not-found-hook(resolved-title, home-langs.first(), sheet-hrefs)
-            } else {
-              html.html(lang: home-langs.first(), {
-                html.head({
-                  html.meta(charset: "utf-8")
-                  html.meta(name: "viewport", content: "width=device-width, initial-scale=1")
-                  html.meta(name: "robots", content: "noindex")
-                  html.title("404 - " + to-plain-text(resolved-title, lang: home-langs.first()))
-                  for css-p in sheet-hrefs {
-                    html.link(rel: "stylesheet", href: "/" + str(css-p).trim("/"))
-                  }
-                })
-                html.body({
-                  html.main(class: "notfound", {
-                    html.elem(
-                      "nav",
-                      attrs: (class: "back-home", "aria-label": "Site navigation"),
-                      html.a(href: "/", "/.."),
-                    )
-                    html.h1("404")
-                    html.p("No such page.")
-                  })
-                })
-              })
-            }
-          },
-        )<thyme-not-found>]
-      }
-
-      for m in all-mounts {
-        let doc-body = {
-          emit-doc-marker(m.path, m.label)
-          if m.is-wrapped {
-            m.body
-          } else {
-            context {
-              let src-href = if source-label != none and m.raw-source != none {
-                rel-href(m.path, source-path-for(m.path))
-              } else {
-                none
-              }
-              render-core-shell(
-                title: m.title,
-                site-title: resolved-title,
-                author: author,
-                site-url: url,
-                doc-path: m.path,
-                langs: resolve-page-langs(auto, default-lang: lang, scan-nodes: (m.body,)),
-                stylesheet-paths: sheet-hrefs,
-                include-core-topbar-css: shell-hook == none,
-                favicon-href: if norm-fav != none { norm-fav.path } else { none },
-                favicon-type: if norm-fav != none { norm-fav.mime } else { none },
-                source-href: src-href,
-                source-label: source-label,
-                back-content: html.a(href: rel-root(m.path) + "index.html", "/.."),
-                open-graph: open-graph,
-                {
-                  show: with-html-headings.with(shift: 0, permalinks: heading-permalinks)
-                  m.body
-                },
-              )
-            }
-          }
-        }
-        [#document(m.path, title: m.title, doc-body)#m.label]
-        for pa in m.assets {
-          emit-bundle-asset(join-path(m.dir, pa.path), pa.data, lbl: pa.at("label", default: none))
-        }
-      }
-
-      if extra-docs-hook != none {
-        extra-docs-hook(
-          all-mounts: all-mounts,
-          resolved-title: resolved-title,
-          site-url: url,
-          author: author,
-          default-lang: home-langs.first(),
-          sheet-hrefs: sheet-hrefs,
-          favicon-href: if norm-fav != none { norm-fav.path } else { none },
-          favicon-type: if norm-fav != none { norm-fav.mime } else { none },
-        )
-      }
-
-      let emit-robots = if robots == auto { sitemap-path != none } else { robots == true }
-      if emit-robots and "robots.txt" not in explicit-paths {
-        emit-bundle-asset("robots.txt", build-robots-txt(site-url: url, sitemap-path: sitemap-path))
-      }
+    // Emit the home page: a `<document>` in bundle mode, an inline shell otherwise.
+    if target() == "bundle" {
+      [#document("index.html", title: resolved-title, home-doc-content)<site>]
+    } else if single-page {
+      [#metadata(none)<site>]
+      home-doc-content
     } else if paged-fallback-hook != none {
+      // `png` / `svg` / `pdf` targets: render the paged preview of the site body.
       paged-fallback-hook(all-mounts, pre-mount-els, home-langs.first(), emit-auto-h1, resolved-title, clean-home-body)
     } else {
       set text(lang: home-langs.first())
@@ -1471,7 +1478,7 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
         m
       }
       if sitemap-path != none {
-        let sm-xml = build-sitemap(
+        let sm-xml = sitemap-xml(
           site-url: url,
           entries: public-pages,
           root-alternates: alternates,
@@ -1479,7 +1486,7 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
         [#asset(sitemap-path, bytes(sm-xml))<sitemap>]
       }
       if rss-path != none {
-        let rss-xml = build-rss-feed(
+        let rss-xml = rss-xml(
           site-title: resolved-title,
           site-subtitle: description,
           site-url: url,
@@ -1492,7 +1499,7 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
         [#asset(rss-path, bytes(rss-xml))<rss>]
       }
       if atom-path != none {
-        let atom-xml = build-atom-feed(
+        let atom-xml = atom-xml(
           site-title: resolved-title,
           site-subtitle: description,
           site-url: url,

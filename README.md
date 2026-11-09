@@ -12,7 +12,7 @@
 
 `thyme` turns Typst `0.15+`'s native `bundle` and typed `html` targets into a complete static site generator — driven **100% by the standard `typst` CLI** (`typst compile` & `typst watch`) with **zero external wrapper CLIs** and **zero client-side JavaScript frameworks**.
 
-Use the **unopinionated zero-CSS core** (`#import "@preview/thyme:0.1.0": *`) to build custom static sites and portfolios with your own stylesheet, or activate the batteries-included **monochrome scholarly `blog` preset** (`#import blog: *`, `site`, or order-independently via `#show: blog.site.with(...)`) with native MathML, right-margin sidenotes & citations, static `/tags/` archives, bidirectional backlinks, Obsidian frontmatter, theorem/proof environments, and print-first two-column `@media print` preservation.
+Use the **unopinionated zero-CSS core** (`#import "@preview/thyme:0.1.0": *`) to build custom static sites and portfolios with your own stylesheet, or activate the batteries-included **monochrome scholarly `blog` preset** (`#import "@preview/thyme:0.1.0": blog` then `#show: blog.site.with(...)`) with native MathML, right-margin sidenotes & citations, static `/tags/` archives, bidirectional backlinks, Obsidian frontmatter, theorem/proof environments, and print-first two-column `@media print` preservation.
 
 ---
 
@@ -43,9 +43,9 @@ Or wire `site.typ` by hand:
 
 ```typst
 #import "@preview/thyme:0.1.0": *
-#import blog: *
+#import "@preview/thyme:0.1.0": blog
 
-#show: site.with(
+#show: blog.site.with(
   description: "Notes on programming languages, formal methods, and systems.",
   url: "https://blog.example.org",
   author: "Ada Lovelace",
@@ -56,7 +56,7 @@ Or wire `site.typ` by hand:
 
 Notes on programming languages, formal methods, mathematics, and systems.
 
-#links(
+#blog.links(
   direction: "row",
   link("https://example.org")[example.org],
   [@rss[rss]],
@@ -65,8 +65,8 @@ Notes on programming languages, formal methods, mathematics, and systems.
 
 == Posts
 
-#post(path("posts/fixed-points.typ")) <fixed-points>
-#post(path("posts/minimal-bundles.typ")) <minimal-bundles>
+#blog.post(path("posts/fixed-points.typ")) <fixed-points>
+#blog.post(path("posts/minimal-bundles.typ")) <minimal-bundles>
 ```
 
 ### 2. Custom Portfolio / Landing Site (Unopinionated Core)

@@ -6,7 +6,7 @@
 #import "../core.typ": render-core-shell
 #import "../paths.typ": with-smart-refs
 #import "../text.typ": to-plain-text
-#import "theme.typ": build-stylesheet, default-theme, stylesheet-href
+#import "theme.typ": stylesheet-css, default-theme, stylesheet-href
 
 /// Minimal event-delegated copy-button handler for `zebraw` code listings.
 #let clipboard-script = "document.addEventListener('click', (ev) => {
@@ -52,7 +52,7 @@
   source-label: ".typ",
   back-content: none,
   render-topbar: false,
-  theme-cfg: default-theme,
+  theme-config: default-theme,
   copy-button: auto,
   include-feeds: false,
   rss-path: "rss.xml",
@@ -71,12 +71,12 @@
   let eff-sheets = if not in-bundle {
     ()
   } else if stylesheet-paths == auto {
-    (stylesheet-href(theme: theme-cfg),)
+    (stylesheet-href(theme: theme-config),)
   } else {
     stylesheet-paths
   }
   let inline-css = (
-    ..if not in-bundle { (build-stylesheet(theme: theme-cfg),) } else { () },
+    ..if not in-bundle { (stylesheet-css(theme: theme-config),) } else { () },
     ..if theme-override-css != none { (theme-override-css,) } else { () },
   )
   let emit-copy-js = if copy-button == auto {
@@ -127,7 +127,7 @@
     body-wrapper: inner => {
       show: zebraw-init
       show: checklist
-      show: with-smart-refs.with(ink: theme-cfg.text-light, muted: theme-cfg.muted-light)
+      show: with-smart-refs.with(ink: theme-config.text-light, muted: theme-config.muted-light)
       inner
     },
     wrap-main: true,
@@ -141,10 +141,10 @@
   home-text: "/..",
   lang: "en",
   stylesheet-paths: auto,
-  theme-cfg: default-theme,
+  theme-config: default-theme,
 ) = {
   let sheets = if stylesheet-paths == auto {
-    (stylesheet-href(theme: theme-cfg),)
+    (stylesheet-href(theme: theme-config),)
   } else {
     stylesheet-paths
   }
