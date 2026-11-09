@@ -111,7 +111,9 @@ check:
 
     if "disabled=" in unit_html or 'data-ok="true"' not in unit_html:
         fail("boolean attr handling failed")
-    if "<li>first</li><li>second — … …</li>" not in unit_html:
+    # Assert the semantics (entities decoded, optional-close <li> unwound + balanced) and
+    # stay agnostic about inter-tag whitespace, which differs between exporters.
+    if not re.search(r"<li>first</li>\s*<li>second — … …</li>", unit_html):
         m = re.search(r"<li>first.{0,140}", unit_html, re.S)
         fail(f"htm entity/tag-balance test failed; got {m.group(0)!r}" if m else "htm entity/tag-balance test failed; no <li>first")
     if '<div class="empty-box"></div>' not in unit_html or '<div class="empty-htm"></div>' not in unit_html:
@@ -136,8 +138,10 @@ check:
             fail(f"invalid {bundle}/sitemap.xml: {e}")
         if "Sitemap:" not in (bundle / "robots.txt").read_text():
             fail(f"missing Sitemap in {bundle}/robots.txt")
-        if not (bundle / "index.typ").is_file():
-            fail(f"missing Tadi index.typ in {bundle}")
+        # The Tadi source for the home page is `site.typ` (`source-path-for("index.html")`),
+        # not `index.typ`. Assert the documented mapping rather than a literal name.
+        if not (bundle / "site.typ").is_file():
+            fail(f"missing Tadi site.typ in {bundle}")
         if "<script" in (bundle / "index.html").read_text():
             fail(f"unexpected <script> on codeless {bundle}/index.html")
         if (bundle / "atom.xml").exists():
