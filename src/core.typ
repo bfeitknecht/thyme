@@ -69,9 +69,9 @@
   }
 }
 
-// Declare a co-located file asset inline inside a page or post body
-// (`#page-asset("diagram.svg", path("diagram.svg")) <diagram>`).
-// -> content
+/// Declare a co-located asset emitted next to the page that contains it
+/// (`#page-asset("diagram.svg", path("diagram.svg")) <diagram>`).
+/// -> content
 #let page-asset(
   /// Relative filename inside the page's output directory.
   /// -> str
@@ -85,8 +85,10 @@
   data: if type(data) == path { read(data, encoding: none) } else { data },
 ))
 
-// Emit a static file at an exact bundle root path (`#file("pgp.txt", path("pgp.txt")) <pgp>`).
-// -> content
+/// Emit a static file at an exact bundle-root path
+/// (`#file("pgp.txt", path("pgp.txt")) <pgp>`).
+/// Pass a capability `path(...)` to read the payload, or `bytes` / `str` directly.
+/// -> content
 #let file(
   /// Bundle output path relative to the web root (e.g. `"age.txt"`, `"cv.pdf"`, `"assets/font.woff2"`).
   /// -> str
@@ -173,13 +175,13 @@
   auto
 })
 
-// Mount a standalone `.typ` page into a `site` bundle using Typst 0.15's capability
-// `path("...")` value (`#mount(path("contact.typ")) <contact>`).
-//
-// Passing `path("...")` lets `thyme` simultaneously evaluate the page (`include p`),
-// read its verbatim `.typ` source for Tadi Web inspection (`read(p)`), and infer its
-// URL route (`contact/index.html`) — all with native `typst watch` dependency tracking.
-// -> content
+/// Mount a standalone `.typ` page into a `site` bundle
+/// (`#mount(path("contact.typ")) <contact>`).
+///
+/// Passing `path(...)` lets `thyme` evaluate the page (`include p`), read its verbatim
+/// `.typ` source for Tadi Web inspection (`read(p)`), and infer its URL route
+/// (`contact/index.html`) — all with native `typst watch` dependency tracking.
+/// -> content
 #let mount(
   /// Capability `path("...")` to the `.typ` file (or pre-evaluated `include "..."` content).
   /// -> path | content
@@ -261,10 +263,10 @@
   ))
 }
 
-// Query public (non-draft, non-unlisted) pages/posts across the active bundle,
-// optionally filtered by `collection`, `tag`, or `lang` and sorted newest-first.
-// Must be called inside `context`.
-// -> array
+/// Query public (non-draft, unlisted-excluded) pages and posts across the active
+/// bundle, newest first. Filter by `collection`, `tag`, or `lang`.
+/// Call inside `context`.
+/// -> array
 #let query-pages(
   /// Optional collection filter (e.g. `"posts"`).
   /// -> str | none
@@ -314,10 +316,10 @@
   entries.sorted(key: p => p.sort-key).rev()
 }
 
-// Render a compile-time backlinks list ("Referenced by") for the enclosing page/post
-// (`target` defaults to `auto`, inferring the current page's slug). Emits nothing when
-// zero public pages link to this page.
-// -> content
+/// Render a compile-time "Referenced by" list for the enclosing page or post.
+/// `target: auto` infers the current page's slug. Emits nothing when no public
+/// page links here. Call inside `context`.
+/// -> content
 #let backlinks(
   /// Optional explicit target slug (`auto` infers from the enclosing bundle document).
   /// -> auto | str
@@ -761,12 +763,12 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
   })
 }
 
-// Generic, unopinionated HTML page template (`#show: webpage.with(title: ..., ...)`).
-//
-// Sets per-page metadata (`title`, `description`, `created`, `modified`, `lang`, `tags`,
-// `collection`) without imposing any opinionated stylesheet — while automatically
-// inheriting the active `blog` stylesheet if mounted inside a `blog` site!
-// -> content
+/// Render one standalone HTML page (`#show: webpage.with(title: ..., ...)`).
+///
+/// Records the page metadata (`title`, `description`, `created`, `modified`, `lang`,
+/// `tags`, `collection`) that `query-pages()` and the feeds read, without imposing a
+/// stylesheet. Inside a `site` bundle it inherits the site's stylesheets and top bar.
+/// -> content
 #let webpage(
   /// Page title (`auto` infers from the first `= ...` heading in `body`).
   /// -> auto | content | str
@@ -1021,11 +1023,13 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
 
 /// Generic, unopinionated static site bundler (`#show: site.with(...)`).
 ///
-/// Compiles a pure-Typst project into a multi-page static HTML bundle (`index.html`,
-/// mounted subpages, user stylesheets, static files, `404.html`, `sitemap.xml`, `robots.txt`,
-/// optional RSS/Atom feeds, and Tadi Web `.typ` plaintext source files) without any
-/// opinionated CSS or JavaScript runtime. Import `blog` and use `blog.site` (or `#import blog: *`)
-/// to activate the scholarly monochrome `blog` preset without import-order sensitivity.
+/// Compile a pure-Typst project into a static site bundle: `index.html`, mounted
+/// subpages, your own stylesheets, static files, `404.html`, `sitemap.xml`,
+/// `robots.txt`, optional RSS/Atom feeds, and Tadi Web `.typ` source files.
+///
+/// Ships no CSS or JavaScript of its own, so the site looks exactly like what you
+/// pass in `stylesheets`. For the batteries-included monochrome blog instead, use
+/// `blog.site` from the `blog` module.
 /// -> content
 #let site(
   /// Site title (`auto` infers from the first `= ...` heading in `body`, or pass any `str` / rich `content`).

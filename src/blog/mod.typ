@@ -24,9 +24,16 @@
   backlinks,
   file,
   mount,
+  page-asset,
   query-pages,
   webpage,
   with-html-math,
+)
+
+#import "../htm.typ": (
+  enable-htm,
+  h,
+  htm,
 )
 
 #import "theme.typ": (
@@ -98,7 +105,7 @@
 //   theme       default-theme, resolve-theme, active-theme, css-oklch,
 //               stylesheet-css, stylesheet-href, stylesheet-asset-path,
 //               theme-override-css, default-woff2-files
-//   typography  htm, h
+//   typography  htm, h, enable-htm, with-html-math
 //   notes       sidenote, sn, marginnote, mn, mcite, container
 //   blocks      callout, codeblock, sbox, academic environments
 //               (definition, theorem, lemma, proposition, corollary, example,
