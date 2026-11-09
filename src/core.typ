@@ -40,6 +40,7 @@
   sitemap-xml,
   render-seo-meta,
 )
+#import "blog/theme.typ": css-hex, default-theme
 #import "text.typ": count-words, estimate-reading-minutes, to-plain-text
 #import "tree.typ": collect-content, find-content, map-containers
 
@@ -623,6 +624,10 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
   extra-head: none,
   body-wrapper: none,
   wrap-main: true,
+  /// Theme dictionary used to derive `<meta name="theme-color">`. Browsers only
+  /// honour sRGB there, so the `oklch` tokens are converted to hex for this one tag.
+  /// -> dictionary
+  theme-config: default-theme,
   body,
 ) = {
   let in-bundle = doc-path != none
@@ -687,9 +692,19 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
           ..if favicon-type != none { (type: favicon-type) } else { (:) },
         )
       }
-      // Theme color meta tag (Light: #f2f2f2, Dark: #101010) for strict monochrome scheme
-      html.meta(name: "theme-color", content: "#f2f2f2", media: "(prefers-color-scheme: light)")
-      html.meta(name: "theme-color", content: "#101010", media: "(prefers-color-scheme: dark)")
+      // `theme-color` follows the active theme rather than a pinned hex value. This is
+      // the one place a literal is unavoidable: browsers ignore non-sRGB colour
+      // syntax here, so the oklch tokens are converted at compile time.
+      html.meta(
+        name: "theme-color",
+        content: css-hex(theme-config.paper-light),
+        media: "(prefers-color-scheme: light)",
+      )
+      html.meta(
+        name: "theme-color",
+        content: css-hex(theme-config.paper-dark),
+        media: "(prefers-color-scheme: dark)",
+      )
       for css-p in stylesheet-paths {
         let p-str = str(css-p)
         let href = if p-str.starts-with("http://") or p-str.starts-with("https://") or p-str.starts-with("/") {
@@ -923,6 +938,12 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
       // A preset site (e.g. `blog`) styles its own top bar, so skip the built-in
       // monochrome rules; plain core sites get them.
       let is-preset-site = site-config != none and site-config.at("is-preset", default: false)
+      // A preset may supply its resolved theme so `theme-color` tracks user overrides.
+      let shell-theme = if site-config != none {
+        site-config.at("theme", default: default-theme)
+      } else {
+        default-theme
+      }
 
       render-core-shell(
         title: resolved-title,
@@ -946,6 +967,7 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
         open-graph: eff-og,
         wrap-main: wrap-main,
         extra-head: head,
+        theme-config: shell-theme,
         {
           show: with-html-headings.with(shift: 0, permalinks: eff-permalinks)
           set text(lang: eff-langs.first())
@@ -1310,6 +1332,7 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
               open-graph: open-graph,
               extra-head: head,
               wrap-main: wrap-main,
+              theme-config: if site-config != none { site-config.at("theme", default: default-theme) } else { default-theme },
               home-inner,
             )
           }
