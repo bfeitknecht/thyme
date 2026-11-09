@@ -176,9 +176,8 @@ just preview    # build template/ + examples/ into a browsable preview/
 ```
 
 `typstyle` is not part of the Typst CLI — `cargo install typstyle --version 0.15.1 --locked`.
-The CI setup action pins the same version, and `.pre-commit-config.yaml` runs the same hook, so
-local and CI formatting cannot drift. Bumping the pin means re-running `just fmt` in the same
-commit.
+The CI setup action pins the same version, so local and CI formatting cannot drift. Bumping the
+pin means re-running `just fmt` in the same commit.
 
 ---
 

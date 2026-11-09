@@ -442,6 +442,50 @@ bump version:
         p.write_text(txt)
     print(f"bumped thyme {old_ver} -> {new_ver} (remember to run `just docs` and update CHANGELOG.md)")
 
+# Print the release notes: the `## [<version>]` section of CHANGELOG.md
+notes version:
+    #!/usr/bin/env python3
+    import pathlib, re, sys
+    version = "{{version}}".lstrip("v")
+    text = pathlib.Path("CHANGELOG.md").read_text()
+    # The section runs to the next `## [...]` heading or the `[x.y.z]: url` link definitions.
+    match = re.search(
+        rf"^## \[{re.escape(version)}\][^\n]*\n(.*?)(?=^## \[|^\[[^\]]+\]:|\Z)",
+        text,
+        re.M | re.S,
+    )
+    body = match.group(1).strip() if match else ""
+    if not body:
+        sys.exit(
+            f"CHANGELOG.md has no publishable '## [{version}]' section "
+            "(missing or empty) — refusing to publish empty release notes"
+        )
+    print(body)
+
+# Validate a release tag against typst.toml and CHANGELOG.md before anything is published
+check-release tag:
+    #!/usr/bin/env python3
+    import pathlib, re, subprocess, sys, tomllib
+    tag = "{{tag}}"
+    package = tomllib.loads(pathlib.Path("typst.toml").read_text())["package"]
+    version = package["version"]
+    problems = []
+    if not re.fullmatch(r"\d+\.\d+\.\d+", version):
+        problems.append(f"typst.toml version {version!r} is not plain X.Y.Z")
+    if tag != f"v{version}":
+        problems.append(f"tag {tag!r} does not match typst.toml version (want 'v{version}')")
+    if not re.search(
+        rf"^## \[{re.escape(version)}\] - \d\d\d\d-\d\d-\d\d", pathlib.Path("CHANGELOG.md").read_text(), re.M
+    ):
+        problems.append(f"CHANGELOG.md needs a dated '## [{version}] - YYYY-MM-DD' section")
+    for problem in problems:
+        print(f"::error::{problem}")
+    if problems:
+        sys.exit(1)
+    # The notes themselves must be publishable, not just present.
+    subprocess.run(["just", "notes", version], check=True, stdout=subprocess.DEVNULL)
+    print(f"release {tag} is consistent with typst.toml and CHANGELOG.md")
+
 # Commit, tag (vX.Y.Z), and push; GitHub Actions cuts the release and opens a Draft PR to typst/packages
 release $tag="" $message="":
     #!/usr/bin/env sh

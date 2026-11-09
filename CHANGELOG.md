@@ -34,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   public option — but nothing ever called the function, so no bundle contained a `robots.txt` at
   all and `Sitemap:` discovery silently did not work. Now emitted whenever `robots` is `auto` and a
   sitemap is produced. Regression assertions added to `tests/unit.typ`.
-- **`just fmt` / the pre-commit hook called a command that does not exist.**
+- **`just fmt` called a command that does not exist.**
   The Typst CLI has no `fmt` subcommand — 0.15.x ships `compile`, `watch`, `init`, `query`,
   `eval`, `fonts`, `update`, `completions`, `info` — so every invocation exited 2 (clap usage
   error) and the CI `Format` job failed on its first real run. All three call sites now use
@@ -72,8 +72,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **One way to read `typst.toml`, not eleven.** The same `sed -n 's/^version = "…"/\1/p'` was
   copied across the justfile, a shell script and both workflows, and one copy had already been got
   wrong badly enough that `release.yaml` could never have run. Everything now uses `tomllib`.
-- **The formatter is pinned to `typstyle` 0.15.1** in the CI setup action and `.pre-commit-config`
-  (and `typst-package-check` to `v0.7.0`, which was previously installed from whatever `master`
+- **The formatter is pinned to `typstyle` 0.15.1** in the CI setup action (and
+  `typst-package-check` to `v0.7.0`, which was previously installed from whatever `master`
   happened to be at release time). typstyle's output changes between releases, so a floating
   version makes local `just fmt` and CI `just fmt --check` disagree.
 - **`src/lib.typ` documented a guarantee Typst does not provide.** It claimed `site` is "always
@@ -103,9 +103,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   alias was ever exported.
 
 ### Removed
-- `black`, `isort` and the redundant `trailing-whitespace`/`end-of-file-fixer` overlap from
-  `.pre-commit-config.yaml`; only `ruff` + `ruff-format` run, matching `pyproject.toml`, instead
-  of three formatters fighting over the same files.
+- `.pre-commit-config.yaml` and `docs/autoformat.md`. The hooks duplicated `just fmt` / `just lint`
+  and needed `typstyle` on the host anyway, so CI is the only place the checks are enforced. The
+  removed doc also claimed `typst fmt` existed and that `just lint` scanned the justfile; it did
+  neither.
 
 [Unreleased]: https://github.com/bfeitknecht/thyme/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/bfeitknecht/thyme/releases/tag/v0.1.0
