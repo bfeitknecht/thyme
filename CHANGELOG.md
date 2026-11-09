@@ -83,14 +83,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   own `[0.1.0]` entry is corrected too.
 
 ### Changed
-- **The manual is rebuilt by `just check`, reproducibly.** `docs/manual.pdf` is generated from
-  the `///` comments in `src/`, so it is part of the gate rather than a separate step, and the
-  build pins `SOURCE_DATE_EPOCH` (default `0`), which Typst honours for the embedded creation
-  date. The `just docs` recipe is gone: it existed to run one `typst compile`.
+- **The manual is rebuilt on release, reproducibly.** `docs/manual.pdf` is generated from the
+  `///` comments in `src/`; `just release` regenerates it immediately before committing, and the
+  build pins `SOURCE_DATE_EPOCH` so the result is stable. The `just docs` recipe is gone: it
+  existed to run one `typst compile`, and a recipe that exists only to be called from another
+  recipe is a step, not a command.
 - **CI and release workflows restructured.** The seven copy-pasted toolchain install blocks are
   now one composite action (`.github/actions/setup`). Release is `verify` → `github-release` →
   `universe-pr`, with the Universe job gated on a repository variable so an early tag does not
-  fail solely because `vendor/` still holds an unpublished dependency. Added `concurrency` to CI.
+  fail solely because a dependency is not published yet. Added `concurrency` to CI.
   (A stale-`docs/manual.pdf` byte comparison was tried and removed: Typst embeds `/CreationDate`
   in an uncompressed object stream, so a content-identical rebuild never matches byte-for-byte.)
 - **The command surface is the justfile, not a pile of helper recipes.** `just release` is the
