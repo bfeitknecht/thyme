@@ -35,8 +35,8 @@ rm -rf vendor
 Also delete the TODO at the top of `src/seo.typ` (lines 5–6) that asks for exactly this.
 
 Guard rails that will make you do this anyway, which is the point of them:
-`scripts/stage-universe.sh` refuses to stage while `vendor/*/typst.toml` exists, and the
-`universe-pr` CI job fails the same check.
+`just stage-universe` and the `universe-pr` CI job both refuse to stage while
+`vendor/*/typst.toml` exists. `just check` skips its staging dry run in that state and says so.
 
 ## 2. Re-verify against Universe, with no local safety net
 

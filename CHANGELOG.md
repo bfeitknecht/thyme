@@ -96,7 +96,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **The command surface is the justfile, not a pile of helper recipes.** `just release` is the
   only release entry point, with `--check` (validate a tag against `typst.toml` and `CHANGELOG.md`
   without writing) and `--notes` (print the section CI publishes) as read-only modes of the same
-  recipe. `stage-universe` is a recipe rather than a shell script, and `scripts/` is gone.
+  recipe. `thumbnail` is no longer a recipe either: `just check` regenerates `thumbnail.png`, because
+  a stale one ships inside the package archive. `scripts/` is gone.
+
+  `just stage-universe` builds exactly the directory that is submitted to `typst/packages`, so it
+  no longer takes `--allow-vendored`: staging a payload with a vendored `@preview/` import would
+  produce an archive Typst Universe cannot resolve. `just check` skips the dry run while `vendor/`
+  is populated, rather than being handed a flag that makes the guard unfireable.
 - **`just install-packages` was removed.** It linked this checkout into the real OS `@preview`
   cache for editor LSPs, but it assumed `@preview/exemel` was not on Typst Universe — the one
   condition this release exists to end. Once exemel is live, `vendor/` goes and plain
