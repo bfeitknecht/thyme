@@ -29,7 +29,7 @@
   - Add repository secret `UNIVERSE_TOKEN` on `bfeitknecht/thyme` (fine-grained PAT with `Contents: Read and write` on `bfeitknecht/packages` and `Pull requests: Read and write` on `typst/packages`).
   - Leave repository variable `UNIVERSE_SUBMIT` unset (or `false`) until Step 1 completes.
 - [ ] **Remove temporary `exemel` vendoring once `exemel:0.3.0` is live**
-  *(Note: `./scripts/stage-universe.sh` intentionally aborts while `vendor/exemel/` exists so an incomplete archive can never be submitted by accident.)*
+  *(Note: `just stage-universe` intentionally aborts while `vendor/exemel/` exists so an incomplete archive can never be submitted by accident.)*
   ```sh
   rm -rf vendor
   ```
@@ -38,7 +38,7 @@
 - [ ] **Verify & stage locally against live Typst Universe**
   ```sh
   just check
-  just stage-universe dist/universe
+  just stage-universe dist/universe   # refuses while vendor/ exists; that is the point
   ```
 - [ ] **Cut `v0.1.0` & open the Universe PR**
   ```sh

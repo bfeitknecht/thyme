@@ -182,12 +182,26 @@ check:
     print("verified unit tests, sitemap.xml, robots.txt, full-HTML feeds, live tag-cloud links, Reader-Mode divs, a11y controls, .typ sources, and internal hrefs across all 3 bundles")
     PY
 
-    # 4. Dry-run Universe directory staging
-    just stage-universe "$tmp_stage" --allow-vendored
+    # 4. Regenerate the Universe thumbnail: it is a committed artefact, and a stale one
+    #    ships in the package archive.
+    typst compile --package-path "$tmp_pkg" -f png --pages 1 --ppi 250 \
+        template/posts/fixed-points.typ thumbnail.png
+    if command -v oxipng >/dev/null 2>&1; then
+        oxipng -o 4 --strip safe thumbnail.png
+    fi
 
-    pkg_name="$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml", "rb"))["package"]["name"])')"
-    pkg_version="$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml", "rb"))["package"]["version"])')"
-    if command -v typst-package-check >/dev/null 2>&1 && [ ! -d vendor/exemel ]; then
+    # 5. Stage for Typst Universe. Skipped while vendor/ holds an unpublished dependency,
+    #    which is exactly the state that blocks the release.
+    if [ -z "$(find vendor -mindepth 1 -maxdepth 2 -name typst.toml 2>/dev/null)" ]; then
+        just stage-universe "$tmp_stage"
+    else
+        echo "note: skipping the Universe staging dry run; vendor/ still holds:" >&2
+        find vendor -mindepth 1 -maxdepth 2 -name typst.toml >&2
+    fi
+
+    if [ -d "$tmp_stage" ] && command -v typst-package-check >/dev/null 2>&1; then
+        pkg_name="$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml", "rb"))["package"]["name"])')"
+        pkg_version="$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml", "rb"))["package"]["version"])')"
         typst-package-check check "$tmp_stage/packages/preview/$pkg_name/$pkg_version"
     fi
     echo "all checks passed"
@@ -326,70 +340,51 @@ preview:
     echo "preview written to $out/index.html"
     echo "live reload: typst watch --features html,bundle -f bundle template/site.typ preview/template --serve"
 
-# Regenerate thumbnail.png (250 PPI) from template/posts/fixed-points.typ
-thumbnail:
-    #!/usr/bin/env sh
-    set -eu
-    tmp_pkg=".tmp-pkg"
-    trap 'rm -rf "$tmp_pkg"' EXIT
-    just _link-pkg "$tmp_pkg"
-    typst compile --package-path "$tmp_pkg" -f png --pages 1 --ppi 250 template/posts/fixed-points.typ thumbnail.png
-    if command -v oxipng >/dev/null 2>&1; then
-        oxipng -o 4 --strip safe thumbnail.png
-    fi
-    echo "updated thumbnail.png"
+# Stage the exact directory submitted to typst/packages -> dist/universe/...
+stage-universe out="dist/universe":
+    #!/usr/bin/env python3
+    import pathlib, re, shutil, subprocess, sys, tomllib
 
-# Stage a clean Typst Universe directory -> dist/universe/packages/preview/thyme/<version>
-stage-universe out="dist/universe" *flags:
-    #!/usr/bin/env sh
-    set -eu
-    allow_vendored=0
-    for flag in {{flags}}; do
-        case "$flag" in
-            --allow-vendored) allow_vendored=1 ;;
-            *) echo "stage-universe: unknown flag $flag" >&2; exit 1 ;;
-        esac
-    done
+    package = tomllib.loads(pathlib.Path("typst.toml").read_text())["package"]
+    name, version = package["name"], package["version"]
 
-    pkg_name="$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml", "rb"))["package"]["name"])')"
-    pkg_ver="$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml", "rb"))["package"]["version"])')"
-
-    # Refuse to stage for Universe while unpublished dependencies are still vendored.
-    if [ "$allow_vendored" -eq 0 ] && [ -d vendor ] \
-        && [ -n "$(find vendor -mindepth 1 -maxdepth 2 -name typst.toml 2>/dev/null)" ]; then
-        echo "stage-universe: vendor/ still contains unpublished dependencies:" >&2
-        find vendor -mindepth 1 -maxdepth 2 -name typst.toml >&2
-        echo "Wait for the upstream release on Typst Universe, remove vendor/, and re-run" >&2
-        echo "(or pass --allow-vendored for a local dry run)." >&2
-        exit 1
-    fi
+    # What is staged is what is submitted, so unpublished dependencies are a hard stop:
+    # Typst Universe cannot resolve a vendored `@preview/` import.
+    vendored = sorted(p.parent for p in pathlib.Path("vendor").glob("*/typst.toml"))
+    if vendored:
+        sys.exit(
+            "stage-universe: vendor/ holds unpublished dependencies ("
+            + ", ".join(str(v) for v in vendored)
+            + "). Remove vendor/ once they are on Typst Universe; nothing is staged."
+        )
 
     # Every @preview/<name>:<version> import must name the version being staged.
-    expected="@preview/${pkg_name}:${pkg_ver}"
-    stale="$(grep -rn "@preview/${pkg_name}:" template examples tests/unit.typ docs/manual.typ README.md \
-        | grep -v "$expected" || true)"
-    if [ -n "$stale" ]; then
-        echo "stage-universe: version mismatch (expected $expected):" >&2
-        echo "$stale" >&2
-        exit 1
-    fi
+    expected = f"@preview/{name}:{version}"
+    stale = subprocess.run(
+        ["grep", "-rn", f"@preview/{name}:", "template", "examples", "tests/unit.typ",
+         "docs/manual.typ", "README.md"],
+        capture_output=True, text=True,
+    ).stdout
+    stale = chr(10).join(l for l in stale.splitlines() if expected not in l)
+    if stale:
+        sys.exit(f"stage-universe: imports do not name {expected}:" + chr(10) + stale)
 
-    dest="{{out}}/packages/preview/${pkg_name}/${pkg_ver}"
-    rm -rf "$dest"
-    mkdir -p "$dest/docs" "$dest/assets"
+    dest = pathlib.Path("{{out}}") / "packages" / "preview" / name / version
+    shutil.rmtree(dest, ignore_errors=True)
+    (dest / "docs").mkdir(parents=True)
+    (dest / "assets").mkdir()
 
-    # Required package and template files (these land in the compiler archive).
-    cp typst.toml LICENSE README.md "$dest/"
-    cp -R src template "$dest/"
-    cp thumbnail.png "$dest/"
+    for item in ("typst.toml", "LICENSE", "README.md", "thumbnail.png"):
+        shutil.copy2(item, dest)
+    for item in ("src", "template", "examples"):
+        shutil.copytree(item, dest / item)
+    shutil.copy2("docs/manual.pdf", dest / "docs" / "manual.pdf")
+    for item in ("assets/preview-light.png", "assets/preview-dark.png"):
+        shutil.copy2(item, dest / "assets" / pathlib.Path(item).name)
 
-    # Showcase files linked from README.md (`typst.toml` `exclude` keeps them out of the archive).
-    cp docs/manual.pdf "$dest/docs/manual.pdf"
-    cp assets/preview-light.png assets/preview-dark.png "$dest/assets/"
-    cp -R examples "$dest/"
-
-    find "$dest" -name '.DS_Store' -delete
-    echo "staged ${pkg_name}:${pkg_ver} -> $dest"
+    for stray in dest.rglob(".DS_Store"):
+        stray.unlink()
+    print(f"staged {name}:{version} -> {dest}")
 
 # Bump package version across typst.toml, template/, examples/, tests/unit.typ, docs/manual.typ, and README.md
 bump version:
@@ -414,7 +409,6 @@ bump version:
         p.write_text(txt)
     print(f"bumped thyme {old_ver} -> {new_ver} (then update CHANGELOG.md; `just check` rebuilds the manual)")
 
-# Commit, tag (vX.Y.Z), and push; GitHub Actions cuts the release and opens a Draft PR to typst/packages
 # Cut a release: `just release [TAG]`, `just release TAG --check`, `just release --notes`
 release *args:
     #!/usr/bin/env python3
@@ -480,7 +474,8 @@ release *args:
         print(f"{tag} is ready: typst.toml, CHANGELOG.md and the tag agree")
         sys.exit(0)
 
-    # The full gate, then tag and push; CI cuts the GitHub release and the Universe PR.
+    # The full gate. `check` rewrites `thumbnail.png` and `docs/manual.pdf`, so they are
+    # committed below along with everything else: the archive never carries a stale artefact.
     for gate in (["check"], ["fmt", "--check"], ["lint"]):
         subprocess.run(["just", *gate], check=True)
 
