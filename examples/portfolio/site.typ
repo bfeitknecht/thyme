@@ -10,7 +10,7 @@
   wrap-main: false,
 )
 
-#raw-file("pgp.txt", path("pgp.txt"))
+#file("pgp.txt", path("pgp.txt"))
 #mount(path("contact.typ")) <contact>
 
 #htm(

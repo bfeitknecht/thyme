@@ -84,7 +84,7 @@
     return none
   }
   let last = parts.last()
-  if last == "index.typ" and parts.len() >= 2 {
+  if last == "site.typ" and parts.len() >= 2 {
     parts.at(parts.len() - 2)
   } else if last.ends-with(".typ") {
     last.slice(0, last.len() - 4)
@@ -124,10 +124,10 @@
 /// -> str
 #let route-html-path(rel-typ) = {
   let clean = str(rel-typ).trim("/")
-  if clean == "index.typ" or clean == "site.typ" {
+  if clean == "index.typ" {
     "index.html"
-  } else if clean.ends-with("/index.typ") {
-    clean.slice(0, clean.len() - "/index.typ".len()) + "/index.html"
+  } else if clean.ends-with("/site.typ") {
+    clean.slice(0, clean.len() - "/site.typ".len()) + "/index.html"
   } else if clean.ends-with(".typ") {
     clean.slice(0, clean.len() - 4) + "/index.html"
   } else if clean.ends-with(".html") {
@@ -138,7 +138,7 @@
 }
 
 /// Compute the sibling Tadi Web `.typ` bundle path for any HTML document path:
-/// - `"index.html"` -> `"index.typ"`
+  /// - `"index.html"` -> `"site.typ"`
 /// - `"posts/impli/index.html"` -> `"posts/impli.typ"`
 /// - `"contact/index.html"` -> `"contact.typ"`
 /// -> str
@@ -149,7 +149,7 @@
 ) = {
   let clean = str(doc-path).trim("/")
   if clean == "index.html" {
-    "index.typ"
+    "site.typ"
   } else if clean.ends-with("/index.html") {
     clean.slice(0, clean.len() - "/index.html".len()) + ".typ"
   } else if clean.ends-with(".html") {
@@ -473,7 +473,13 @@
   }
 
   show ref: it => {
+    // Only emitted `document`/`asset` elements produce a real anchor. A mount marker
+    // (`#post(...)`) is plain `metadata` and cannot be linked in HTML mode, so fall
+    // back to unlinked text instead of failing with "failed to determine link anchor".
     let el = resolve-bundle-label(it.target)
+    if el != none and el.func() == metadata and target() != "bundle" {
+      el = none
+    }
     let custom-text = if it.supplement != auto and it.supplement != none {
       it.supplement
     } else {
@@ -514,6 +520,8 @@
         } else {
           humanize-slug(it.target)
         }
+        // Bundle mode: the mounted page's own `<document>` carries this label, so the
+        // marker's location resolves to that anchor.
         link(el.location(), label-text)
       } else if func == heading and el.numbering == none {
         let label-text = if custom-text != none {

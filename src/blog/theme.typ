@@ -41,11 +41,11 @@
     + family
     + "\";\n  src: url(\""
     + url
-    + "\") format(\"woff2\");\n  font-weight: "
+    + "\") format(\"woff2\");\n  font-weight: \""
     + str(weight)
-    + ";\n  font-style: "
+    + "\";\n  font-style: \""
     + style
-    + ";\n  font-display: swap;\n}"
+    + "\";\n  font-display: swap;\n}"
 )
 
 // Build deterministic `@font-face` rules without `local(...)` so OS-installed stripped
@@ -122,20 +122,20 @@
 /// _Helvetica Neue_ + _Commit Mono_ font stacks, and paged preview geometry.
 /// -> dictionary
 #let default-theme = (
-  paper-light: oklch(99%, 0, 0deg),
-  text-light: oklch(18%, 0, 0deg),
-  muted-light: oklch(52%, 0, 0deg),
-  border-light: oklch(89%, 0, 0deg),
-  frame-light: oklch(20%, 0, 0deg),
-  surface-1-light: oklch(96.5%, 0, 0deg),
-  surface-2-light: oklch(93.5%, 0, 0deg),
-  paper-dark: oklch(18%, 0, 0deg),
-  text-dark: oklch(93%, 0, 0deg),
-  muted-dark: oklch(65%, 0, 0deg),
-  border-dark: oklch(29%, 0, 0deg),
-  frame-dark: oklch(84%, 0, 0deg),
-  surface-1-dark: oklch(22%, 0, 0deg),
-  surface-2-dark: oklch(26%, 0, 0deg),
+  paper-light: oklch(94.9%, 0, 0deg),
+  text-light: oklch(10.1%, 0, 0deg),
+  muted-light: oklch(35.8%, 0, 0deg),
+  border-light: oklch(35.8%, 0, 0deg),
+  frame-light: oklch(10.1%, 0, 0deg),
+  surface-1-light: oklch(94.9%, 0, 0deg),
+  surface-2-light: oklch(85%, 0, 0deg),
+  paper-dark: oklch(6.2%, 0, 0deg),
+  text-dark: oklch(93.1%, 0, 0deg),
+  muted-dark: oklch(62.3%, 0, 0deg),
+  border-dark: oklch(62.3%, 0, 0deg),
+  frame-dark: oklch(93.1%, 0, 0deg),
+  surface-1-dark: oklch(6.2%, 0, 0deg),
+  surface-2-dark: oklch(15%, 0, 0deg),
   serif-fonts: (
     "STIX Two Text",
     "Libertinus Serif",
@@ -182,15 +182,15 @@
 }
 
 /// Resolve the active theme inside `context` (preferring any enclosing per-post
-/// `<blog-post-theme>` override over site-wide `<blog-site-cfg>`).
+/// `<blog-post-theme>` override over the site-wide `<site-cfg>`).
 /// -> dictionary
 #let active-theme() = {
   let post-themes = query(selector(<blog-post-theme>).before(here()))
   if post-themes.len() > 0 {
     post-themes.last().value
   } else {
-    let cfgs = query(<blog-site-cfg>)
-    if cfgs.len() > 0 {
+    let cfgs = query(<site-cfg>)
+    if cfgs.len() > 0 and cfgs.first().value.at("theme", default: none) != none {
       cfgs.first().value.theme
     } else {
       default-theme

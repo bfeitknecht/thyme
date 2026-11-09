@@ -1,5 +1,5 @@
 // Unopinionated, zero-CSS static site generator core (`site`, `webpage`, `mount`,
-// `raw-file`, `page-asset`, `query-pages`, `backlinks`).
+// `file`, `page-asset`, `query-pages`, `backlinks`).
 //
 // Designed both for custom static websites (`apex`-style portfolios, documentation,
 // Tadi Web sites) and as the single shared bundle engine underneath presets like `blog`.
@@ -69,9 +69,9 @@
   }
 }
 
-/// Declare a co-located file asset inline inside a page or post body
-/// (`#page-asset("diagram.svg", path("diagram.svg")) <diagram>`).
-/// -> content
+// Declare a co-located file asset inline inside a page or post body
+// (`#page-asset("diagram.svg", path("diagram.svg")) <diagram>`).
+// -> content
 #let page-asset(
   /// Relative filename inside the page's output directory.
   /// -> str
@@ -85,9 +85,9 @@
   data: if type(data) == path { read(data, encoding: none) } else { data },
 ))
 
-/// Emit a static file at an exact bundle root path (`#raw-file("pgp.txt", path("pgp.txt")) <pgp>`).
-/// -> content
-#let raw-file(
+// Emit a static file at an exact bundle root path (`#file("pgp.txt", path("pgp.txt")) <pgp>`).
+// -> content
+#let file(
   /// Bundle output path relative to the web root (e.g. `"age.txt"`, `"cv.pdf"`, `"assets/font.woff2"`).
   /// -> str
   out-path,
@@ -99,6 +99,17 @@
   path: str(out-path).trim("/"),
   data: if type(data) == path { read(data, encoding: none) } else { data },
 ))
+
+// Resolve the active site configuration inside `context`.
+//
+// `site()` publishes exactly one `<site-cfg>` dictionary per bundle: the shared core
+// keys (title, url, lang, ...) merged with any preset-specific keys (`theme`,
+// `posts-dir`, ...). Post and page renderers read that single dictionary.
+// -> dictionary | none
+#let site-config() = {
+  let found = query(<site-cfg>)
+  if found.len() > 0 { found.first().value } else { none }
+}
 
 // Shared AST extractors built on `src/tree.typ` (single traversal implementation).
 #let _is-mount-or-raw(c) = (
@@ -149,7 +160,7 @@
   descend: n => not _is-mount-or-raw(n),
 )
 
-// Deep container-preserving replacement of `#mount(...)` and `#raw-file(...)` markers inside `site.typ` body.
+// Deep container-preserving replacement of `#mount(...)` and `#file(...)` markers inside `site.typ` body.
 #let transform-mounts(c, render-fn) = map-containers(c, n => {
   if n.func() == metadata and type(n.value) == dictionary {
     if n.value.at("thyme-mounted", default: false) {
@@ -162,13 +173,13 @@
   auto
 })
 
-/// Mount a standalone `.typ` page into a `site` bundle using Typst 0.15's capability
-/// `path("...")` value (`#mount(path("contact.typ")) <contact>`).
-///
-/// Passing `path("...")` lets `thyme` simultaneously evaluate the page (`include p`),
-/// read its verbatim `.typ` source for Tadi Web inspection (`read(p)`), and infer its
-/// URL route (`contact/index.html`) — all with native `typst watch` dependency tracking.
-/// -> content
+// Mount a standalone `.typ` page into a `site` bundle using Typst 0.15's capability
+// `path("...")` value (`#mount(path("contact.typ")) <contact>`).
+//
+// Passing `path("...")` lets `thyme` simultaneously evaluate the page (`include p`),
+// read its verbatim `.typ` source for Tadi Web inspection (`read(p)`), and infer its
+// URL route (`contact/index.html`) — all with native `typst watch` dependency tracking.
+// -> content
 #let mount(
   /// Capability `path("...")` to the `.typ` file (or pre-evaluated `include "..."` content).
   /// -> path | content
@@ -250,10 +261,10 @@
   ))
 }
 
-/// Query public (non-draft, non-unlisted) pages/posts across the active bundle,
-/// optionally filtered by `collection`, `tag`, or `lang` and sorted newest-first.
-/// Must be called inside `context`.
-/// -> array
+// Query public (non-draft, non-unlisted) pages/posts across the active bundle,
+// optionally filtered by `collection`, `tag`, or `lang` and sorted newest-first.
+// Must be called inside `context`.
+// -> array
 #let query-pages(
   /// Optional collection filter (e.g. `"posts"`).
   /// -> str | none
@@ -303,10 +314,10 @@
   entries.sorted(key: p => p.sort-key).rev()
 }
 
-/// Render a compile-time backlinks list ("Referenced by") for the enclosing page/post
-/// (`target` defaults to `auto`, inferring the current page's slug). Emits nothing when
-/// zero public pages link to this page.
-/// -> content
+// Render a compile-time backlinks list ("Referenced by") for the enclosing page/post
+// (`target` defaults to `auto`, inferring the current page's slug). Emits nothing when
+// zero public pages link to this page.
+// -> content
 #let backlinks(
   /// Optional explicit target slug (`auto` infers from the enclosing bundle document).
   /// -> auto | str
@@ -578,7 +589,7 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
   body
 }
 
-/// Shared HTML5 document shell used by both `thyme` core (`site`, `webpage`) and presets (`blog`).
+// Shared HTML5 document shell used by both `thyme` core (`site`, `webpage`) and presets (`blog`).
 #let render-core-shell(
   title: [Site],
   site-title: none,
@@ -674,6 +685,9 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
           ..if favicon-type != none { (type: favicon-type) } else { (:) },
         )
       }
+      // Theme color meta tag (Light: #f2f2f2, Dark: #101010) for strict monochrome scheme
+      html.meta(name: "theme-color", content: "#f2f2f2", media: "(prefers-color-scheme: light)")
+      html.meta(name: "theme-color", content: "#101010", media: "(prefers-color-scheme: dark)")
       for css-p in stylesheet-paths {
         let p-str = str(css-p)
         let href = if p-str.starts-with("http://") or p-str.starts-with("https://") or p-str.starts-with("/") {
@@ -747,12 +761,12 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
   })
 }
 
-/// Generic, unopinionated HTML page template (`#show: webpage.with(title: ..., ...)`).
-///
-/// Sets per-page metadata (`title`, `description`, `created`, `modified`, `lang`, `tags`,
-/// `collection`) without imposing any opinionated stylesheet — while automatically
-/// inheriting the active `blog` stylesheet if mounted inside a `blog` site!
-/// -> content
+// Generic, unopinionated HTML page template (`#show: webpage.with(title: ..., ...)`).
+//
+// Sets per-page metadata (`title`, `description`, `created`, `modified`, `lang`, `tags`,
+// `collection`) without imposing any opinionated stylesheet — while automatically
+// inheriting the active `blog` stylesheet if mounted inside a `blog` site!
+// -> content
 #let webpage(
   /// Page title (`auto` infers from the first `= ...` heading in `body`).
   /// -> auto | content | str
@@ -858,7 +872,7 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
   [#metadata(meta-payload)<thyme-page-meta>]
 
   context {
-    let cfgs = query(<thyme-site-cfg>)
+    let cfgs = query(<site-cfg>)
     let site-cfg = if cfgs.len() > 0 { cfgs.first().value } else { none }
     let enc-doc = find-doc-containing(here())
     let doc-path = if enc-doc != none { enc-doc.path } else { none }
@@ -904,7 +918,9 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
       let src-label = if site-cfg != none { site-cfg.source-label } else { none }
       let src-href = if src-label != none { lookup-source-href(doc-path) } else { none }
       let sheet-paths = if site-cfg != none { site-cfg.at("stylesheet-paths", default: ()) } else { () }
-      let is-blog-site = query(<blog-site-cfg>).len() > 0
+      // A preset site (e.g. `blog`) styles its own top bar, so skip the built-in
+      // monochrome rules; plain core sites get them.
+      let is-preset-site = site-cfg != none and site-cfg.at("is-preset", default: false)
 
       render-core-shell(
         title: resolved-title,
@@ -916,7 +932,7 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
         langs: eff-langs,
         alternates: alternates,
         stylesheet-paths: sheet-paths,
-        include-core-topbar-css: not is-blog-site,
+        include-core-topbar-css: not is-preset-site,
         favicon-href: if site-cfg != none { site-cfg.at("favicon-href", default: none) } else { none },
         favicon-type: if site-cfg != none { site-cfg.at("favicon-type", default: none) } else { none },
         source-href: src-href,
@@ -952,8 +968,8 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
   }
 }
 
-/// Alias for `webpage`.
-/// -> function
+// Alias for `webpage`.
+// -> function
 #let route = webpage
 
 // Normalize a `#mount(...)` record into its concrete bundle path, slug, label, and source mapping.
@@ -1010,13 +1026,10 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
 /// Compiles a pure-Typst project into a multi-page static HTML bundle (`index.html`,
 /// mounted subpages, user stylesheets, static files, `404.html`, `sitemap.xml`, `robots.txt`,
 /// optional RSS/Atom feeds, and Tadi Web `.typ` plaintext source files) without any
-/// opinionated CSS or JavaScript runtime. Pass `preset: blog` (or `#import blog: *`)
+/// opinionated CSS or JavaScript runtime. Import `blog` and use `blog.site` (or `#import blog: *`)
 /// to activate the scholarly monochrome `blog` preset without import-order sensitivity.
 /// -> content
 #let site(
-  /// Optional preset module (e.g. `preset: blog`) to delegate site bundling without shadowing `site`.
-  /// -> module | dictionary | none
-  preset: none,
   /// Site title (`auto` infers from the first `= ...` heading in `body`, or pass any `str` / rich `content`).
   /// -> auto | content | str
   title: auto,
@@ -1044,10 +1057,10 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
   /// Additional static files `(path: "robots.txt", data: ..., label: none)` copied into the bundle root.
   /// -> array
   assets: (),
-  /// Capability `path("site.typ")` (or `str`) of the root entrypoint so Tadi Web source view can emit `/index.typ`.
+  /// Capability `path("site.typ")` (or `str`) of the root entrypoint so Tadi Web source view can emit `/site.typ`.
   /// -> path | str | none
   src: none,
-  /// Co-emit sibling `.typ` plaintext source files (`/index.typ`, `/<route>.typ`) and render a top-right link (`true` uses `".typ"`, `false` disables, or pass custom label `str`).
+  /// Co-emit sibling `.typ` plaintext source files (`/site.typ`, `/<route>.typ`) and render a top-right link (`true` uses `".typ"`, `false` disables, or pass custom label `str`).
   /// -> bool | str
   expose-source: true,
   /// Emit `404.html` (`true` emits a minimal root-relative 404 page, or pass custom `content`).
@@ -1092,47 +1105,11 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
   /// Extra preset-specific options forwarded when `preset != none` (and internal preset hooks).
   /// -> any
   ..extra,
-  /// Root homepage markup and `#mount(path(...))` / `#raw-file(...)` declarations.
+  /// Root homepage markup and `#mount(path(...))` / `#file(...)` declarations.
   /// -> content
   body,
 ) = {
   let ext = extra.named()
-  if preset != none {
-    let p-dict = if type(preset) == module {
-      dictionary(preset)
-    } else if type(preset) == dictionary {
-      preset
-    } else {
-      panic("`preset` must be a preset module (e.g. `preset: blog`).")
-    }
-    return (p-dict.at("site"))(
-      title: title,
-      description: description,
-      url: url,
-      author: author,
-      lang: lang,
-      alternates: alternates,
-      stylesheets: stylesheets,
-      favicon: favicon,
-      assets: assets,
-      src: src,
-      expose-source: expose-source,
-      not-found-page: not-found-page,
-      sitemap-path: sitemap-path,
-      robots: robots,
-      ..if rss-path != none { (rss-path: rss-path) } else { (:) },
-      ..if atom-path != none { (atom-path: atom-path) } else { (:) },
-      feed-content: feed-content,
-      feed-epoch: feed-epoch,
-      heading-permalinks: heading-permalinks,
-      backlinks: backlinks,
-      open-graph: open-graph,
-      scholar-meta: scholar-meta,
-      head: head,
-      ..ext,
-      body,
-    )
-  }
 
   // Internal preset composition hooks (used by `blog.site` so bundle assembly lives in one place)
   let shell-hook = ext.at("_shell-fn", default: none)
@@ -1141,7 +1118,6 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
   let default-route-hook = ext.at("_default-route-fn", default: none)
   let extra-docs-hook = ext.at("_extra-docs-fn", default: none)
   let feed-collection = ext.at("_feed-collection", default: none)
-  let extra-metadata = ext.at("_extra-metadata", default: [])
   let paged-fallback-hook = ext.at("_paged-fallback-fn", default: none)
   let default-title = ext.at("_default-title", default: [Site])
 
@@ -1228,9 +1204,11 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
     backlinks: backlinks,
     open-graph: open-graph,
     scholar-meta: scholar-meta,
+    // A preset (e.g. `blog`) contributes extra keys and its own top-bar styling.
+    is-preset: ext.at("_preset-cfg", default: none) != none,
+    ..ext.at("_preset-cfg", default: (:)),
   )
-  extra-metadata
-  [#metadata(site-cfg)<thyme-site-cfg>]
+  [#metadata(site-cfg)<site-cfg>]
 
   let body-mounts = extract-mounts(body)
   let body-raw-files = extract-raw-files(body)
@@ -1279,7 +1257,7 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
       }
 
       if root-raw-source != none {
-        emit-bundle-asset("index.typ", root-raw-source, lbl: <source>)
+        emit-bundle-asset("site.typ", root-raw-source, lbl: <source>)
       }
       for m in all-mounts {
         if source-label != none and m.raw-source != none {
@@ -1287,7 +1265,7 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
         }
       }
 
-      let home-src-href = if root-raw-source != none { "index.typ" } else { none }
+      let home-src-href = if root-raw-source != none { "site.typ" } else { none }
 
       [#document(
         "index.html",

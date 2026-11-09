@@ -184,7 +184,7 @@
 }
 
 /// Scholarly monochrome blog bundler (`#show: site.with(...)` after `#import blog: *`,
-/// `#show: blog-site.with(...)`, or `#show: site.with(preset: blog, ...)`).
+/// or `#show: blog.site.with(...)`).
 ///
 /// Renders `site.typ`'s body as `index.html` (`<site>`), emits every mounted
 /// `#post(path("posts/foo.typ")) <foo>` as `<posts-dir>/foo/index.html` (`<foo>`) and any
@@ -194,9 +194,6 @@
 /// and `atom.xml` (`<atom>`).
 /// -> content
 #let site(
-  /// Ignored compatibility parameter so `site.with(preset: blog, ...)` works regardless of import order.
-  /// -> any
-  preset: none,
   /// Site title (`auto` infers from the first `= ...` heading in `body`, or pass any `str` / rich `content`).
   /// -> auto | content | str
   title: auto,
@@ -224,10 +221,10 @@
   /// Output directory prefix for static tag archive pages (`tags/<tag>/index.html`).
   /// -> str
   tags-dir: "tags",
-  /// Capability `path("site.typ")` (or `str`) of the root entrypoint so Tadi Web source view emits `/index.typ`.
+  /// Capability `path("site.typ")` (or `str`) of the root entrypoint so Tadi Web source view emits `/site.typ`.
   /// -> path | str | none
   src: none,
-  /// Co-emit sibling `.typ` plaintext source files (`/index.typ`, `/posts/<slug>.typ`) and render a top-right `.typ` link (`true` uses `".typ"`, `false` disables, or pass custom label `str`).
+  /// Co-emit sibling `.typ` plaintext source files (`/site.typ`, `/posts/<slug>.typ`) and render a top-right `.typ` link (`true` uses `".typ"`, `false` disables, or pass custom label `str`).
   /// -> bool | str
   expose-source: true,
   /// Additional user stylesheets (`path("extra.css")`) appended after `css/style.css`.
@@ -287,7 +284,7 @@
   /// Theme overrides merged onto `default-theme` across both HTML CSS and paged previews.
   /// -> dictionary
   theme: (:),
-  /// Homepage markup (`= Heading`, `#links-row(...)`, and mounted `#post(path("...")) <slug>` entries).
+  /// Homepage markup (`= Heading`, `#links(direction: "row", ...)`, and mounted `#post(path("...")) <slug>` entries).
   /// -> content
   body,
 ) = {
@@ -375,7 +372,7 @@
     head: head,
     _default-title: [Blog],
     _feed-collection: "posts",
-    _extra-metadata: [#metadata(blog-cfg)<blog-site-cfg>],
+    _preset-cfg: blog-cfg,
     _default-route-fn: default-route,
     _mount-card-fn: rec => _render-mounted-entry(
       rec,
