@@ -10,9 +10,9 @@
 | :---: | :---: |
 | ![Light preview](assets/preview-light.png) | ![Dark preview](assets/preview-dark.png) |
 
-`thyme` turns Typst `0.15+`'s native `bundle` and typed `html` targets into a complete static site generator — driven **100% by the standard `typst` CLI** (`typst compile` & `typst watch`) with **zero external wrapper CLIs** and **zero client-side JavaScript frameworks**.
+`thyme` builds static sites from Typst's native `bundle` and typed `html` targets. The standard `typst` CLI does the work: `typst compile` and `typst watch` need no wrapper CLI and no client-side JavaScript.
 
-Use the **unopinionated zero-CSS core** (`#import "@preview/thyme:0.1.0": *`) to build custom static sites and portfolios with your own stylesheet, or activate the batteries-included **monochrome scholarly `blog` preset** (`#import "@preview/thyme:0.1.0": blog` then `#show: blog.site.with(...)`) with native MathML, right-margin sidenotes & citations, static `/tags/` archives, bidirectional backlinks, Obsidian frontmatter, theorem/proof environments, and print-first two-column `@media print` preservation.
+The core is zero-CSS and unopinionated. Import it (`#import "@preview/thyme:0.1.0": *`) to build a site with your own stylesheet. The `blog` preset adds a monochrome scholarly theme: native MathML, right-margin sidenotes and citations, static `/tags/` archives, backlinks, Obsidian frontmatter, theorem and proof environments, and two-column print output.
 
 ---
 
@@ -120,18 +120,18 @@ headers = { Content-Type = "text/plain; charset=utf-8", Content-Disposition = "i
 
 `thyme` follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Because Typst packages
 are pinned per-version (`@preview/thyme:0.1.0`), upgrading is always an explicit, reviewable change
-in your `typst.toml`-adjacent imports — nothing is fetched at compile time beyond the version you
+in the imports next to `typst.toml`. Nothing is fetched at compile time beyond the version you
 name.
 
 What the version number promises:
 
 | Surface | Guarantee |
 | :--- | :--- |
-| Names re-exported by `#import "@preview/thyme:0.1.0": *` | **Stable** across `0.x` patch releases; renamed only in a minor release, with the old name gone (no deprecation aliases — see below). |
+| Names re-exported by `#import "@preview/thyme:0.1.0": *` | **Stable** across `0.x` patch releases; renamed only in a minor release, with the old name gone (no deprecation aliases; see below). |
 | Names re-exported by `#import blog: *` | Same as above. |
 | Named arguments of `site`, `blog.site`, `webpage`, `post`, `mount`, `file`, `page-asset` | **Stable** across patch releases. Additive parameters are non-breaking. |
 | Emitted file layout (`index.html`, `404.html`, `.typ` siblings, `sitemap.xml`, `robots.txt`, `rss.xml`, `atom.xml`, `tags/`) | **Stable**; new optional outputs only behind opt-in options. |
-| CSS class names (`blog-*`, `thyme-*`) | Treat as **semi-public** — used for theming/styling, so changes ship with a CHANGELOG note. |
+| CSS class names (`blog-*`, `thyme-*`) | Treat as **semi-public**. They are used for theming and styling, so a change ships with a CHANGELOG note. |
 | Anything prefixed `_` in `src/` | **Private**. No guarantee; may change in any release. |
 
 ### Deliberately no deprecation aliases
@@ -144,27 +144,27 @@ rename a non-event for anyone who is not actively upgrading.
 
 ### Releasing
 
-Publishing a version is `just release vX.Y.Z`. It validates the tag against `typst.toml` and
-`CHANGELOG.md`, runs the full gate, regenerates `docs/manual.pdf` and `thumbnail.png`, then
-commits and pushes the tag — which drives `.github/workflows/release.yaml` to publish a GitHub
-Release with `docs/manual.pdf` attached and open the Typst Universe PR.
+To publish a version, run `just release vX.Y.Z`. The recipe checks the tag against `typst.toml`
+and `CHANGELOG.md` and runs the full gate. It then rebuilds `docs/manual.pdf` and
+`thumbnail.png`, commits, and pushes the tag. The tag starts
+`.github/workflows/release.yaml`, which publishes a GitHub Release with `docs/manual.pdf`
+attached and opens the Typst Universe PR.
 
-The ordered, actionable sequence — including the gate that has to be opened first and the
-things to check on the upstream PR — is [`docs/release-checklist.md`](docs/release-checklist.md).
+The ordered sequence, including the gate that must open first and the checks to run on the
+upstream PR, is in [`docs/release-checklist.md`](docs/release-checklist.md).
 
 ### Freezing a downstream
 
 To stabilise a site against upstream churn, pin the exact patch version and let CI hold it:
 
 ```typ
-// site.typ — pinned; bump deliberately, never implicitly
+// site.typ: pinned; bump it explicitly
 #import "@preview/thyme:0.1.0": *
 ```
 
-`just check` verifies the whole repository — all three example sites, the unit tests and the
-manual — against the pinned compiler from `typst.toml`, so a dependency bump is a single PR that
-either goes fully green or does not merge. It reads and reports; it never writes, so a clean
-`git status` after a run is guaranteed rather than lucky.
+`just check` verifies the whole repository: the three example sites, the unit tests and the
+manual. It uses the compiler version pinned in `typst.toml`. A dependency bump is therefore one
+PR that passes or does not merge. The recipe does not write to the worktree.
 
 ### Hacking on thyme
 
@@ -176,7 +176,8 @@ just check         # the full gate; read-only, writes nothing
 just preview       # template/ + examples/ into a browsable preview/
 ```
 
-`typstyle` is not part of the Typst CLI — `cargo install typstyle --version 0.15.1 --locked`.
+`typstyle` is not part of the Typst CLI. Install it with
+`cargo install typstyle --version 0.15.1 --locked`.
 The CI setup action pins the same version, so local and CI formatting cannot drift.
 
 Releasing is one command, with a read-only mode so you can validate before you tag:
@@ -191,11 +192,11 @@ just release --notes           # the CHANGELOG section, as CI publishes it
 
 ## Documentation & Examples
 
-- **[API Surface (`docs/api.md`)](docs/api.md)** — the complete exported surface, core and `blog` preset, grouped by purpose.
-- **[Package Reference Manual (`docs/manual.pdf`)](docs/manual.pdf)** — complete API documentation generated from source doc-comments with `@preview/tidy:0.4.3`.
-- **[`template/`](template)** — starter monochrome blog (`typst init @preview/thyme:0.1.0`).
-- **[`examples/portfolio/`](examples/portfolio)** — zero-CSS core `thyme` site using custom `styles.css`, `htm`, `h`, `#tr(en: ..., de: ...)`, `file`, and `webpage`.
-- **[`examples/blog/`](examples/blog)** — unified `blog.site` showcase featuring bilingual `en`/`de` switching (`#tr(...)` + `lang.toml`), co-located folder assets (`posts/state-machine/{site.typ,dfa.svg}`), mounted `webpage` subpages (`about.typ`), full-HTML Atom/RSS feeds, static `/tags/` archives, `#toc()`, `#mcite(...)` margin citations, compile-time backlinks, chronological post navigation, and OpenGraph + Google Scholar `<meta>` tags.
+- **[API Surface (`docs/api.md`)](docs/api.md)**: the exported surface of the core and the `blog` preset, grouped by purpose.
+- **[Package Reference Manual (`docs/manual.pdf`)](docs/manual.pdf)**: API documentation generated from source doc-comments with `@preview/tidy:0.4.3`.
+- **[`template/`](template)**: starter monochrome blog (`typst init @preview/thyme:0.1.0`).
+- **[`examples/portfolio/`](examples/portfolio)**: zero-CSS core `thyme` site using a custom `styles.css`, plus `htm`, `h`, `#tr(en: ..., de: ...)`, `file` and `webpage`.
+- **[`examples/blog/`](examples/blog)**: a `blog.site` showcase with bilingual `en`/`de` switching (`#tr(...)` and `lang.toml`), co-located folder assets (`posts/state-machine/{site.typ,dfa.svg}`), mounted `webpage` subpages (`about.typ`), full-HTML Atom and RSS feeds, static `/tags/` archives, `#toc()`, `#mcite(...)` margin citations, compile-time backlinks, post navigation, and OpenGraph and Google Scholar `<meta>` tags.
 
 ---
 
