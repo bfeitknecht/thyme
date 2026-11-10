@@ -6,7 +6,7 @@
 #import "../core.typ": render-core-shell
 #import "../paths.typ": with-smart-refs
 #import "../text.typ": to-plain-text
-#import "theme.typ": css-hex, stylesheet-css, default-theme, stylesheet-href
+#import "theme.typ": css-hex, default-theme, stylesheet-css, stylesheet-href
 
 /// Minimal event-delegated copy-button handler for `zebraw` code listings.
 #let clipboard-script = "document.addEventListener('click', (ev) => {
@@ -128,7 +128,10 @@
     body-wrapper: inner => {
       show: zebraw-init
       show: checklist
-      show: with-smart-refs.with(ink: theme-config.text-light, muted: theme-config.muted-light)
+      show: with-smart-refs.with(
+        ink: theme-config.text-light,
+        muted: theme-config.muted-light,
+      )
       inner
     },
     wrap-main: true,
@@ -152,7 +155,10 @@
   html.html(lang: lang, {
     html.head({
       html.meta(charset: "utf-8")
-      html.meta(name: "viewport", content: "width=device-width, initial-scale=1")
+      html.meta(
+        name: "viewport",
+        content: "width=device-width, initial-scale=1",
+      )
       html.meta(name: "robots", content: "noindex")
       html.title("404 - " + to-plain-text(site-title, lang: lang))
       html.meta(
@@ -167,7 +173,11 @@
       )
       for css-p in sheets {
         let p-str = str(css-p)
-        let href = if p-str.starts-with("http://") or p-str.starts-with("https://") or p-str.starts-with("/") {
+        let href = if (
+          p-str.starts-with("http://")
+            or p-str.starts-with("https://")
+            or p-str.starts-with("/")
+        ) {
           p-str
         } else {
           "/" + p-str.trim("/")

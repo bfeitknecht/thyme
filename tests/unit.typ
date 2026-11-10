@@ -4,12 +4,18 @@
 #import "../src/paths.typ": heading-anchor-id
 #import "../src/htm.typ": _tokenize-htm
 #import "../src/text.typ": query-body-words
-#import "../src/blog/theme.typ": css-hex, stylesheet-css, theme-override-css, default-woff2-files, stylesheet-href
+#import "../src/blog/theme.typ": (
+  css-hex, default-woff2-files, stylesheet-css, stylesheet-href,
+  theme-override-css,
+)
 #import "../src/blog/notes.typ": is-sidenote-link
 #import "@preview/exemel:0.3.0": format-rfc3339, rss-encode, rss-post
 
 // 1. Plain-text & word-count invariants (`smartquote`, fenced raw exclusion, `#tr(...)` primary branch)
-#assert.eq(to-plain-text([Hilbert's "Basis" Theorem]), "Hilbert's \"Basis\" Theorem")
+#assert.eq(
+  to-plain-text([Hilbert's "Basis" Theorem]),
+  "Hilbert's \"Basis\" Theorem",
+)
 #assert.eq(count-words([Hilbert's don't state-of-the-art]), 3)
 #assert.eq(
   count-words([
@@ -22,7 +28,10 @@
   5,
 )
 #assert.eq(
-  count-words(tr(en: [Four English words here.], de: [Sechs deutsche Wörter stehen genau hier.])),
+  count-words(tr(
+    en: [Four English words here.],
+    de: [Sechs deutsche Wörter stehen genau hier.],
+  )),
   4,
 )
 #assert.eq(
@@ -64,30 +73,52 @@
 // `css-hex` must emit a well-formed lowercase #rrggbb for any theme colour.
 #assert.eq(css-hex(rgb("#f2f2f2")), "#f2f2f2")
 #assert.eq(css-hex(rgb("#000000")), "#000000")
-#assert.eq(css-hex(default-theme.paper-light), css-hex(default-theme.paper-light))
+#assert.eq(css-hex(default-theme.paper-light), css-hex(
+  default-theme.paper-light,
+))
 #assert.eq(css-hex(default-theme.text-light).len(), 7)
 
 // `theme-color` must follow the *active* theme, not a pinned hex. A preset that resolves
 // its own theme and then drops it on the way to the shell would emit the default here.
-#let _probe-theme = default-theme + (paper-light: oklch(50%, 0, 0deg), paper-dark: oklch(30%, 0, 0deg))
+#let _probe-theme = (
+  default-theme
+    + (paper-light: oklch(50%, 0, 0deg), paper-dark: oklch(30%, 0, 0deg))
+)
 #assert.eq(css-hex(_probe-theme.paper-light), "#636363")
 #assert.eq(css-hex(_probe-theme.paper-dark), "#2e2e2e")
-#assert.ne(css-hex(_probe-theme.paper-light), css-hex(default-theme.paper-light))
+#assert.ne(css-hex(_probe-theme.paper-light), css-hex(
+  default-theme.paper-light,
+))
 
 // `robots.txt` is a documented, exported feature; make sure it is actually emitted and
 // points at the sitemap (it was exported but never called for a while).
-#let _robots = robots-txt(site-url: "https://example.org", sitemap-path: "sitemap.xml")
-#assert.eq(_robots, "User-agent: *\nAllow: /\n\nSitemap: https://example.org/sitemap.xml\n")
+#let _robots = robots-txt(
+  site-url: "https://example.org",
+  sitemap-path: "sitemap.xml",
+)
+#assert.eq(
+  _robots,
+  "User-agent: *\nAllow: /\n\nSitemap: https://example.org/sitemap.xml\n",
+)
 #assert.eq(
   robots-txt(site-url: "https://example.org/", sitemap-path: none),
   "User-agent: *\nAllow: /\n",
 )
 
 #assert.eq(source-path-for("posts/foo/index.html"), "posts/foo.typ")
-#assert.eq(canonical-page-url("https://blog.example.org", "posts/foo/index.html"), "https://blog.example.org/posts/foo/")
-#let alts = normalize-alternates((de: "/de/posts/foo/", fr: "https://fr.example.org/foo/"), site-url: "https://example.org")
+#assert.eq(
+  canonical-page-url("https://blog.example.org", "posts/foo/index.html"),
+  "https://blog.example.org/posts/foo/",
+)
+#let alts = normalize-alternates(
+  (de: "/de/posts/foo/", fr: "https://fr.example.org/foo/"),
+  site-url: "https://example.org",
+)
 #assert.eq(alts.len(), 2)
-#assert.eq(alts.at(0), (hreflang: "de", href: "https://example.org/de/posts/foo/"))
+#assert.eq(alts.at(0), (
+  hreflang: "de",
+  href: "https://example.org/de/posts/foo/",
+))
 #assert.eq(alts.at(1), (hreflang: "fr", href: "https://fr.example.org/foo/"))
 
 // 4. Full-HTML feed serializer (`content-to-feed-html` with `label-urls` + `table`)
@@ -111,15 +142,32 @@
 )
 #assert(feed-frag.contains("<h2>First Section</h2>"))
 #assert(feed-frag.contains("Hilbert’s ring"))
-#assert(feed-frag.contains("<a href=\"https://notes.example.org/posts/bar/\">rel link</a>"))
-#assert(feed-frag.contains("<a href=\"https://notes.example.org/about/\">About</a>"))
+#assert(
+  feed-frag.contains(
+    "<a href=\"https://notes.example.org/posts/bar/\">rel link</a>",
+  ),
+)
+#assert(
+  feed-frag.contains("<a href=\"https://notes.example.org/about/\">About</a>"),
+)
 #assert(feed-frag.contains("<ul><li>alpha</li><li>beta</li></ul>"))
-#assert(feed-frag.contains("<table><thead><tr><th>Op</th><th>Complexity</th></tr></thead><tbody><tr><td>Lookup</td><td><code>O(1)</code></td></tr></tbody></table>"))
+#assert(
+  feed-frag.contains(
+    "<table><thead><tr><th>Op</th><th>Complexity</th></tr></thead><tbody><tr><td>Lookup</td><td><code>O(1)</code></td></tr></tbody></table>",
+  ),
+)
 #assert(feed-frag.contains("<strong>Theorem.</strong>"))
 #assert(feed-frag.contains("<p>◻</p>"))
 
 // 5. `exemel` RFC 3339, `smartquote` preservation, & RSS `updated: auto` `<lastBuildDate>` inference
-#let dt = datetime(year: 2026, month: 10, day: 30, hour: 14, minute: 5, second: 0)
+#let dt = datetime(
+  year: 2026,
+  month: 10,
+  day: 30,
+  hour: 14,
+  minute: 5,
+  second: 0,
+)
 #assert.eq(format-rfc3339(dt), "2026-10-30T14:05:00Z")
 #assert.eq(format-rfc3339(dt, tz: "+01:00"), "2026-10-30T14:05:00+01:00")
 #assert.eq(format-rfc3339(dt, tz: "+0200"), "2026-10-30T14:05:00+02:00")
@@ -128,7 +176,15 @@
   site-link: "https://example.org/",
   updated: auto,
   tz: "+0100",
-  posts: (rss-post([Noether's Ring], link: "https://example.org/p/", is-permalink: false, published: dt, tz: "+0100"),),
+  posts: (
+    rss-post(
+      [Noether's Ring],
+      link: "https://example.org/p/",
+      is-permalink: false,
+      published: dt,
+      tz: "+0100",
+    ),
+  ),
 )
 #assert(rss-str.contains("Hilbert&apos;s &quot;Notes&quot;"))
 #assert(rss-str.contains("Noether&apos;s Ring"))
@@ -149,7 +205,10 @@
   set text(lang: "de")
   context {
     if target() == "paged" {
-      let w-tr = measure(tr(en: [HI], de: [GERMAN_BRANCH_ACTIVE_LONG_STRING])).width
+      let w-tr = measure(tr(
+        en: [HI],
+        de: [GERMAN_BRANCH_ACTIVE_LONG_STRING],
+      )).width
       let w-en = measure([HI]).width
       assert(w-tr > w-en * 4)
     }
@@ -185,11 +244,16 @@
 #let cdn-css = stylesheet-css()
 #assert(not cdn-css.contains("local("))
 #assert(cdn-css.contains("commit-mono-latin-700-italic.woff2"))
-#let self-css = stylesheet-css(theme: (font-base: "/fonts/", font-version: "2.13b171-1.143"))
+#let self-css = stylesheet-css(theme: (
+  font-base: "/fonts/",
+  font-version: "2.13b171-1.143",
+))
 #assert(not self-css.contains("local(") and not self-css.contains("jsdelivr"))
 #assert(self-css.contains("/fonts/STIXTwoText-Regular.woff2?v=2.13b171-1.143"))
 #assert(self-css.contains("/fonts/STIXTwoMath-Regular.woff2?v=2.13b171-1.143"))
-#assert(self-css.contains("/fonts/CommitMono-700-Italic.woff2?v=2.13b171-1.143"))
+#assert(
+  self-css.contains("/fonts/CommitMono-700-Italic.woff2?v=2.13b171-1.143"),
+)
 #assert.ne(
   stylesheet-href(theme: (font-base: "/fonts/", font-version: "1")),
   stylesheet-href(theme: (font-base: "/fonts/", font-version: "2")),
@@ -205,6 +269,15 @@
 #assert(not is-sidenote-link([ordinary link text]))
 
 // 10. Multi-line `htm(...)` preserves inter-word spaces across line breaks adjacent to inline tags
-#let parsed-inline = _tokenize-htm("<p>\n  <a href=\"#a\">alpha</a>\n  or\n  <a href=\"#b\">beta</a>\n</p>", (:), ())
-#assert.eq(parsed-inline.prose-pieces.map(to-plain-text).join(), "alpha or beta")
-#htm("<p class=\"multiline-inline\">\n  <a href=\"#a\">alpha</a>\n  or\n  <a href=\"#b\">beta</a>\n</p>")
+#let parsed-inline = _tokenize-htm(
+  "<p>\n  <a href=\"#a\">alpha</a>\n  or\n  <a href=\"#b\">beta</a>\n</p>",
+  (:),
+  (),
+)
+#assert.eq(
+  parsed-inline.prose-pieces.map(to-plain-text).join(),
+  "alpha or beta",
+)
+#htm(
+  "<p class=\"multiline-inline\">\n  <a href=\"#a\">alpha</a>\n  or\n  <a href=\"#b\">beta</a>\n</p>",
+)

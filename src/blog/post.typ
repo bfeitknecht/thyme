@@ -5,34 +5,23 @@
 #import "@preview/cheq:0.4.0": checklist
 #import "@preview/zebraw:0.6.3": zebraw-init
 #import "../core.typ": (
-  backlinks,
-  extract-page-assets,
-  extract-page-meta,
-  lookup-source-href,
-  mount,
-  normalize-assets,
-  page-asset,
-  query-doc-tr-codes,
-  query-pages,
-  render-top-bar,
+  backlinks, extract-page-assets, extract-page-meta, lookup-source-href, mount,
+  normalize-assets, page-asset, query-doc-tr-codes, query-pages, render-top-bar,
   site-config,
 )
 #import "../i18n.typ": resolve-page-langs
 #import "../paths.typ": (
-  date-sort-key,
-  find-doc-containing,
-  format-date,
-  join-path,
-  rel-href,
-  slug-from-path,
-  slugify,
-  with-html-headings,
-  with-smart-refs,
+  date-sort-key, find-doc-containing, format-date, join-path, rel-href,
+  slug-from-path, slugify, with-html-headings, with-smart-refs,
 )
 #import "../text.typ": count-words, estimate-reading-minutes, query-body-words
 #import "html.typ": render-html-shell
-#import "notes.typ": is-sidenote-link, reset-sidenotes, sidenote, sidenote-bottom-guard
-#import "theme.typ": active-theme, theme-override-css, default-theme, resolve-theme
+#import "notes.typ": (
+  is-sidenote-link, reset-sidenotes, sidenote, sidenote-bottom-guard,
+)
+#import "theme.typ": (
+  active-theme, default-theme, resolve-theme, theme-override-css,
+)
 
 #let _paged-sec-counter = counter("blog/paged-sec")
 
@@ -66,7 +55,9 @@
   }
   // `all-posts` is sorted newest-first: `idx - 1` is newer, `idx + 1` is older
   let newer = if idx > 0 { all-posts.at(idx - 1) } else { none }
-  let older = if idx + 1 < all-posts.len() { all-posts.at(idx + 1) } else { none }
+  let older = if idx + 1 < all-posts.len() { all-posts.at(idx + 1) } else {
+    none
+  }
   if older == none and newer == none {
     return []
   }
@@ -97,14 +88,23 @@
     grid(
       columns: (1fr, 1fr),
       align: (left, right),
-      if older != none { link(older.doc-loc, older-label + [ ] + older.title) } else { [] },
-      if newer != none { link(newer.doc-loc, newer.title + [ ] + newer-label) } else { [] },
+      if older != none {
+        link(older.doc-loc, older-label + [ ] + older.title)
+      } else { [] },
+      if newer != none {
+        link(newer.doc-loc, newer.title + [ ] + newer-label)
+      } else { [] },
     )
   }
 }
 
 // Apply theme-driven `oklch` monochrome typography to paged previews.
-#let style-paged-article(theme-config, lang: "en", numbered-headings: true, body) = {
+#let style-paged-article(
+  theme-config,
+  lang: "en",
+  numbered-headings: true,
+  body,
+) = {
   set text(
     font: theme-config.serif-fonts,
     size: theme-config.font-size,
@@ -135,14 +135,22 @@
   )
 
   show link: it => {
-    if type(it.dest) in (str, location, label) and not is-sidenote-link(it.body) {
-      underline(stroke: 0.5pt + theme-config.muted-light, offset: 2pt, text(fill: theme-config.text-light, it))
+    if (
+      type(it.dest) in (str, location, label) and not is-sidenote-link(it.body)
+    ) {
+      underline(stroke: 0.5pt + theme-config.muted-light, offset: 2pt, text(
+        fill: theme-config.text-light,
+        it,
+      ))
     } else {
       it
     }
   }
 
-  show heading: set text(font: theme-config.serif-fonts, fill: theme-config.text-light)
+  show heading: set text(
+    font: theme-config.serif-fonts,
+    fill: theme-config.text-light,
+  )
   show heading.where(level: 1): it => {
     if numbered-headings {
       _paged-sec-counter.step()
@@ -187,14 +195,21 @@
       emph(text(fill: theme-config.muted-light, it.body))
       if it.attribution != none {
         v(0.3em)
-        align(right, text(font: theme-config.mono-fonts, size: 0.78em, fill: theme-config.muted-light, "- " + it.attribution))
+        align(right, text(
+          font: theme-config.mono-fonts,
+          size: 0.78em,
+          fill: theme-config.muted-light,
+          "- " + it.attribution,
+        ))
       }
     },
   )
 
   set table(
     stroke: (_, y) => (
-      top: if y == 0 { 1pt + theme-config.text-light } else if y == 1 { 0.6pt + theme-config.text-light } else { none },
+      top: if y == 0 { 1pt + theme-config.text-light } else if y == 1 {
+        0.6pt + theme-config.text-light
+      } else { none },
       bottom: 1pt + theme-config.text-light,
     ),
     inset: (x: 0.65em, y: 0.46em),
@@ -318,11 +333,24 @@
   body,
 ) = {
   if title == auto and type(body) == std.path {
-    return mount(body, slug: slug, route: path, collection: "posts", assets: assets)
+    return mount(
+      body,
+      slug: slug,
+      route: path,
+      collection: "posts",
+      assets: assets,
+    )
   }
   let detected-meta = if title == auto { extract-page-meta(body) } else { none }
   if detected-meta != none {
-    return mount(body, slug: slug, route: path, collection: "posts", assets: assets, src: src)
+    return mount(
+      body,
+      slug: slug,
+      route: path,
+      collection: "posts",
+      assets: assets,
+      src: src,
+    )
   }
 
   let title = if title == auto { [Untitled Post] } else { title }
@@ -333,7 +361,12 @@
   let modified-str = format-date(eff-modified)
   let base-words = count-words(body)
   let norm-assets = normalize-assets(assets) + extract-page-assets(body)
-  let initial-langs = resolve-page-langs(lang, scan-nodes: (title, subtitle, summary, body))
+  let initial-langs = resolve-page-langs(lang, scan-nodes: (
+    title,
+    subtitle,
+    summary,
+    body,
+  ))
 
   let meta-payload = (
     title: title,
@@ -366,9 +399,13 @@
   reset-sidenotes()
   _paged-sec-counter.update(0)
 
-  set footnote.entry(separator: if footnotes-as-sidenotes { none } else { line(length: 30%, stroke: 0.5pt) })
+  set footnote.entry(separator: if footnotes-as-sidenotes { none } else {
+    line(length: 30%, stroke: 0.5pt)
+  })
   show footnote.entry: it => if footnotes-as-sidenotes { none } else { it }
-  show footnote: fn => if footnotes-as-sidenotes { sidenote(fn.body) } else { fn }
+  show footnote: fn => if footnotes-as-sidenotes { sidenote(fn.body) } else {
+    fn
+  }
   show cite.where(form: "normal"): it => if citations-as-sidenotes {
     sidenote({
       cite(it.key, form: "full")
@@ -383,9 +420,13 @@
     let doc-path = if enc-doc != none { enc-doc.path } else { none }
     // Merged preset + core site metadata (preset keys win).
     let site-config = site-config()
-    let base-theme = if site-config != none { site-config.theme } else { default-theme }
+    let base-theme = if site-config != none { site-config.theme } else {
+      default-theme
+    }
     let has-post-theme = theme != none and theme != (:)
-    let merged-theme = resolve-theme(base-theme + (if has-post-theme { theme } else { (:) }))
+    let merged-theme = resolve-theme(
+      base-theme + (if has-post-theme { theme } else { (:) }),
+    )
     let site-title = if site-config != none { site-config.title } else { none }
     let site-url = if site-config != none { site-config.url } else { none }
     let site-lang = if site-config != none { site-config.lang } else { "en" }
@@ -445,8 +486,14 @@
     } else {
       false
     }
-    let link-tags = site-config != none and site-config.at("tag-pages", default: false) and doc-path != none
-    let tags-dir = if site-config != none { site-config.at("tags-dir", default: "tags") } else { "tags" }
+    let link-tags = (
+      site-config != none
+        and site-config.at("tag-pages", default: false)
+        and doc-path != none
+    )
+    let tags-dir = if site-config != none {
+      site-config.at("tags-dir", default: "tags")
+    } else { "tags" }
 
     let has-props = (
       eff-author != none
@@ -468,8 +515,12 @@
       } else {
         none
       }
-      let src-label = if site-config != none { site-config.at("source-label", default: none) } else { none }
-      let src-href = if src-label != none { lookup-source-href(doc-path) } else { none }
+      let src-label = if site-config != none {
+        site-config.at("source-label", default: none)
+      } else { none }
+      let src-href = if src-label != none {
+        lookup-source-href(doc-path)
+      } else { none }
       let sheet-paths = if site-config != none {
         site-config.at("stylesheet-paths", default: auto)
       } else {
@@ -493,8 +544,12 @@
         alternates: alternates,
         stylesheet-paths: sheet-paths,
         theme-override-css: theme-override-css,
-        favicon-href: if site-config != none { site-config.at("favicon-href", default: none) } else { none },
-        favicon-type: if site-config != none { site-config.at("favicon-type", default: none) } else { none },
+        favicon-href: if site-config != none {
+          site-config.at("favicon-href", default: none)
+        } else { none },
+        favicon-type: if site-config != none {
+          site-config.at("favicon-type", default: none)
+        } else { none },
         source-href: src-href,
         source-label: src-label,
         theme-config: merged-theme,
@@ -510,7 +565,9 @@
         extra-head: head,
         {
           html.article(
-            ..if numbered-headings { (class: "numbered-sections") } else { (:) },
+            ..if numbered-headings { (class: "numbered-sections") } else {
+              (:)
+            },
             {
               render-top-bar(
                 back-content: back-node,
@@ -537,18 +594,35 @@
                     }
                     if created-str != none {
                       html.dt("created")
-                      html.dd(html.elem("time", attrs: (datetime: created-str), created-str))
+                      html.dd(html.elem(
+                        "time",
+                        attrs: (datetime: created-str),
+                        created-str,
+                      ))
                     }
                     if modified-str != none {
                       html.dt("modified")
-                      html.dd(html.elem("time", attrs: (datetime: modified-str), modified-str))
+                      html.dd(html.elem(
+                        "time",
+                        attrs: (datetime: modified-str),
+                        modified-str,
+                      ))
                     }
                     if show-wordcount {
                       html.dt("words")
-                      html.dd(context str(query-body-words(base-words, doc-el: enc-doc)))
+                      html.dd(context str(query-body-words(
+                        base-words,
+                        doc-el: enc-doc,
+                      )))
                       html.dt("reading")
                       html.dd(context {
-                        str(estimate-reading-minutes(query-body-words(base-words, doc-el: enc-doc), wpm: wpm)) + " min"
+                        (
+                          str(estimate-reading-minutes(
+                            query-body-words(base-words, doc-el: enc-doc),
+                            wpm: wpm,
+                          ))
+                            + " min"
+                        )
                       })
                     }
                     if tags.len() > 0 {
@@ -557,7 +631,10 @@
                         for t in tags {
                           let t-str = str(t)
                           if link-tags {
-                            let tag-target = join-path(tags-dir, join-path(slugify(t-str), "index.html"))
+                            let tag-target = join-path(tags-dir, join-path(
+                              slugify(t-str),
+                              "index.html",
+                            ))
                             html.a(
                               class: "prop-tag",
                               href: rel-href(doc-path, tag-target),
@@ -573,7 +650,10 @@
                 }
               })
 
-              show: with-html-headings.with(shift: 1, permalinks: eff-permalinks)
+              show: with-html-headings.with(
+                shift: 1,
+                permalinks: eff-permalinks,
+              )
               set text(lang: primary-lang)
               [#metadata(merged-theme)<blog-post-theme>]
               [#metadata(none)<thyme-body-start>]
@@ -591,7 +671,9 @@
         },
       )
     } else {
-      let eff-page-width = if page-width == auto { merged-theme.page-width } else { page-width }
+      let eff-page-width = if page-width == auto {
+        merged-theme.page-width
+      } else { page-width }
       let eff-margin = if margin == auto { merged-theme.margin } else { margin }
 
       set page(
@@ -607,23 +689,43 @@
             dy: -0.08em,
             box(
               baseline: bottom,
-              circle(radius: 0.22em, stroke: 0.65pt + merged-theme.muted-light, fill: none),
+              circle(
+                radius: 0.22em,
+                stroke: 0.65pt + merged-theme.muted-light,
+                fill: none,
+              ),
             ),
           ),
           "x": move(
             dy: -0.08em,
             box(
               baseline: bottom,
-              circle(radius: 0.22em, stroke: 0.65pt + merged-theme.text-light, fill: merged-theme.text-light),
+              circle(
+                radius: 0.22em,
+                stroke: 0.65pt + merged-theme.text-light,
+                fill: merged-theme.text-light,
+              ),
             ),
           ),
         ),
       )
-      show: with-smart-refs.with(ink: merged-theme.text-light, muted: merged-theme.muted-light)
-      show: style-paged-article.with(merged-theme, lang: primary-lang, numbered-headings: numbered-headings)
+      show: with-smart-refs.with(
+        ink: merged-theme.text-light,
+        muted: merged-theme.muted-light,
+      )
+      show: style-paged-article.with(
+        merged-theme,
+        lang: primary-lang,
+        numbered-headings: numbered-headings,
+      )
 
       block(width: 100%, below: 1.65em, {
-        text(size: 2.0em, weight: "semibold", fill: merged-theme.text-light, title)
+        text(
+          size: 2.0em,
+          weight: "semibold",
+          fill: merged-theme.text-light,
+          title,
+        )
         if subtitle != none {
           v(0.36em)
           text(size: 1.12em, fill: merged-theme.muted-light, emph(subtitle))
@@ -650,20 +752,34 @@
           }
           if show-wordcount {
             prop-cells.push(text(fill: merged-theme.muted-light)[words])
-            prop-cells.push(text(fill: merged-theme.text-light, context str(query-body-words(base-words, doc-el: enc-doc))))
+            prop-cells.push(text(fill: merged-theme.text-light, context str(
+              query-body-words(base-words, doc-el: enc-doc),
+            )))
             prop-cells.push(text(fill: merged-theme.muted-light)[reading])
             prop-cells.push(text(fill: merged-theme.text-light, context {
-              str(estimate-reading-minutes(query-body-words(base-words, doc-el: enc-doc), wpm: wpm)) + " min"
+              (
+                str(estimate-reading-minutes(
+                  query-body-words(base-words, doc-el: enc-doc),
+                  wpm: wpm,
+                ))
+                  + " min"
+              )
             }))
           }
           if tags.len() > 0 {
             prop-cells.push(text(fill: merged-theme.muted-light)[tags])
-            prop-cells.push(text(fill: merged-theme.muted-light, tags.map(t => "#" + str(t)).join("  ")))
+            prop-cells.push(text(
+              fill: merged-theme.muted-light,
+              tags.map(t => "#" + str(t)).join("  "),
+            ))
           }
 
           block(
             width: 100%,
-            stroke: (top: 0.55pt + merged-theme.border-light, bottom: 0.55pt + merged-theme.border-light),
+            stroke: (
+              top: 0.55pt + merged-theme.border-light,
+              bottom: 0.55pt + merged-theme.border-light,
+            ),
             inset: (y: 0.5em),
             {
               set text(font: merged-theme.mono-fonts, size: 0.76em)

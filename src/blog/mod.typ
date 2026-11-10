@@ -15,90 +15,32 @@
 // (the manual and examples rely on `checklist`, `showybox`, `zebraw-init`, ...).
 #import "@preview/cheq:0.4.0": checklist
 #import "@preview/showybox:2.0.4": showybox
-#import "@preview/zebraw:0.6.3": (
-  zebraw-init,
-  zebraw-themes,
-)
+#import "@preview/zebraw:0.6.3": zebraw-init, zebraw-themes
 
 #import "../core.typ": (
-  backlinks,
-  file,
-  mount,
-  page-asset,
-  query-pages,
-  webpage,
-  with-html-math,
+  backlinks, file, mount, page-asset, query-pages, webpage, with-html-math,
 )
 
-#import "../htm.typ": (
-  enable-htm,
-  h,
-  htm,
-)
+#import "../htm.typ": enable-htm, h, htm
 
 #import "theme.typ": (
-  active-theme,
-  stylesheet-css,
+  active-theme, css-hex, css-oklch, default-theme, default-woff2-files,
+  resolve-theme, stylesheet-asset-path, stylesheet-css, stylesheet-href,
   theme-override-css,
-  css-hex,
-  css-oklch,
-  default-theme,
-  default-woff2-files,
-  resolve-theme,
-  stylesheet-asset-path,
-  stylesheet-href,
 )
 
-#import "notes.typ": (
-  container,
-  marginnote,
-  mcite,
-  mn,
-  sidenote,
-  sn,
-)
+#import "notes.typ": container, marginnote, mcite, mn, sidenote, sn
 
 #import "components.typ": (
-  callout,
-  codeblock,
-  corollary,
-  definition,
-  diagram,
-  epigraph,
-  example,
-  grid-table,
-  hr,
-  important-box,
-  kbd,
-  lemma,
-  links,
-  note-box,
-  proof,
-  proposition,
-  recipe,
-  remark,
-  sbox,
-  tablem,
-  theorem,
-  three-line-table,
-  tip-box,
-  toc,
-  warning-box,
-  wide,
-  zebraw,
+  callout, codeblock, corollary, definition, diagram, epigraph, example,
+  grid-table, hr, important-box, kbd, lemma, links, note-box, proof,
+  proposition, recipe, remark, sbox, tablem, theorem, three-line-table, tip-box,
+  toc, warning-box, wide, zebraw,
 )
 
-#import "post.typ": (
-  post,
-  post-asset,
-  post-nav,
-)
+#import "post.typ": post, post-asset, post-nav
 
-#import "site.typ": (
-  post-list,
-  site,
-  tag-cloud,
-)
+#import "site.typ": post-list, site, tag-cloud
 
 // Public surface of `blog` (everything imported above is re-exported by this module).
 //

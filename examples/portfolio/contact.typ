@@ -13,7 +13,8 @@
   de: [Direkter Kontakt per E-Mail oder Signaturprüfung über `/pgp.txt`.],
 )
 
-#h("ul",
+#h(
+  "ul",
   h("li", [Email: ], link("mailto:ada@example.org")[`ada@example.org`]),
   h("li", [OpenPGP: ], link("../pgp.txt")[`pgp.txt`]),
 )

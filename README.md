@@ -142,6 +142,16 @@ impossible to tell which spelling is canonical. The CHANGELOG records every rena
 downstream can simply stay pinned to its existing version — the compile-time package model makes a
 rename a non-event for anyone who is not actively upgrading.
 
+### Releasing
+
+Publishing a version is `just release vX.Y.Z`. It validates the tag against `typst.toml` and
+`CHANGELOG.md`, runs the full gate, regenerates `docs/manual.pdf` and `thumbnail.png`, then
+commits and pushes the tag — which drives `.github/workflows/release.yaml` to publish a GitHub
+Release with `docs/manual.pdf` attached and open the Typst Universe PR.
+
+The ordered, actionable sequence — including the gate that has to be opened first and the
+things to check on the upstream PR — is [`docs/release-checklist.md`](docs/release-checklist.md).
+
 ### Freezing a downstream
 
 To stabilise a site against upstream churn, pin the exact patch version and let CI hold it:
@@ -151,9 +161,31 @@ To stabilise a site against upstream churn, pin the exact patch version and let 
 #import "@preview/thyme:0.1.0": *
 ```
 
-`just check` verifies the whole repository (all three example sites, unit tests, docs, and the
-Universe staging payload) against the pinned compiler from `typst.toml`, so a dependency bump is a
-single PR that either goes fully green or does not merge.
+`just check` verifies the whole repository — all three example sites, the unit tests and the
+manual — against the pinned compiler from `typst.toml`, so a dependency bump is a single PR that
+either goes fully green or does not merge. It reads and reports; it never writes, so a clean
+`git status` after a run is guaranteed rather than lucky.
+
+### Hacking on thyme
+
+```sh
+just fmt           # format every .typ file
+just fmt --check   # verify formatting without writing
+just lint          # ruff over the Python, typstyle over the Typst
+just check         # the full gate; read-only, writes nothing
+just preview       # template/ + examples/ into a browsable preview/
+```
+
+`typstyle` is not part of the Typst CLI — `cargo install typstyle --version 0.15.1 --locked`.
+The CI setup action pins the same version, so local and CI formatting cannot drift.
+
+Releasing is one command, with a read-only mode so you can validate before you tag:
+
+```sh
+just release v0.1.0 --check    # tag vs typst.toml vs CHANGELOG.md, nothing written
+just release v0.1.0            # the gate, then commit, tag, and push
+just release --notes           # the CHANGELOG section, as CI publishes it
+```
 
 ---
 

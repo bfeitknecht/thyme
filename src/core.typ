@@ -5,41 +5,17 @@
 // Tadi Web sites) and as the single shared bundle engine underneath presets like `blog`.
 
 #import "i18n.typ": (
-  i18n-css,
-  lang-switcher,
-  normalize-alternates,
-  render-lang-inputs,
+  i18n-css, lang-switcher, normalize-alternates, render-lang-inputs,
   resolve-page-langs,
 )
 #import "paths.typ": (
-  canonical-page-url,
-  date-sort-key,
-  emit-doc-marker,
-  find-doc-containing,
-  format-date,
-  join-path,
-  parent-dir,
-  query-backlinks,
-  rel-href,
-  rel-root,
-  relative-typ-path,
-  resolve-bundle-label,
-  route-html-path,
-  slug-from-path,
-  slug-from-typ-path,
-  slugify,
-  source-path-for,
-  unwrap-typ-path,
-  with-html-headings,
-  with-smart-refs,
+  canonical-page-url, date-sort-key, emit-doc-marker, find-doc-containing,
+  format-date, join-path, parent-dir, query-backlinks, rel-href, rel-root,
+  relative-typ-path, resolve-bundle-label, route-html-path, slug-from-path,
+  slug-from-typ-path, slugify, source-path-for, unwrap-typ-path,
+  with-html-headings, with-smart-refs,
 )
-#import "seo.typ": (
-  atom-xml,
-  robots-txt,
-  rss-xml,
-  sitemap-xml,
-  render-seo-meta,
-)
+#import "seo.typ": atom-xml, render-seo-meta, robots-txt, rss-xml, sitemap-xml
 #import "blog/theme.typ": css-hex, default-theme
 #import "text.typ": count-words, estimate-reading-minutes, to-plain-text
 #import "tree.typ": collect-content, find-content, map-containers
@@ -50,7 +26,13 @@
   if assets == none or assets == () or assets == (:) {
     ()
   } else if type(assets) == dictionary {
-    assets.pairs().map(((p, d)) => (path: str(p).trim("/"), data: coerce-data(d), label: none))
+    assets
+      .pairs()
+      .map(((p, d)) => (
+        path: str(p).trim("/"),
+        data: coerce-data(d),
+        label: none,
+      ))
   } else if type(assets) == array {
     assets.map(a => if type(a) == array {
       (
@@ -66,7 +48,9 @@
       )
     })
   } else {
-    panic("`assets` expects a dictionary or an array of `(path, data, label?)` records.")
+    panic(
+      "`assets` expects a dictionary or an array of `(path, data, label?)` records.",
+    )
   }
 }
 
@@ -118,11 +102,15 @@
 #let _is-mount-or-raw(c) = (
   c.func() == metadata
     and type(c.value) == dictionary
-    and (c.value.at("thyme-mounted", default: false) or c.value.at("thyme-raw-file", default: false))
+    and (
+      c.value.at("thyme-mounted", default: false)
+        or c.value.at("thyme-raw-file", default: false)
+    )
 )
 
 #let extract-page-meta(c) = find-content(c, n => (
-  if n.func() == metadata and n.at("label", default: none) == <thyme-page-meta> {
+  if n.func() == metadata
+    and n.at("label", default: none) == <thyme-page-meta> {
     n.value
   } else {
     none
@@ -130,8 +118,16 @@
 ))
 
 #let extract-page-assets(c) = collect-content(c, n => (
-  if n.func() == metadata and type(n.value) == dictionary and n.value.at("thyme-page-asset", default: false) {
-    ((path: n.value.path, data: n.value.data, label: n.at("label", default: none)),)
+  if n.func() == metadata
+    and type(n.value) == dictionary
+    and n.value.at("thyme-page-asset", default: false) {
+    (
+      (
+        path: n.value.path,
+        data: n.value.data,
+        label: n.at("label", default: none),
+      ),
+    )
   } else {
     ()
   }
@@ -139,13 +135,17 @@
 
 #let extract-first-h1(c) = find-content(
   c,
-  n => if n.func() == heading and n.at("depth", default: 1) == 1 { n.body } else { none },
+  n => if n.func() == heading and n.at("depth", default: 1) == 1 {
+    n.body
+  } else { none },
   descend: n => not _is-mount-or-raw(n) and n.func() != heading,
 )
 
 #let extract-mounts(c) = collect-content(
   c,
-  n => if n.func() == metadata and type(n.value) == dictionary and n.value.at("thyme-mounted", default: false) {
+  n => if n.func() == metadata
+    and type(n.value) == dictionary
+    and n.value.at("thyme-mounted", default: false) {
     ((el: n, val: n.value, lbl: n.at("label", default: none)),)
   } else {
     ()
@@ -155,7 +155,9 @@
 
 #let extract-raw-files(c) = collect-content(
   c,
-  n => if n.func() == metadata and type(n.value) == dictionary and n.value.at("thyme-raw-file", default: false) {
+  n => if n.func() == metadata
+    and type(n.value) == dictionary
+    and n.value.at("thyme-raw-file", default: false) {
     ((val: n.value, lbl: n.at("label", default: none)),)
   } else {
     ()
@@ -249,13 +251,17 @@
   let extra-assets = normalize-assets(assets)
   let merged-meta = (
     ..meta,
-    collection: if collection != none { collection } else { meta.at("collection", default: none) },
+    collection: if collection != none { collection } else {
+      meta.at("collection", default: none)
+    },
     assets: meta.at("assets", default: ()) + extra-assets,
   )
 
   metadata((
     thyme-mounted: true,
-    slug: if slug != auto { slug } else if merged-meta.slug != none { merged-meta.slug } else { slug-from-typ-path(typ-path) },
+    slug: if slug != auto { slug } else if merged-meta.slug != none {
+      merged-meta.slug
+    } else { slug-from-typ-path(typ-path) },
     path: route,
     typ-path: typ-path,
     raw-source: raw-source,
@@ -292,20 +298,29 @@
         let allow = (
           not m.at("draft", default: false)
             and (include-unlisted or not m.at("unlisted", default: false))
-            and (collection == none or m.at("collection", default: none) == collection)
+            and (
+              collection == none
+                or m.at("collection", default: none) == collection
+            )
             and (tag == none or tag in m.at("tags", default: ()))
             and (lang == none or m.at("primary-lang", default: "en") == lang)
         )
         if allow {
-          let derived-slug = if m.slug != none { m.slug } else { slug-from-path(d.path) }
-          let hint-words = query(selector(<thyme-word-hint>).within(d.location()))
-            .fold(0, (acc, h) => acc + h.value)
+          let derived-slug = if m.slug != none { m.slug } else {
+            slug-from-path(d.path)
+          }
+          let hint-words = query(
+            selector(<thyme-word-hint>).within(d.location()),
+          ).fold(0, (acc, h) => acc + h.value)
           let total-words = m.base-words + hint-words
           entries.push((
             ..m,
             slug: derived-slug,
             words: total-words,
-            minutes: estimate-reading-minutes(total-words, wpm: m.at("wpm", default: 200)),
+            minutes: estimate-reading-minutes(total-words, wpm: m.at(
+              "wpm",
+              default: 200,
+            )),
             doc-loc: d.location(),
             doc-path: d.path,
             html-path: d.path,
@@ -338,7 +353,10 @@
   }
   let resolved-slug = if target != auto {
     str(target)
-  } else if doc-metas.len() > 0 and doc-metas.first().value.at("slug", default: none) != none {
+  } else if (
+    doc-metas.len() > 0
+      and doc-metas.first().value.at("slug", default: none) != none
+  ) {
     doc-metas.first().value.slug
   } else if doc-path != none {
     slug-from-path(doc-path)
@@ -362,7 +380,11 @@
             if r.at("created-str", default: none) != none {
               html.span(class: "when", {
                 " · "
-                html.elem("time", attrs: (datetime: r.created-str), r.created-str)
+                html.elem(
+                  "time",
+                  attrs: (datetime: r.created-str),
+                  r.created-str,
+                )
               })
             }
           })
@@ -420,13 +442,17 @@
   source-label: ".typ",
 ) = {
   let has-lang = langs.len() >= 2
-  let has-src = source-href != none and source-label != none and source-label != false
+  let has-src = (
+    source-href != none and source-label != none and source-label != false
+  )
   let has-right = has-lang or has-src
   if back-content == none and not has-right {
     return []
   }
 
-  let nav-cls = if back-content == none { "back-home only-end" } else { "back-home" }
+  let nav-cls = if back-content == none { "back-home only-end" } else {
+    "back-home"
+  }
   html.elem(
     "nav",
     attrs: (class: nav-cls, "aria-label": "Site navigation"),
@@ -464,8 +490,25 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
 
 // Big operator glyphs whose presence inside `math.lr` requires vertical delimiter stretching.
 #let _math-big-ops = (
-  "∑", "∏", "∐", "∫", "∬", "∭", "∮", "∯", "∰",
-  "⋀", "⋁", "⋂", "⋃", "⨀", "⨁", "⨂", "⨄", "⨅", "⨆",
+  "∑",
+  "∏",
+  "∐",
+  "∫",
+  "∬",
+  "∭",
+  "∮",
+  "∯",
+  "∰",
+  "⋀",
+  "⋁",
+  "⋂",
+  "⋃",
+  "⨀",
+  "⨁",
+  "⨂",
+  "⨄",
+  "⨅",
+  "⨆",
 )
 
 // Pure syntactic AST predicate (zero `measure()`, zero `context`) checking whether a `math.lr`
@@ -475,18 +518,21 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
     return false
   }
   let f = node.func()
-  if f in (
-    math.frac,
-    math.binom,
-    math.mat,
-    math.vec,
-    math.cases,
-    math.root,
-    math.overbrace,
-    math.underbrace,
-    math.overbracket,
-    math.underbracket,
-    math.mid,
+  if (
+    f
+      in (
+        math.frac,
+        math.binom,
+        math.mat,
+        math.vec,
+        math.cases,
+        math.root,
+        math.overbrace,
+        math.underbrace,
+        math.overbracket,
+        math.underbracket,
+        math.mid,
+      )
   ) {
     return true
   }
@@ -494,7 +540,10 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
     return _math-big-ops.any(op => node.text.contains(op))
   }
   if node.has("children") {
-    return node.children.any(c => _math-needs-stretch(c, in-display: in-display))
+    return node.children.any(c => _math-needs-stretch(
+      c,
+      in-display: in-display,
+    ))
   }
   if node.has("body") {
     return _math-needs-stretch(node.body, in-display: in-display)
@@ -520,7 +569,9 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
       return true
     }
     for k in ("t", "b", "tl", "bl", "tr", "br") {
-      if node.has(k) and _math-needs-stretch(node.at(k), in-display: in-display) {
+      if (
+        node.has(k) and _math-needs-stretch(node.at(k), in-display: in-display)
+      ) {
         return true
       }
     }
@@ -540,10 +591,18 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
     return false
   }
   let cp = str.to-unicode(cps.at(0))
-  if (cp >= 0x30 and cp <= 0x39) or (cp >= 0x41 and cp <= 0x5A) or (cp >= 0x61 and cp <= 0x7A) {
+  if (
+    (cp >= 0x30 and cp <= 0x39)
+      or (cp >= 0x41 and cp <= 0x5A)
+      or (cp >= 0x61 and cp <= 0x7A)
+  ) {
     return false
   }
-  if (cp >= 0x0370 and cp <= 0x03FF) or (cp >= 0x2100 and cp <= 0x214F) or (cp >= 0x1D400 and cp <= 0x1D7FF) {
+  if (
+    (cp >= 0x0370 and cp <= 0x03FF)
+      or (cp >= 0x2100 and cp <= 0x214F)
+      or (cp >= 0x1D400 and cp <= 0x1D7FF)
+  ) {
     return false
   }
   true
@@ -565,7 +624,11 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
   show math.equation: eq => {
     let is-disp = eq.block
     show math.lr: it => {
-      if it.size != 100% + 0pt or it.body.func() == math.lr or _math-needs-stretch(it.body, in-display: is-disp) {
+      if (
+        it.size != 100% + 0pt
+          or it.body.func() == math.lr
+          or _math-needs-stretch(it.body, in-display: is-disp)
+      ) {
         it
       } else {
         it.body
@@ -634,7 +697,9 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
   let root-prefix = rel-root(doc-path)
   let primary-lang = if langs.len() > 0 { langs.first() } else { "en" }
   let title-str = to-plain-text(title, lang: primary-lang)
-  let site-str = if site-title != none { to-plain-text(site-title, lang: primary-lang) } else { none }
+  let site-str = if site-title != none {
+    to-plain-text(site-title, lang: primary-lang)
+  } else { none }
   let page-title-str = if site-str != none and title-str != site-str {
     title-str + " - " + site-str
   } else {
@@ -656,12 +721,21 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
   html.html(lang: primary-lang, {
     html.head({
       html.meta(charset: "utf-8")
-      html.meta(name: "viewport", content: "width=device-width, initial-scale=1")
+      html.meta(
+        name: "viewport",
+        content: "width=device-width, initial-scale=1",
+      )
       if description != none {
-        html.meta(name: "description", content: to-plain-text(description, lang: primary-lang))
+        html.meta(name: "description", content: to-plain-text(
+          description,
+          lang: primary-lang,
+        ))
       }
       if author != none {
-        html.meta(name: "author", content: to-plain-text(author, lang: primary-lang))
+        html.meta(name: "author", content: to-plain-text(
+          author,
+          lang: primary-lang,
+        ))
       }
       html.title(page-title-str)
       if canon-url != none {
@@ -707,7 +781,11 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
       )
       for css-p in stylesheet-paths {
         let p-str = str(css-p)
-        let href = if p-str.starts-with("http://") or p-str.starts-with("https://") or p-str.starts-with("/") {
+        let href = if (
+          p-str.starts-with("http://")
+            or p-str.starts-with("https://")
+            or p-str.starts-with("/")
+        ) {
           p-str
         } else {
           root-prefix + p-str.trim("/")
@@ -715,7 +793,12 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
         html.link(rel: "stylesheet", href: href)
       }
       if source-href != none {
-        html.link(rel: "alternate", type: "text/plain", title: "Typst source", href: source-href)
+        html.link(
+          rel: "alternate",
+          type: "text/plain",
+          title: "Typst source",
+          href: source-href,
+        )
       }
       if in-bundle and include-feeds {
         let label-base = if site-str != none { site-str } else { title-str }
@@ -856,7 +939,11 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
   }
   let created-str = format-date(created)
   let modified-str = format-date(modified)
-  let page-langs = resolve-page-langs(lang, scan-nodes: (resolved-title, description, body))
+  let page-langs = resolve-page-langs(lang, scan-nodes: (
+    resolved-title,
+    description,
+    body,
+  ))
   let primary-lang = page-langs.first()
 
   let meta-payload = (
@@ -932,12 +1019,20 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
       } else {
         none
       }
-      let src-label = if site-config != none { site-config.source-label } else { none }
-      let src-href = if src-label != none { lookup-source-href(doc-path) } else { none }
-      let sheet-paths = if site-config != none { site-config.at("stylesheet-paths", default: ()) } else { () }
+      let src-label = if site-config != none { site-config.source-label } else {
+        none
+      }
+      let src-href = if src-label != none {
+        lookup-source-href(doc-path)
+      } else { none }
+      let sheet-paths = if site-config != none {
+        site-config.at("stylesheet-paths", default: ())
+      } else { () }
       // A preset site (e.g. `blog`) styles its own top bar, so skip the built-in
       // monochrome rules; plain core sites get them.
-      let is-preset-site = site-config != none and site-config.at("is-preset", default: false)
+      let is-preset-site = (
+        site-config != none and site-config.at("is-preset", default: false)
+      )
       // A preset may supply its resolved theme so `theme-color` tracks user overrides.
       let shell-theme = if site-config != none {
         site-config.at("theme", default: default-theme)
@@ -949,15 +1044,21 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
         title: resolved-title,
         site-title: if site-config != none { site-config.title } else { none },
         description: description,
-        author: if author != none { author } else if site-config != none { site-config.author } else { none },
+        author: if author != none { author } else if site-config != none {
+          site-config.author
+        } else { none },
         site-url: if site-config != none { site-config.url } else { none },
         doc-path: doc-path,
         langs: eff-langs,
         alternates: alternates,
         stylesheet-paths: sheet-paths,
         include-core-topbar-css: not is-preset-site,
-        favicon-href: if site-config != none { site-config.at("favicon-href", default: none) } else { none },
-        favicon-type: if site-config != none { site-config.at("favicon-type", default: none) } else { none },
+        favicon-href: if site-config != none {
+          site-config.at("favicon-href", default: none)
+        } else { none },
+        favicon-type: if site-config != none {
+          site-config.at("favicon-type", default: none)
+        } else { none },
         source-href: src-href,
         source-label: src-label,
         back-content: back-node,
@@ -1153,8 +1254,17 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
   } else {
     default-title
   }
-  let emit-auto-h1 = h1 == none and wrap-main and resolved-title != none and (title != auto or shell-hook != none)
-  let home-langs = resolve-page-langs(lang, default-lang: lang, scan-nodes: (resolved-title, description, body))
+  let emit-auto-h1 = (
+    h1 == none
+      and wrap-main
+      and resolved-title != none
+      and (title != auto or shell-hook != none)
+  )
+  let home-langs = resolve-page-langs(lang, default-lang: lang, scan-nodes: (
+    resolved-title,
+    description,
+    body,
+  ))
   let source-label = if expose-source == false or expose-source == none {
     none
   } else if expose-source == true {
@@ -1162,7 +1272,9 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
   } else {
     str(expose-source)
   }
-  let site-typ-path = if type(src) == path { unwrap-typ-path(src) } else { none }
+  let site-typ-path = if type(src) == path { unwrap-typ-path(src) } else {
+    none
+  }
   let root-raw-source = if source-label != none and src != none {
     if type(src) == path { read(src) } else { str(src) }
   } else {
@@ -1180,11 +1292,15 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
       (
         path: out-p,
         href: str(s.at("href", default: out-p)).trim("/"),
-        data: if type(s.data) == path { read(s.data, encoding: none) } else { s.data },
+        data: if type(s.data) == path { read(s.data, encoding: none) } else {
+          s.data
+        },
         label: s.at("label", default: none),
       )
     } else {
-      panic("`stylesheets` entries must be `path(...)` or `(path: ..., data: ...)` dictionaries.")
+      panic(
+        "`stylesheets` entries must be `path(...)` or `(path: ..., data: ...)` dictionaries.",
+      )
     }
   })
   let sheet-hrefs = norm-sheets.map(s => s.href)
@@ -1193,7 +1309,10 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
   let norm-fav = if favicon == none {
     none
   } else if type(favicon) == path {
-    let rel = relative-typ-path(unwrap-typ-path(favicon), site-path: site-typ-path)
+    let rel = relative-typ-path(
+      unwrap-typ-path(favicon),
+      site-path: site-typ-path,
+    )
     let out-p = if rel != none { rel } else { "favicon.svg" }
     (
       path: out-p,
@@ -1204,8 +1323,12 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
     let out-p = str(favicon.path).trim("/")
     (
       path: out-p,
-      data: if type(favicon.data) == path { read(favicon.data, encoding: none) } else { favicon.data },
-      mime: favicon.at("type", default: if out-p.ends-with(".svg") { "image/svg+xml" } else { none }),
+      data: if type(favicon.data) == path {
+        read(favicon.data, encoding: none)
+      } else { favicon.data },
+      mime: favicon.at("type", default: if out-p.ends-with(".svg") {
+        "image/svg+xml"
+      } else { none }),
     )
   } else {
     none
@@ -1244,19 +1367,35 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
 
   let body-mounts = extract-mounts(body)
   let body-raw-files = extract-raw-files(body)
-  let clean-home-body = transform-mounts(body, if mount-card-hook != none { mount-card-hook } else { _ => [] })
+  let clean-home-body = transform-mounts(body, if mount-card-hook != none {
+    mount-card-hook
+  } else { _ => [] })
 
   context {
     let pre-mount-els = query(selector(metadata).before(here())).filter(el => (
-      type(el.value) == dictionary and el.value.at("thyme-mounted", default: false)
+      type(el.value) == dictionary
+        and el.value.at("thyme-mounted", default: false)
     ))
     let pre-raw-els = query(selector(metadata).before(here())).filter(el => (
-      type(el.value) == dictionary and el.value.at("thyme-raw-file", default: false)
+      type(el.value) == dictionary
+        and el.value.at("thyme-raw-file", default: false)
     ))
     let all-mounts = (
-      pre-mount-els.map(el => (el: el, val: el.value, lbl: el.at("label", default: none))) + body-mounts
-    ).map(rec => resolve-core-mount(rec, site-typ-path: site-typ-path, default-route-fn: default-route-hook))
-    let all-raw-files = pre-raw-els.map(el => (val: el.value, lbl: el.at("label", default: none))) + body-raw-files
+      pre-mount-els.map(el => (
+        el: el,
+        val: el.value,
+        lbl: el.at("label", default: none),
+      ))
+        + body-mounts
+    ).map(rec => resolve-core-mount(
+      rec,
+      site-typ-path: site-typ-path,
+      default-route-fn: default-route-hook,
+    ))
+    let all-raw-files = (
+      pre-raw-els.map(el => (val: el.value, lbl: el.at("label", default: none)))
+        + body-raw-files
+    )
 
     // Build `<thyme-source-map>` mapping `doc-path -> sibling .typ asset path`
     let src-map = (:)
@@ -1279,75 +1418,86 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
     let home-src-href = if root-raw-source != none { "site.typ" } else { none }
 
     let home-doc-content = {
-        emit-doc-marker("index.html", <site>)
-        context {
-          let site-docs = query(<site>)
-          let home-doc = if site-docs.len() > 0 { site-docs.first() } else { none }
-          let eff-home-langs = resolve-page-langs(
-            lang,
-            default-lang: lang,
-            scan-nodes: (resolved-title, description, body),
-            queried-codes: query-doc-tr-codes(home-doc),
-          )
-          let home-inner = {
-            show: with-html-headings.with(shift: if emit-auto-h1 { 1 } else { 0 }, permalinks: heading-permalinks)
-            set text(lang: eff-home-langs.first())
-            if emit-auto-h1 {
-              html.h1(resolved-title)
-            }
-            clean-home-body
-          }
-          if shell-hook != none {
-            shell-hook(
-              title: resolved-title,
-              site-title: resolved-title,
-              description: description,
-              author: author,
-              site-url: url,
-              doc-path: "index.html",
-              langs: eff-home-langs,
-              alternates: alternates,
-              stylesheet-paths: sheet-hrefs,
-              favicon-href: if norm-fav != none { norm-fav.path } else { none },
-              favicon-type: if norm-fav != none { norm-fav.mime } else { none },
-              source-href: home-src-href,
-              source-label: source-label,
-              include-feeds: true,
-              rss-path: rss-path,
-              atom-path: atom-path,
-              open-graph: open-graph,
-              extra-head: head,
-              home-inner,
-            )
-          } else {
-            render-core-shell(
-              title: resolved-title,
-              site-title: resolved-title,
-              description: description,
-              author: author,
-              site-url: url,
-              doc-path: "index.html",
-              langs: eff-home-langs,
-              alternates: alternates,
-              stylesheet-paths: sheet-hrefs,
-              favicon-href: if norm-fav != none { norm-fav.path } else { none },
-              favicon-type: if norm-fav != none { norm-fav.mime } else { none },
-              source-href: home-src-href,
-              source-label: source-label,
-              include-feeds: true,
-              rss-path: rss-path,
-              atom-path: atom-path,
-              open-graph: open-graph,
-              extra-head: head,
-              wrap-main: wrap-main,
-              theme-config: if site-config != none { site-config.at("theme", default: default-theme) } else { default-theme },
-              home-inner,
-            )
-          }
+      emit-doc-marker("index.html", <site>)
+      context {
+        let site-docs = query(<site>)
+        let home-doc = if site-docs.len() > 0 { site-docs.first() } else {
+          none
         }
+        let eff-home-langs = resolve-page-langs(
+          lang,
+          default-lang: lang,
+          scan-nodes: (resolved-title, description, body),
+          queried-codes: query-doc-tr-codes(home-doc),
+        )
+        let home-inner = {
+          show: with-html-headings.with(
+            shift: if emit-auto-h1 { 1 } else { 0 },
+            permalinks: heading-permalinks,
+          )
+          set text(lang: eff-home-langs.first())
+          if emit-auto-h1 {
+            html.h1(resolved-title)
+          }
+          clean-home-body
+        }
+        if shell-hook != none {
+          shell-hook(
+            title: resolved-title,
+            site-title: resolved-title,
+            description: description,
+            author: author,
+            site-url: url,
+            doc-path: "index.html",
+            langs: eff-home-langs,
+            alternates: alternates,
+            stylesheet-paths: sheet-hrefs,
+            favicon-href: if norm-fav != none { norm-fav.path } else { none },
+            favicon-type: if norm-fav != none { norm-fav.mime } else { none },
+            source-href: home-src-href,
+            source-label: source-label,
+            include-feeds: true,
+            rss-path: rss-path,
+            atom-path: atom-path,
+            open-graph: open-graph,
+            extra-head: head,
+            home-inner,
+          )
+        } else {
+          render-core-shell(
+            title: resolved-title,
+            site-title: resolved-title,
+            description: description,
+            author: author,
+            site-url: url,
+            doc-path: "index.html",
+            langs: eff-home-langs,
+            alternates: alternates,
+            stylesheet-paths: sheet-hrefs,
+            favicon-href: if norm-fav != none { norm-fav.path } else { none },
+            favicon-type: if norm-fav != none { norm-fav.mime } else { none },
+            source-href: home-src-href,
+            source-label: source-label,
+            include-feeds: true,
+            rss-path: rss-path,
+            atom-path: atom-path,
+            open-graph: open-graph,
+            extra-head: head,
+            wrap-main: wrap-main,
+            theme-config: if site-config != none {
+              site-config.at("theme", default: default-theme)
+            } else { default-theme },
+            home-inner,
+          )
+        }
+      }
     }
 
-    if target() == "bundle" and not-found-page != false and not-found-page != none {
+    if (
+      target() == "bundle"
+        and not-found-page != false
+        and not-found-page != none
+    ) {
       [#document(
         "404.html",
         title: [404],
@@ -1374,9 +1524,15 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
             html.html(lang: home-langs.first(), {
               html.head({
                 html.meta(charset: "utf-8")
-                html.meta(name: "viewport", content: "width=device-width, initial-scale=1")
+                html.meta(
+                  name: "viewport",
+                  content: "width=device-width, initial-scale=1",
+                )
                 html.meta(name: "robots", content: "noindex")
-                html.title("404 - " + to-plain-text(resolved-title, lang: home-langs.first()))
+                html.title(
+                  "404 - "
+                    + to-plain-text(resolved-title, lang: home-langs.first()),
+                )
                 html.meta(
                   name: "theme-color",
                   content: css-hex(shell-theme.paper-light),
@@ -1395,7 +1551,10 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
                 html.main(class: "notfound", {
                   html.elem(
                     "nav",
-                    attrs: (class: "back-home", "aria-label": "Site navigation"),
+                    attrs: (
+                      class: "back-home",
+                      "aria-label": "Site navigation",
+                    ),
                     html.a(href: "/", "/.."),
                   )
                   html.h1("404")
@@ -1429,18 +1588,26 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
               author: author,
               site-url: url,
               doc-path: m.path,
-              langs: resolve-page-langs(auto, default-lang: lang, scan-nodes: (m.body,)),
+              langs: resolve-page-langs(auto, default-lang: lang, scan-nodes: (
+                m.body,
+              )),
               stylesheet-paths: sheet-hrefs,
               include-core-topbar-css: shell-hook == none,
               favicon-href: if norm-fav != none { norm-fav.path } else { none },
               favicon-type: if norm-fav != none { norm-fav.mime } else { none },
               source-href: src-href,
               source-label: source-label,
-              back-content: html.a(href: rel-root(m.path) + "index.html", "/.."),
+              back-content: html.a(
+                href: rel-root(m.path) + "index.html",
+                "/..",
+              ),
               open-graph: open-graph,
               theme-config: shell-theme,
               {
-                show: with-html-headings.with(shift: 0, permalinks: heading-permalinks)
+                show: with-html-headings.with(
+                  shift: 0,
+                  permalinks: heading-permalinks,
+                )
                 m.body
               },
             )
@@ -1449,7 +1616,10 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
       }
       [#document(m.path, title: m.title, doc-body)#m.label]
       for pa in m.assets {
-        emit-bundle-asset(join-path(m.dir, pa.path), pa.data, lbl: pa.at("label", default: none))
+        emit-bundle-asset(join-path(m.dir, pa.path), pa.data, lbl: pa.at(
+          "label",
+          default: none,
+        ))
       }
     }
 
@@ -1475,9 +1645,15 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
         emit-bundle-asset(norm-fav.path, norm-fav.data)
       }
 
-      let explicit-paths = assets.map(a => str(a.path).trim("/")) + all-raw-files.map(r => r.val.path)
+      let explicit-paths = (
+        assets.map(a => str(a.path).trim("/"))
+          + all-raw-files.map(r => r.val.path)
+      )
       for a in assets {
-        emit-bundle-asset(str(a.path).trim("/"), a.data, lbl: a.at("label", default: none))
+        emit-bundle-asset(str(a.path).trim("/"), a.data, lbl: a.at(
+          "label",
+          default: none,
+        ))
       }
       for r in all-raw-files {
         emit-bundle-asset(r.val.path, r.val.data, lbl: r.lbl)
@@ -1491,7 +1667,6 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
           emit-bundle-asset(source-path-for(m.path), m.raw-source)
         }
       }
-
     }
 
     // Emit the home page: a `<document>` in bundle mode, an inline shell otherwise.
@@ -1502,7 +1677,14 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
       home-doc-content
     } else if paged-fallback-hook != none {
       // `png` / `svg` / `pdf` targets: render the paged preview of the site body.
-      paged-fallback-hook(all-mounts, pre-mount-els, home-langs.first(), emit-auto-h1, resolved-title, clean-home-body)
+      paged-fallback-hook(
+        all-mounts,
+        pre-mount-els,
+        home-langs.first(),
+        emit-auto-h1,
+        resolved-title,
+        clean-home-body,
+      )
     } else {
       set text(lang: home-langs.first())
       show: with-smart-refs
@@ -1547,9 +1729,14 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
       // `robots: auto` means "on whenever a sitemap is emitted". This was documented and
       // `robots-txt` was exported, but nothing ever called it, so no bundle contained a
       // robots.txt at all.
-      let emit-robots = if robots == auto { sitemap-path != none } else { robots == true }
+      let emit-robots = if robots == auto { sitemap-path != none } else {
+        robots == true
+      }
       if emit-robots {
-        [#asset("robots.txt", bytes(robots-txt(site-url: url, sitemap-path: sitemap-path)))<robots>]
+        [#asset("robots.txt", bytes(robots-txt(
+          site-url: url,
+          sitemap-path: sitemap-path,
+        )))<robots>]
       }
       if rss-path != none {
         let rss-xml = rss-xml(
