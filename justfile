@@ -7,10 +7,9 @@ _link-pkg dir=".tmp-pkg":
     #!/usr/bin/env sh
     set -eu
     # Throwaway package path for `typst compile --package-path`: map this checkout to
-    # @preview/thyme so the sources resolve without a published release. Nothing here
-    # touches the real OS package cache. The vendor/* glob below is the only line in this
-    # repo that still knows vendoring exists; it disappears the moment @preview/exemel:0.3.0
-    # is on Typst Universe, which is the one thing blocking this release.
+    # @preview/thyme so the sources resolve without a published release. The OS package
+    # cache is not used. The vendor/* glob below is the last reference to vendoring; remove
+    # it when @preview/exemel:0.3.0 reaches Typst Universe.
     rm -rf "{{dir}}"
     mkdir -p "{{dir}}/preview"
     for manifest in typst.toml vendor/*/typst.toml; do
@@ -397,8 +396,8 @@ release *args:
         )
     tag = positional[0] if positional else ""
 
-    # The release notes are this section of CHANGELOG.md. Both read-only modes need it,
-    # and so does the publish step, which is why it lives here rather than in the workflow.
+    # The release notes are this section of CHANGELOG.md. Both read-only modes need them,
+    # and so does the publish step.
     match = re.search(
         rf"^## \[{re.escape(version)}\][^\n]*\n(.*?)(?=^## \[|^\[[^\]]+\]:|\Z)",
         changelog,
@@ -439,8 +438,8 @@ release *args:
         print(f"{tag} is ready: typst.toml, CHANGELOG.md and the tag agree")
         sys.exit(0)
 
-    # The full gate. `check` is read-only; the artefacts it verifies are regenerated here,
-    # just before the commit, so the tag can never carry a stale manual or thumbnail.
+    # Run the full gate, then rebuild the committed artefacts so the tag cannot carry a
+    # stale manual or thumbnail.
     for gate in (["check"], ["fmt", "--check"], ["lint"]):
         subprocess.run(["just", *gate], check=True)
 
