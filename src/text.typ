@@ -2,7 +2,24 @@
 // `<thyme-word-hint>` tracking, reading-time estimation, and full-byte content hashing.
 
 #let _space-func = [ ].func()
-#let _hex-digits = ("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f")
+#let _hex-digits = (
+  "0",
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  "a",
+  "b",
+  "c",
+  "d",
+  "e",
+  "f",
+)
 
 // Internal depth counter tracking active non-primary `#tr(...)` branches in HTML mode
 // so `<thyme-word-hint>` inside secondary language branches never inflates primary word counts.
@@ -49,7 +66,9 @@
   } else if it.func() == smartquote {
     if it.at("double", default: true) { "\"" } else { "'" }
   } else if it.func() == metadata {
-    if type(it.value) == dictionary and it.value.at("thyme-tr", default: false) {
+    if (
+      type(it.value) == dictionary and it.value.at("thyme-tr", default: false)
+    ) {
       let branch = _tr-primary(it.value, preferred-lang: lang)
       if branch != none { go(branch) } else { "" }
     } else {
@@ -78,7 +97,9 @@
   } else if it.has("num") and it.has("denom") {
     go(it.num) + "/" + go(it.denom)
   } else if it.has("radicand") {
-    let idx = if it.has("index") and it.index != none { go(it.index) } else { "" }
+    let idx = if it.has("index") and it.index != none { go(it.index) } else {
+      ""
+    }
     idx + "√(" + go(it.radicand) + ")"
   } else if it.func() == math.primes and it.has("count") {
     "'" * it.count
@@ -101,7 +122,9 @@
     if fn == math.equation or fn == footnote {
       " "
     } else if fn == metadata {
-      if type(it.value) == dictionary and it.value.at("thyme-tr", default: false) {
+      if (
+        type(it.value) == dictionary and it.value.at("thyme-tr", default: false)
+      ) {
         let branch = _tr-primary(it.value)
         if branch != none { " " + _to-word-text(branch) + " " } else { " " }
       } else {
@@ -120,9 +143,13 @@
     } else if fn == table or fn == grid {
       " " + it.children.map(ch => " " + _to-word-text(ch) + " ").join(" ") + " "
     } else if it.has("children") {
-      if it.children.len() > 0 { it.children.map(_to-word-text).join() } else { " " }
+      if it.children.len() > 0 { it.children.map(_to-word-text).join() } else {
+        " "
+      }
     } else if it.has("body") {
-      let sep = if fn in (heading, list.item, enum.item, par, block) { " " } else { "" }
+      let sep = if fn in (heading, list.item, enum.item, par, block) {
+        " "
+      } else { "" }
       sep + _to-word-text(it.body) + sep
     } else if it.has("child") {
       _to-word-text(it.child)
@@ -141,7 +168,9 @@
   /// -> content | str | none
   body,
 ) = {
-  _to-word-text(body).matches(regex("[\\p{L}\\p{N}]+(?:[-'\\u{2019}][\\p{L}\\p{N}]+)*")).len()
+  _to-word-text(body)
+    .matches(regex("[\\p{L}\\p{N}]+(?:[-'\\u{2019}][\\p{L}\\p{N}]+)*"))
+    .len()
 }
 
 /// Emit a zero-footprint `<thyme-word-hint>` marker from inside `context`-wrapped
@@ -190,7 +219,11 @@
     let starts = query(<thyme-body-start>)
     let ends = query(<thyme-body-end>)
     if starts.len() > 0 and ends.len() > 0 {
-      query(selector(<thyme-word-hint>).after(starts.last().location()).before(ends.last().location()))
+      query(
+        selector(<thyme-word-hint>)
+          .after(starts.last().location())
+          .before(ends.last().location()),
+      )
     } else {
       query(<thyme-word-hint>)
     }
@@ -211,7 +244,11 @@
   let full-end = n - calc.rem(n, 4)
   let i = 0
   while i < full-end {
-    let word = int.from-bytes(bs.slice(i, i + 4), endian: "little", signed: false)
+    let word = int.from-bytes(
+      bs.slice(i, i + 4),
+      endian: "little",
+      signed: false,
+    )
     h = calc.rem(h.bit-xor(word) * prime, mod)
     i += 4
   }

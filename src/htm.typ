@@ -7,7 +7,9 @@
 
 #import "text.typ": to-plain-text, word-hint
 
-#let _html-dict = if "html" in dictionary(std) { dictionary(std.html) } else { (:) }
+#let _html-dict = if "html" in dictionary(std) { dictionary(std.html) } else {
+  (:)
+}
 
 #let _join-content(arr) = if arr.len() > 0 { arr.join() } else { [] }
 
@@ -52,9 +54,35 @@
   dt: ("dt", "dd"),
   dd: ("dt", "dd"),
   p: (
-    "address", "article", "aside", "blockquote", "details", "div", "dl", "fieldset",
-    "figcaption", "figure", "footer", "form", "h1", "h2", "h3", "h4", "h5", "h6",
-    "header", "hgroup", "hr", "main", "nav", "ol", "p", "pre", "section", "table", "ul",
+    "address",
+    "article",
+    "aside",
+    "blockquote",
+    "details",
+    "div",
+    "dl",
+    "fieldset",
+    "figcaption",
+    "figure",
+    "footer",
+    "form",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "header",
+    "hgroup",
+    "hr",
+    "main",
+    "nav",
+    "ol",
+    "p",
+    "pre",
+    "section",
+    "table",
+    "ul",
   ),
   tr: ("tr",),
   td: ("td", "th"),
@@ -64,7 +92,15 @@
   option: ("option",),
 )
 
-#let _paged-hidden-tags = ("script", "style", "meta", "link", "head", "base", "template")
+#let _paged-hidden-tags = (
+  "script",
+  "style",
+  "meta",
+  "link",
+  "head",
+  "base",
+  "template",
+)
 
 #let _paged-block-tags = (
   "address",
@@ -105,7 +141,21 @@
 #let _ws-boundary-tags = (
   _paged-block-tags
     + _paged-hidden-tags
-    + ("html", "body", "thead", "tbody", "tfoot", "tr", "td", "th", "colgroup", "col", "hr", "br", "wbr")
+    + (
+      "html",
+      "body",
+      "thead",
+      "tbody",
+      "tfoot",
+      "tr",
+      "td",
+      "th",
+      "colgroup",
+      "col",
+      "hr",
+      "br",
+      "wbr",
+    )
 )
 
 // Peek at the tag opening at index `idx` (`cs.at(idx) == "<"`) to determine whether
@@ -261,21 +311,24 @@
   if not s.contains("&") {
     return s
   }
-  s.replace(regex("&(?:#[xX]([0-9a-fA-F]+)|#([0-9]+)|([a-zA-Z][a-zA-Z0-9]*));"), m => {
-    let raw-tok = m.text
-    let body = raw-tok.slice(1, raw-tok.len() - 1)
-    if body.starts-with("#x") or body.starts-with("#X") {
-      let cp = int(body.slice(2), base: 16)
-      if cp > 0 and cp <= 0x10FFFF { str.from-unicode(cp) } else { raw-tok }
-    } else if body.starts-with("#") {
-      let cp = int(body.slice(1))
-      if cp > 0 and cp <= 0x10FFFF { str.from-unicode(cp) } else { raw-tok }
-    } else if body in _named-entities {
-      _named-entities.at(body)
-    } else {
-      raw-tok
-    }
-  })
+  s.replace(
+    regex("&(?:#[xX]([0-9a-fA-F]+)|#([0-9]+)|([a-zA-Z][a-zA-Z0-9]*));"),
+    m => {
+      let raw-tok = m.text
+      let body = raw-tok.slice(1, raw-tok.len() - 1)
+      if body.starts-with("#x") or body.starts-with("#X") {
+        let cp = int(body.slice(2), base: 16)
+        if cp > 0 and cp <= 0x10FFFF { str.from-unicode(cp) } else { raw-tok }
+      } else if body.starts-with("#") {
+        let cp = int(body.slice(1))
+        if cp > 0 and cp <= 0x10FFFF { str.from-unicode(cp) } else { raw-tok }
+      } else if body in _named-entities {
+        _named-entities.at(body)
+      } else {
+        raw-tok
+      }
+    },
+  )
 }
 
 // Construct a single HTML element using Typst's built-in typed `html.<tag>` functions
@@ -339,7 +392,9 @@
           continue
         } else if v == true {
           str-attrs.insert(k, "")
-        } else if k in _typed-bool-attrs and lower(to-plain-text(v)) == "false" {
+        } else if (
+          k in _typed-bool-attrs and lower(to-plain-text(v)) == "false"
+        ) {
           continue
         } else if type(v) == array {
           str-attrs.insert(k, v.map(to-plain-text).join(" "))
@@ -361,18 +416,32 @@
       linebreak()
     } else if clean-tag == "hr" {
       line(length: 100%, stroke: 0.5pt + luma(80%))
-    } else if clean-tag == "a" and "href" in raw-attrs and raw-attrs.href != none {
+    } else if (
+      clean-tag == "a" and "href" in raw-attrs and raw-attrs.href != none
+    ) {
       link(to-plain-text(raw-attrs.href), safe-body)
     } else if clean-tag in ("strong", "b") {
       strong(safe-body)
     } else if clean-tag in ("em", "i") {
       emph(safe-body)
     } else if clean-tag == "h1" {
-      block(above: 1.2em, below: 0.5em, text(size: 1.6em, weight: "bold", safe-body))
+      block(above: 1.2em, below: 0.5em, text(
+        size: 1.6em,
+        weight: "bold",
+        safe-body,
+      ))
     } else if clean-tag == "h2" {
-      block(above: 1.1em, below: 0.45em, text(size: 1.3em, weight: "semibold", safe-body))
+      block(above: 1.1em, below: 0.45em, text(
+        size: 1.3em,
+        weight: "semibold",
+        safe-body,
+      ))
     } else if clean-tag == "h3" {
-      block(above: 0.9em, below: 0.35em, text(size: 1.1em, weight: "semibold", safe-body))
+      block(above: 0.9em, below: 0.35em, text(
+        size: 1.1em,
+        weight: "semibold",
+        safe-body,
+      ))
     } else if clean-tag in _paged-block-tags {
       block(width: 100%, above: 0.45em, below: 0.45em, safe-body)
     } else {
@@ -477,7 +546,9 @@
     if type(pos-arg) == dictionary {
       for (k, v) in pos-arg.pairs() {
         if k == "class" and v != none {
-          if type(v) == array { classes += v.map(to-plain-text) } else { classes.push(to-plain-text(v)) }
+          if type(v) == array { classes += v.map(to-plain-text) } else {
+            classes.push(to-plain-text(v))
+          }
         } else {
           merged.insert(k, v)
         }
@@ -489,7 +560,9 @@
 
   for (k, v) in args.named().pairs() {
     if k == "class" and v != none {
-      if type(v) == array { classes += v.map(to-plain-text) } else { classes.push(to-plain-text(v)) }
+      if type(v) == array { classes += v.map(to-plain-text) } else {
+        classes.push(to-plain-text(v))
+      }
     } else {
       merged.insert(k, v)
     }
@@ -517,10 +590,22 @@
     if idx >= 0 and idx < pos-slots.len() {
       pos-slots.at(idx)
     } else {
-      panic("`htm(...)`: positional slot `{" + key + "}` out of range (" + str(pos-slots.len()) + " positional args).")
+      panic(
+        "`htm(...)`: positional slot `{"
+          + key
+          + "}` out of range ("
+          + str(pos-slots.len())
+          + " positional args).",
+      )
     }
   } else {
-    panic("`htm(...)`: unknown slot `{" + key + "}` (available: " + named-slots.keys().join(", ") + ").")
+    panic(
+      "`htm(...)`: unknown slot `{"
+        + key
+        + "}` (available: "
+        + named-slots.keys().join(", ")
+        + ").",
+    )
   }
 }
 
@@ -577,13 +662,21 @@
   keep-leading-space: false,
   keep-trailing-space: false,
 ) = {
-  if not preserve-ws and raw-str.contains("\n") and raw-str.trim(regex("[ \\t\\r\\n]+")) == "" {
+  if (
+    not preserve-ws
+      and raw-str.contains("\n")
+      and raw-str.trim(regex("[ \\t\\r\\n]+")) == ""
+  ) {
     return if keep-leading-space and keep-trailing-space { (" ",) } else { () }
   }
   let cleaned = if not preserve-ws and raw-str.contains("\n") {
     raw-str
-      .replace(regex("^[ \\t]*\\r?\\n[ \\t]*"), if keep-leading-space { " " } else { "" })
-      .replace(regex("[ \\t]*\\r?\\n[ \\t]*$"), if keep-trailing-space { " " } else { "" })
+      .replace(regex("^[ \\t]*\\r?\\n[ \\t]*"), if keep-leading-space {
+        " "
+      } else { "" })
+      .replace(regex("[ \\t]*\\r?\\n[ \\t]*$"), if keep-trailing-space {
+        " "
+      } else { "" })
       .replace(regex("[ \\t]*\\r?\\n[ \\t]*"), " ")
   } else {
     raw-str
@@ -655,9 +748,19 @@
 
   while i < n {
     if cs.at(i) == "<" {
-      if i + 3 < n and cs.at(i + 1) == "!" and cs.at(i + 2) == "-" and cs.at(i + 3) == "-" {
+      if (
+        i + 3 < n
+          and cs.at(i + 1) == "!"
+          and cs.at(i + 2) == "-"
+          and cs.at(i + 3) == "-"
+      ) {
         i += 4
-        while i + 2 < n and not (cs.at(i) == "-" and cs.at(i + 1) == "-" and cs.at(i + 2) == ">") {
+        while (
+          i + 2 < n
+            and not (
+              cs.at(i) == "-" and cs.at(i + 1) == "-" and cs.at(i + 2) == ">"
+            )
+        ) {
           i += 1
         }
         i = calc.min(n, i + 3)
@@ -681,7 +784,9 @@
         i += 1
         while i < n and cs.at(i) in _ws-clusters { i += 1 }
         let ts = i
-        while i < n and cs.at(i) not in _ws-clusters and cs.at(i) not in (">", "/") { i += 1 }
+        while (
+          i < n and cs.at(i) not in _ws-clusters and cs.at(i) not in (">", "/")
+        ) { i += 1 }
         let tag = cs.slice(ts, i).join()
         let attrs = (:)
         let self-close = false
@@ -700,7 +805,11 @@
           }
 
           let aks = i
-          while i < n and cs.at(i) not in _ws-clusters and cs.at(i) not in ("=", ">", "/") { i += 1 }
+          while (
+            i < n
+              and cs.at(i) not in _ws-clusters
+              and cs.at(i) not in ("=", ">", "/")
+          ) { i += 1 }
           let akey = cs.slice(aks, i).join()
           while i < n and cs.at(i) in _ws-clusters { i += 1 }
 
@@ -715,7 +824,11 @@
               let aval = cs.slice(avs, i).join()
               if i < n and cs.at(i) == q { i += 1 }
               if akey != "" {
-                attrs.insert(akey, _interpolate-attr-str(aval, named-slots, pos-slots))
+                attrs.insert(akey, _interpolate-attr-str(
+                  aval,
+                  named-slots,
+                  pos-slots,
+                ))
               }
             } else if i < n and cs.at(i) == "{" {
               i += 1
@@ -728,7 +841,11 @@
               }
             } else {
               let avs = i
-              while i < n and cs.at(i) not in _ws-clusters and cs.at(i) not in (">", "/") { i += 1 }
+              while (
+                i < n
+                  and cs.at(i) not in _ws-clusters
+                  and cs.at(i) not in (">", "/")
+              ) { i += 1 }
               let aval = cs.slice(avs, i).join()
               if akey != "" {
                 attrs.insert(akey, _decode-entities(aval))
@@ -764,7 +881,10 @@
       let prev-is-inline = (
         prev-tok != none
           and prev-tok.tag not in _ws-boundary-tags
-          and (prev-tok.kind == "close" or prev-tok.at("self-close", default: false))
+          and (
+            prev-tok.kind == "close"
+              or prev-tok.at("self-close", default: false)
+          )
       )
       let next-is-inline = i < n and _peek-next-inline-open(cs, i, n)
       let pieces = _interpolate-text-nodes(
@@ -793,7 +913,9 @@
   let idx = start-idx
   let n = tokens.len()
   let nodes = ()
-  let peer-closers = if stop-tag != none { _auto-close-peers.at(stop-tag, default: ()) } else { () }
+  let peer-closers = if stop-tag != none {
+    _auto-close-peers.at(stop-tag, default: ())
+  } else { () }
 
   while idx < n {
     let tok = tokens.at(idx)
@@ -806,10 +928,20 @@
         if stop-tag in _optional-close-tags {
           return (content: _join-content(nodes), next: idx)
         }
-        panic("`htm(...)`: unclosed `<" + stop-tag + ">` before `</" + tok.tag + ">`.")
+        panic(
+          "`htm(...)`: unclosed `<"
+            + stop-tag
+            + ">` before `</"
+            + tok.tag
+            + ">`.",
+        )
       } else {
-        let ctx = if stop-tag != none { " inside `<" + stop-tag + ">`" } else { "" }
-        panic("`htm(...)`: unexpected closing tag `</" + tok.tag + ">`" + ctx + ".")
+        let ctx = if stop-tag != none { " inside `<" + stop-tag + ">`" } else {
+          ""
+        }
+        panic(
+          "`htm(...)`: unexpected closing tag `</" + tok.tag + ">`" + ctx + ".",
+        )
       }
     } else if tok.kind == "text" {
       nodes += tok.pieces
@@ -822,8 +954,15 @@
         nodes.push(_emit-element(tok.tag, tok.attrs, []))
         idx += 1
       } else {
-        let next-ancestors = if stop-tag != none { ancestors + (stop-tag,) } else { ancestors }
-        let sub = _build-htm-tree(tokens, idx + 1, tok.tag, ancestors: next-ancestors)
+        let next-ancestors = if stop-tag != none {
+          ancestors + (stop-tag,)
+        } else { ancestors }
+        let sub = _build-htm-tree(
+          tokens,
+          idx + 1,
+          tok.tag,
+          ancestors: next-ancestors,
+        )
         nodes.push(_emit-element(tok.tag, tok.attrs, sub.content))
         idx = sub.next
       }

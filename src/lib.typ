@@ -10,58 +10,28 @@
 #import "blog/mod.typ" as blog
 
 #import "core.typ": (
-  backlinks,
-  file,
-  mount,
-  page-asset,
-  query-pages,
-  site,
-  webpage,
+  backlinks, file, mount, page-asset, query-pages, site, webpage,
   with-html-math,
 )
 
-#import "htm.typ": (
-  enable-htm,
-  h,
-  htm,
-)
+#import "htm.typ": enable-htm, h, htm
 
 #import "i18n.typ": (
-  i18n-css,
-  lang-switcher,
-  normalize-alternates,
-  resolve-page-langs,
-  tr,
+  i18n-css, lang-switcher, normalize-alternates, resolve-page-langs, tr,
 )
 
 #import "paths.typ": (
-  canonical-page-url,
-  heading-anchor-id,
-  query-backlinks,
-  slugify,
+  canonical-page-url, heading-anchor-id, query-backlinks, slugify,
   source-path-for,
 )
 
 #import "seo.typ": (
-  atom-xml,
-  robots-txt,
-  rss-xml,
+  atom-xml, content-to-feed-html, render-seo-meta, robots-txt, rss-xml,
   sitemap-xml,
-  content-to-feed-html,
-  render-seo-meta,
 )
 
 #import "text.typ": (
-  count-words,
-  estimate-reading-minutes,
-  short-hash,
-  to-plain-text,
-  word-hint,
+  count-words, estimate-reading-minutes, short-hash, to-plain-text, word-hint,
 )
 
-#import "tree.typ": (
-  any-content,
-  collect-content,
-  find-content,
-  map-containers,
-)
+#import "tree.typ": any-content, collect-content, find-content, map-containers

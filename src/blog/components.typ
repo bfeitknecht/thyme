@@ -4,9 +4,13 @@
 
 #import "@preview/cheq:0.4.0": checklist
 #import "@preview/showybox:2.0.4": showybox
-#import "@preview/tablem:0.3.0": tablem as _tablem, three-line-table as _three-line-table
+#import "@preview/tablem:0.3.0": (
+  tablem as _tablem, three-line-table as _three-line-table,
+)
 #import "@preview/zebraw:0.6.3": zebraw as _zebraw, zebraw-init, zebraw-themes
-#import "../paths.typ": find-doc-containing, heading-anchor-id, resolve-abs-length
+#import "../paths.typ": (
+  find-doc-containing, heading-anchor-id, resolve-abs-length,
+)
 #import "../text.typ": to-plain-text, word-hint
 #import "theme.typ": active-theme
 
@@ -28,7 +32,11 @@
   /// -> any
   ..rest,
 ) = {
-  [#metadata((thyme-feed-node: true, kind: "block", body: body))<thyme-feed-meta>]
+  [#metadata((
+    thyme-feed-node: true,
+    kind: "block",
+    body: body,
+  ))<thyme-feed-meta>]
   context {
     let t = active-theme()
     let inner = _tablem(
@@ -76,16 +84,28 @@
 ) = {
   let pos-args = args.pos()
   if pos-args.len() > 0 {
-    [#metadata((thyme-feed-node: true, kind: "code", body: pos-args.last()))<thyme-feed-meta>]
+    [#metadata((
+      thyme-feed-node: true,
+      kind: "code",
+      body: pos-args.last(),
+    ))<thyme-feed-meta>]
   }
   [#metadata(true)<blog-has-code>]
   context {
     let t = active-theme()
     _zebraw(
-      highlight-color: if highlight-color == auto { t.surface-2-light } else { highlight-color },
-      background-color: if background-color == auto { t.surface-1-light } else { background-color },
-      comment-color: if comment-color == auto { t.surface-2-light } else { comment-color },
-      lang-color: if lang-color == auto { t.surface-2-light } else { lang-color },
+      highlight-color: if highlight-color == auto { t.surface-2-light } else {
+        highlight-color
+      },
+      background-color: if background-color == auto { t.surface-1-light } else {
+        background-color
+      },
+      comment-color: if comment-color == auto { t.surface-2-light } else {
+        comment-color
+      },
+      lang-color: if lang-color == auto { t.surface-2-light } else {
+        lang-color
+      },
       ..args,
     )
   }
@@ -153,7 +173,9 @@
   ))<thyme-feed-meta>]
   context {
     let t = active-theme()
-    let has-title = clean-title != none and to-plain-text(clean-title).trim().len() > 0
+    let has-title = (
+      clean-title != none and to-plain-text(clean-title).trim().len() > 0
+    )
     word-hint(kind, clean-title, ..parts)
 
     if target() == "html" {
@@ -163,7 +185,11 @@
         {
           if parts.len() == 0 {
             if kind != none or has-title {
-              html.div(class: "blog-sbox-part", _sbox-html-head(kind, has-title, clean-title))
+              html.div(class: "blog-sbox-part", _sbox-html-head(
+                kind,
+                has-title,
+                clean-title,
+              ))
             }
           } else {
             for (i, part) in parts.enumerate() {
@@ -204,13 +230,15 @@
       let sbox-parts = if parts.len() == 0 {
         if head-line != none { (head-line,) } else { ([],) }
       } else {
-        parts.enumerate().map(((i, part)) => {
-          if i == 0 and head-line != none {
-            head-line + part
-          } else {
-            part
-          }
-        })
+        parts
+          .enumerate()
+          .map(((i, part)) => {
+            if i == 0 and head-line != none {
+              head-line + part
+            } else {
+              part
+            }
+          })
       }
 
       showybox(
@@ -273,27 +301,57 @@
 
 /// Lemma environment (`LEMMA.`).
 /// -> content
-#let lemma(title, ..sections) = sbox(title, ..sections.pos(), variant: "lemma", kind: "Lemma")
+#let lemma(title, ..sections) = sbox(
+  title,
+  ..sections.pos(),
+  variant: "lemma",
+  kind: "Lemma",
+)
 
 /// Proposition environment (`PROPOSITION.`).
 /// -> content
-#let proposition(title, ..sections) = sbox(title, ..sections.pos(), variant: "proposition", kind: "Proposition")
+#let proposition(title, ..sections) = sbox(
+  title,
+  ..sections.pos(),
+  variant: "proposition",
+  kind: "Proposition",
+)
 
 /// Corollary environment (`COROLLARY.`).
 /// -> content
-#let corollary(title, ..sections) = sbox(title, ..sections.pos(), variant: "theorem", kind: "Corollary")
+#let corollary(title, ..sections) = sbox(
+  title,
+  ..sections.pos(),
+  variant: "theorem",
+  kind: "Corollary",
+)
 
 /// Example environment (`EXAMPLE.`).
 /// -> content
-#let example(title, ..sections) = sbox(title, ..sections.pos(), variant: "example", kind: "Example")
+#let example(title, ..sections) = sbox(
+  title,
+  ..sections.pos(),
+  variant: "example",
+  kind: "Example",
+)
 
 /// Recipe / procedure environment (`RECIPE.`).
 /// -> content
-#let recipe(title, ..sections) = sbox(title, ..sections.pos(), variant: "recipe", kind: "Recipe")
+#let recipe(title, ..sections) = sbox(
+  title,
+  ..sections.pos(),
+  variant: "recipe",
+  kind: "Recipe",
+)
 
 /// Remark environment (`REMARK.`).
 /// -> content
-#let remark(title, ..sections) = sbox(title, ..sections.pos(), variant: "recipe", kind: "Remark")
+#let remark(title, ..sections) = sbox(
+  title,
+  ..sections.pos(),
+  variant: "recipe",
+  kind: "Remark",
+)
 
 /// Proof block with subtle left rule and flush-right hollow Halmos square (`sym.square.stroked`).
 ///
@@ -311,7 +369,12 @@
   /// -> content
   body,
 ) = {
-  [#metadata((thyme-feed-node: true, kind: "proof", label: to-plain-text(title), body: body))<thyme-feed-meta>]
+  [#metadata((
+    thyme-feed-node: true,
+    kind: "proof",
+    label: to-plain-text(title),
+    body: body,
+  ))<thyme-feed-meta>]
   context {
     let t = active-theme()
     word-hint(title, body)
@@ -370,11 +433,15 @@
   /// -> content
   body,
 ) = {
-  let heading-text = if title == auto { _callout-labels.at(kind, default: "Note") } else { title }
+  let heading-text = if title == auto {
+    _callout-labels.at(kind, default: "Note")
+  } else { title }
   [#metadata((
     thyme-feed-node: true,
     kind: "callout",
-    label: if heading-text != none { to-plain-text(heading-text) } else { none },
+    label: if heading-text != none { to-plain-text(heading-text) } else {
+      none
+    },
     body: body,
   ))<thyme-feed-meta>]
   context {
@@ -443,7 +510,12 @@
   /// -> content
   body,
 ) = {
-  [#metadata((thyme-feed-node: true, kind: "epigraph", title: source, body: body))<thyme-feed-meta>]
+  [#metadata((
+    thyme-feed-node: true,
+    kind: "epigraph",
+    title: source,
+    body: body,
+  ))<thyme-feed-meta>]
   context {
     let t = active-theme()
     word-hint(body, source)
@@ -465,7 +537,12 @@
           emph(body)
           if source != none {
             v(0.35em)
-            align(right, text(font: t.mono-fonts, size: 0.8em, fill: t.muted-light, "- " + source))
+            align(right, text(
+              font: t.mono-fonts,
+              size: 0.8em,
+              fill: t.muted-light,
+              "- " + source,
+            ))
           }
         },
       )
@@ -482,7 +559,11 @@
   /// -> content
   body,
 ) = {
-  [#metadata((thyme-feed-node: true, kind: "block", body: body))<thyme-feed-meta>]
+  [#metadata((
+    thyme-feed-node: true,
+    kind: "block",
+    body: body,
+  ))<thyme-feed-meta>]
   context {
     let t = active-theme()
     word-hint(body)
@@ -493,15 +574,20 @@
       let cur-y = here().position().y
       let notes = state("marge:0.1.0/page-" + str(pg), ()).get()
       let top-clear = if notes.len() > 0 {
-        let max-note-y = notes.fold(0pt, (acc, n) => calc.max(acc, n.position.y + n.height))
-        let clearance = (1.35em).to-absolute()
+        let max-note-y = notes.fold(0pt, (acc, n) => calc.max(
+          acc,
+          n.position.y + n.height,
+        ))
+        let clearance = 1.35em.to-absolute()
         calc.max(0pt, max-note-y + clearance - cur-y)
       } else {
         0pt
       }
       let default-right = resolve-abs-length(t.margin.right, fallback: 7.4cm)
       let default-left = resolve-abs-length(t.margin.left, fallback: 2.2cm)
-      let right-m = if type(page.margin) == dictionary and "right" in page.margin {
+      let right-m = if (
+        type(page.margin) == dictionary and "right" in page.margin
+      ) {
         resolve-abs-length(page.margin.right, fallback: default-right)
       } else {
         default-right
@@ -575,7 +661,9 @@
       inset: (x: 0.34em, y: 0.13em),
       outset: (y: 0.12em),
       radius: 2pt,
-      text(size: 0.82em, font: t.mono-fonts, raw(if type(key) == str { key } else { to-plain-text(key) })),
+      text(size: 0.82em, font: t.mono-fonts, raw(if type(key) == str {
+        key
+      } else { to-plain-text(key) })),
     )
   }
 }
@@ -606,11 +694,14 @@
   let t = active-theme()
   let entries = items.pos()
   if target() == "html" {
-    html.ul(class: if direction == "row" { "links" } else { "links-col" }, {
-      for item in entries {
-        html.li(item)
-      }
-    })
+    html.ul(
+      class: if direction == "row" { "links" } else { "links-col" },
+      {
+        for item in entries {
+          html.li(item)
+        }
+      },
+    )
   } else {
     if direction == "row" {
       block(above: 0.6em, below: 1.2em, {
@@ -649,7 +740,11 @@
     let starts = query(selector(<thyme-body-start>).within(enc-doc.location()))
     let ends = query(selector(<thyme-body-end>).within(enc-doc.location()))
     if starts.len() > 0 and ends.len() > 0 {
-      query(selector(heading).after(starts.first().location()).before(ends.first().location()))
+      query(
+        selector(heading)
+          .after(starts.first().location())
+          .before(ends.first().location()),
+      )
     } else {
       query(selector(heading).within(enc-doc.location()))
     }
@@ -657,7 +752,11 @@
     let starts = query(selector(<thyme-body-start>).before(here()))
     let ends = query(selector(<thyme-body-end>).after(here()))
     if starts.len() > 0 and ends.len() > 0 {
-      query(selector(heading).after(starts.last().location()).before(ends.first().location()))
+      query(
+        selector(heading)
+          .after(starts.last().location())
+          .before(ends.first().location()),
+      )
     } else {
       query(heading)
     }
@@ -679,7 +778,9 @@
         html.ol({
           for h in entries {
             let h-pos = all-headings.position(x => x.location() == h.location())
-            let prior = if h-pos != none { all-headings.slice(0, h-pos) } else { () }
+            let prior = if h-pos != none { all-headings.slice(0, h-pos) } else {
+              ()
+            }
             let aid = heading-anchor-id(h, prior-headings: prior)
             if h.level == 1 {
               sec-idx += 1
@@ -737,7 +838,12 @@
           }
           block(below: 0.28em, inset: (left: pad), {
             if num-str != none {
-              text(font: t.mono-fonts, size: 0.78em, fill: t.muted-light, num-str)
+              text(
+                font: t.mono-fonts,
+                size: 0.78em,
+                fill: t.muted-light,
+                num-str,
+              )
               std.h(0.45em)
             }
             link(h.location(), text(size: 0.92em, h.body))

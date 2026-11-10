@@ -20,7 +20,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
-      - run: just fmt-check
+      - run: just fmt --check
 
   lint:
     name: Lint

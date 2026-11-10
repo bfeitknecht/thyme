@@ -45,10 +45,7 @@
 /// Join path segments with single `/` separators and no leading or trailing slash.
 /// -> str
 #let join-path(..parts) = {
-  let segs = parts
-    .pos()
-    .map(p => str(p).trim("/"))
-    .filter(p => p.len() > 0)
+  let segs = parts.pos().map(p => str(p).trim("/")).filter(p => p.len() > 0)
   if segs.len() > 0 { segs.join("/") } else { "" }
 }
 
@@ -138,7 +135,7 @@
 }
 
 /// Compute the sibling Tadi Web `.typ` bundle path for any HTML document path:
-  /// - `"index.html"` -> `"site.typ"`
+/// - `"index.html"` -> `"site.typ"`
 /// - `"posts/impli/index.html"` -> `"posts/impli.typ"`
 /// - `"contact/index.html"` -> `"contact.typ"`
 /// -> str
@@ -233,7 +230,9 @@
 /// -> str
 #let canonical-page-url(site-url, doc-path) = {
   let base = str(site-url).trim("/", at: end)
-  let raw-str = if doc-path == none { "index.html" } else { str(doc-path).trim() }
+  let raw-str = if doc-path == none { "index.html" } else {
+    str(doc-path).trim()
+  }
   let had-trailing = raw-str.ends-with("/")
   let clean = raw-str.trim("/")
   if clean == "" or clean == "index.html" {
@@ -271,7 +270,14 @@
 #let date-sort-key(d) = {
   if type(d) == datetime {
     let norm = if d.hour() == none {
-      datetime(year: d.year(), month: d.month(), day: d.day(), hour: 0, minute: 0, second: 0)
+      datetime(
+        year: d.year(),
+        month: d.month(),
+        day: d.day(),
+        hour: 0,
+        minute: 0,
+        second: 0,
+      )
     } else {
       d
     }
@@ -286,7 +292,10 @@
 /// Emit a zero-footprint `<thyme-doc-marker>` at the start of every bundle `document(...)`
 /// so enclosing-document lookup runs in $O(1)$ without cross-document `<thyme-page-meta>` bleed.
 /// -> content
-#let emit-doc-marker(doc-path, doc-label) = [#metadata((path: doc-path, doc-label: doc-label))<thyme-doc-marker>]
+#let emit-doc-marker(doc-path, doc-label) = [#metadata((
+  path: doc-path,
+  doc-label: doc-label,
+))<thyme-doc-marker>]
 
 /// Find the enclosing `document` element for an arbitrary location in $O(1)$ inside `context`.
 /// -> content | none
@@ -302,7 +311,9 @@
     }
   }
   for d in query(document) {
-    if query(selector(<thyme-page-meta>).within(d.location())).any(m => m.location() == loc) {
+    if query(selector(<thyme-page-meta>).within(d.location())).any(m => (
+      m.location() == loc
+    )) {
       return d
     }
   }
@@ -311,7 +322,10 @@
 
 /// Find the enclosing `document` element in bundle mode for a metadata or body location.
 /// -> content | none
-#let find-enclosing-doc(meta-loc, meta-label: <thyme-page-meta>) = find-doc-containing(meta-loc)
+#let find-enclosing-doc(
+  meta-loc,
+  meta-label: <thyme-page-meta>,
+) = find-doc-containing(meta-loc)
 
 /// Resolve a `<label>` across the bundle, preferring emitted `document` / `asset` / `heading`
 /// targets over mount-marker `metadata` nodes, while falling back to mounted-page
@@ -326,7 +340,10 @@
   let mount-meta = all.filter(el => (
     el.func() == metadata
       and type(el.value) == dictionary
-      and (el.value.at("thyme-mounted", default: false) or el.value.at("thyme-paged-ref", default: false))
+      and (
+        el.value.at("thyme-mounted", default: false)
+          or el.value.at("thyme-paged-ref", default: false)
+      )
   ))
   if mount-meta.len() > 0 {
     return mount-meta.first()
@@ -431,7 +448,11 @@
     let prior = if not it.has("label") and eff-level >= 2 {
       let markers = query(selector(<thyme-doc-marker>).before(it.location()))
       let priors = if markers.len() > 0 {
-        query(selector(heading).after(markers.last().location()).before(it.location()))
+        query(
+          selector(heading)
+            .after(markers.last().location())
+            .before(it.location()),
+        )
       } else {
         query(selector(heading).before(it.location()))
       }
@@ -439,14 +460,21 @@
     } else {
       ()
     }
-    let hid = heading-anchor-id(it, auto-slug: eff-level >= 2, prior-headings: prior)
+    let hid = heading-anchor-id(
+      it,
+      auto-slug: eff-level >= 2,
+      prior-headings: prior,
+    )
     let tag-fn = html-dict.at("h" + str(eff-level))
     let inner = if permalinks and eff-level >= 2 and hid != none {
-      it.body + html.a(
-        href: "#" + hid,
-        class: "heading-anchor",
-        ..("aria-label": "Permalink to this section"),
-        permalink-symbol,
+      (
+        it.body
+          + html.a(
+            href: "#" + hid,
+            class: "heading-anchor",
+            ..("aria-label": "Permalink to this section"),
+            permalink-symbol,
+          )
       )
     } else {
       it.body
@@ -520,7 +548,10 @@
       } else if (
         func == metadata
           and type(el.value) == dictionary
-          and (el.value.at("thyme-mounted", default: false) or el.value.at("thyme-paged-ref", default: false))
+          and (
+            el.value.at("thyme-mounted", default: false)
+              or el.value.at("thyme-paged-ref", default: false)
+          )
       ) {
         [#metadata((target: str(it.target)))<thyme-outbound-ref>]
         let pm = el.value.at("meta", default: none)
@@ -558,7 +589,11 @@
           humanize-slug(it.target)
         }
         if target() == "html" {
-          html.span(class: "thyme-unresolved-ref", title: "@" + str(it.target), fallback)
+          html.span(
+            class: "thyme-unresolved-ref",
+            title: "@" + str(it.target),
+            fallback,
+          )
         } else {
           underline(
             stroke: (paint: muted, thickness: 0.6pt, dash: "dashed"),
@@ -588,18 +623,30 @@
   exclude-doc-path: none,
 ) = {
   let clean-target = str(target-slug)
-  let clean-excl = if exclude-doc-path != none { str(exclude-doc-path).trim("/") } else { none }
+  let clean-excl = if exclude-doc-path != none {
+    str(exclude-doc-path).trim("/")
+  } else { none }
   let hits = ()
   for d in query(document) {
     let dp = if d.path != none { str(d.path).trim("/") } else { "" }
-    if dp.ends-with(".html") and dp != "404.html" and dp != "index.html" and dp != clean-excl {
+    if (
+      dp.ends-with(".html")
+        and dp != "404.html"
+        and dp != "index.html"
+        and dp != clean-excl
+    ) {
       let metas = query(selector(<thyme-page-meta>).within(d.location()))
       if metas.len() > 0 {
         let m = metas.first().value
-        if not m.at("draft", default: false) and not m.at("unlisted", default: false) {
+        if (
+          not m.at("draft", default: false)
+            and not m.at("unlisted", default: false)
+        ) {
           let refs = query(selector(<thyme-outbound-ref>).within(d.location()))
           if refs.any(r => r.value.target == clean-target) {
-            let derived-slug = if m.slug != none { m.slug } else { slug-from-path(dp) }
+            let derived-slug = if m.slug != none { m.slug } else {
+              slug-from-path(dp)
+            }
             hits.push((
               ..m,
               slug: derived-slug,

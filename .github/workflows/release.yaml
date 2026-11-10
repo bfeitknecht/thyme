@@ -31,37 +31,21 @@ jobs:
 
       - uses: ./.github/actions/setup
 
-      - name: Validate tag against typst.toml & CHANGELOG
+      - name: Validate the release tag
         id: meta
         env:
-          RAW_TAG: ${{ inputs.tag || github.ref_name }}
+          TAG: ${{ inputs.tag || github.ref_name }}
         run: |
-          set -eu
-          tag_version="${RAW_TAG#v}"
-          pkg_name="$(sed -n 's/^name = "\(.*\)"$/\1/p' typst.toml)"
-          pkg_version="$(sed -n 's/^version = "\(.*\)"$/\1/p' typst.toml)"
-
-          if [ -z "$pkg_name" ] || [ -z "$pkg_version" ]; then
-            echo "::error::could not read name/version from typst.toml"
-            exit 1
-          fi
-          if [ "$tag_version" != "$pkg_version" ]; then
-            echo "::error::tag ${RAW_TAG} does not match typst.toml version ${pkg_version}"
-            exit 1
-          fi
-          if ! grep -Eq "^## \[${pkg_version}\]" CHANGELOG.md; then
-            echo "::error::missing '## [${pkg_version}]' section in CHANGELOG.md"
-            exit 1
-          fi
-
-          echo "pkg_name=${pkg_name}" >> "$GITHUB_OUTPUT"
-          echo "pkg_version=${pkg_version}" >> "$GITHUB_OUTPUT"
+          just release "$TAG" --check
+          {
+            echo "pkg_name=$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml","rb"))["package"]["name"])')"
+            echo "pkg_version=$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml","rb"))["package"]["version"])')"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Run full check suite
         run: |
-          just docs
           just check
-          just fmt-check
+          just fmt --check
           just lint
 
   github-release:
@@ -77,50 +61,30 @@ jobs:
 
       - uses: ./.github/actions/setup
 
-      - name: Build manual
-        run: just docs
-
-      - name: Extract Keep a Changelog notes & publish
+      - name: Publish the GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ inputs.tag || github.ref_name }}
-          VER: ${{ needs.verify.outputs.pkg_version }}
         run: |
           set -eu
-          python3 - "$VER" <<'PY' > release-notes.md
-          import pathlib, re, sys
+          just release --notes > release-notes.md
+          cat >> release-notes.md <<'EOF'
 
-          version = sys.argv[1]
-          text = pathlib.Path("CHANGELOG.md").read_text()
-          match = re.search(
-              rf"^## \[{re.escape(version)}\][^\n]*\n(.*?)(?=^## \[|^\[[^\]]+\]:|\Z)",
-              text,
-              re.M | re.S,
-          )
-          body = match.group(1).strip() if match else f"Release v{version}"
-          footer = (
-              "\n\n---\n"
-              "_Release notes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) "
-              "and [Semantic Versioning](https://semver.org/spec/v2.0.0.html)._"
-          )
-          print(body + footer)
-          PY
-
+          ---
+          _Release notes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/spec/v2.0.0.html)._
+          EOF
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" docs/manual.pdf --clobber
             gh release edit "$TAG" --notes-file release-notes.md
           else
-            gh release create "$TAG" docs/manual.pdf \
-              --title "$TAG" \
-              --notes-file release-notes.md
+            gh release create "$TAG" docs/manual.pdf --title "$TAG" --notes-file release-notes.md
           fi
 
   universe-pr:
     name: Open Typst Universe PR
     needs: [verify, github-release]
     runs-on: ubuntu-latest
-    # Skipped while an unpublished dependency is still vendored, or before
-    # UNIVERSE_TOKEN is configured, so a tag never fails for those reasons.
+    # Off until UNIVERSE_TOKEN is configured, so a tag never fails for that reason.
     if: ${{ vars.UNIVERSE_SUBMIT == 'true' }}
     env:
       PKG_NAME: ${{ needs.verify.outputs.pkg_name }}
@@ -132,13 +96,6 @@ jobs:
         with:
           ref: ${{ inputs.tag || github.ref }}
 
-      - name: Ensure no unpublished dependency is still vendored
-        run: |
-          if [ -d vendor ] && [ -n "$(find vendor -mindepth 1 -maxdepth 2 -name typst.toml 2>/dev/null)" ]; then
-            echo "::error::vendor/ still contains unpublished dependencies (e.g. @preview/exemel:0.3.0). Wait for the upstream Universe release, remove vendor/, and re-run."
-            exit 1
-          fi
-
       - name: Require UNIVERSE_TOKEN
         env:
           GH_TOKEN: ${{ secrets.UNIVERSE_TOKEN }}
@@ -149,23 +106,27 @@ jobs:
           fi
 
       - name: Stage Universe payload
-        run: ./scripts/stage-universe.sh universe-stage
+        run: just _stage universe-stage "$PKG_NAME" "$PKG_VER"
 
       - name: Cache typst-package-check
         uses: actions/cache@v4
         with:
           path: ~/.cargo/bin/typst-package-check
-          key: typst-package-check-${{ runner.os }}-v1
+          key: typst-package-check-${{ runner.os }}-v0.7.0
 
       - name: Install Typst & typst-package-check
         run: |
           set -eu
           mkdir -p "$HOME/.local/bin"
-          typst_version="$(sed -n 's/^compiler = "\(.*\)"$/\1/p' typst.toml)"
+          typst_version="$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml","rb"))["package"]["compiler"])')"
           curl -fsSL "https://github.com/typst/typst/releases/download/v${typst_version}/typst-x86_64-unknown-linux-musl.tar.xz" \
             | tar -xJ -C "$HOME/.local/bin" --strip-components=1 "typst-x86_64-unknown-linux-musl/typst"
+          # Pin the validator to a tag: `--git` without a rev installs whatever master
+          # happens to be at release time, so a release can fail (or pass) for reasons
+          # that do not exist in this repository's history.
           if [ ! -x "$HOME/.cargo/bin/typst-package-check" ]; then
-            cargo install --locked --git https://github.com/typst/package-check.git typst-package-check
+            cargo install --locked --git https://github.com/typst/package-check.git \
+              --tag v0.7.0 typst-package-check
           fi
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"

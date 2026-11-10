@@ -2,7 +2,9 @@
 // over Typst `content` trees.
 
 #let _seq-func = [].func()
-#let _html-elem-func = if "html" in dictionary(std) { std.html.elem } else { none }
+#let _html-elem-func = if "html" in dictionary(std) { std.html.elem } else {
+  none
+}
 
 /// Find the first non-`none` result produced by `match-fn(node)` in pre-order traversal.
 /// Set `descend` to prune subtrees (e.g. skipping mounted subpages).
@@ -48,7 +50,10 @@
 /// Return `true` when any node in `c` satisfies `pred(node)`.
 /// -> bool
 #let any-content(c, pred, descend: _ => true) = {
-  find-content(c, n => if pred(n) { true } else { none }, descend: descend) == true
+  (
+    find-content(c, n => if pred(n) { true } else { none }, descend: descend)
+      == true
+  )
 }
 
 /// Collect an array of items extracted by `extract-fn(node)` across `c`.
@@ -133,7 +138,10 @@
     }
     return if mapped.len() > 0 { mapped.join() } else { [] }
   }
-  if fn in (block, box, align, pad, list.item, enum.item, quote) and c.has("body") {
+  if (
+    fn in (block, box, align, pad, list.item, enum.item, quote)
+      and c.has("body")
+  ) {
     let f = c.fields()
     let b = f.remove("body")
     let mb = go(b)
