@@ -13,15 +13,15 @@
 
 ### Step 2 — Publish `bfeitknecht/thyme` & submit `@preview/thyme:0.1.0`
 
-> **The release pipeline is already wired, but gated.** Pushing a `v*.*.*` tag runs
-> `.github/workflows/release.yaml`: `verify` (tag vs `typst.toml` vs `CHANGELOG.md`, then the
-> full check suite) → `github-release` (GitHub Release with `docs/manual.pdf` attached) →
-> `universe-pr` (stage, `typst-package-check`, push to the fork, open the Draft PR).
+> **The release pipeline is already wired and gated.** Pushing a `v*.*.*` tag runs
+> `.github/workflows/release.yaml`: `verify` (tag against `typst.toml` and `CHANGELOG.md`, then
+> the full check suite), then `github-release` (GitHub Release with `docs/manual.pdf` attached),
+> then `universe-pr` (stage, `typst-package-check`, push to the fork, open the Draft PR).
 >
-> `universe-pr` is **skipped unless the repository variable `UNIVERSE_SUBMIT` is `true`**, so
-> tagging while `vendor/exemel` still exists does not produce a red run. Flip the variable only
-> after Step 1 is done and `vendor/` is gone. Note the variable must be a *variable*
-> (`vars.UNIVERSE_SUBMIT`), not a secret — secrets cannot gate a job-level `if`.
+> `universe-pr` is **skipped unless the repository variable `UNIVERSE_SUBMIT` is `true`**, so a
+> tag pushed while `vendor/exemel` still exists does not fail the run. Set the variable only after
+> Step 1 is done and `vendor/` is gone. It must be a *variable* (`vars.UNIVERSE_SUBMIT`), because
+> a secret cannot gate a job-level `if`.
 
 - [ ] **Configure GitHub repo & Universe fork**
   - Create `bfeitknecht/thyme` on GitHub.
@@ -70,9 +70,8 @@
 
 ### Step 4 — Update `bfeitknecht/apex` (`0xbf.ch`)
 - [ ] Copy the files from `apex/` into your `bfeitknecht/apex` checkout (`cv.pdf`, `age.txt`, and `pgp.txt` already match upstream; replace `cv.pdf` if updated).
-- [ ] **Pin to Universe, not a vendored copy:** imports resolve to `@preview/thyme:0.1.0` from the
-  real package cache. `apex` vendors nothing — there is no `vendor/` fallback to design around,
-  so this step is gated on Step 1 rather than on a deployment choice.
+- [ ] **Pin to Universe.** Imports resolve `@preview/thyme:0.1.0` from the
+  real package cache. `apex` has no `vendor/` fallback, so this step is gated on Step 1 alone.
 - [ ] *(Optional — Ratatui WASM TUI)* Pass `head: html.script(type: "module", src: "/boot.js")` inside `site.with(...)` in `site.typ` and copy the compiled WASM/`.js` assets into `/public/` in `Dockerfile`.
 - [ ] **Compile & release**
   ```sh
