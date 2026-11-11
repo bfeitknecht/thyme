@@ -65,12 +65,19 @@ and one token value works in all three repositories.
 
   | Scope | Repository | Why |
   | :--- | :--- | :--- |
-  | `Contents: read and write` | `bfeitknecht/packages` | push the release branch |
-  | `Pull requests: read and write` | `typst/packages` | open the submission PR |
+  | `Contents: read and write` | `bfeitknecht/packages` | sync the fork, push the release branch |
 
-  A fine-grained token must be scoped to both repositories. A classic token needs `public_repo`
-  (that is what `syndicate`'s workflow documents). The push only rewrites
-  `packages/preview/<name>/`, never `.github/workflows/`, so the `workflow` scope is not needed.
+  **Do not add `typst/packages` to the token.** The `typst` org restricts fine-grained tokens, so
+  `createPullRequest` is refused there even when the repository is selected. Adding it produces a
+  token that looks correct and fails at the last step.
+
+  A classic token with `public_repo` can open the PR, but it reaches every public repository you
+  can see. It is not worth that for one click. Use the fine-grained token and finish by hand; the
+  job prints the link.
+
+  The push only rewrites `packages/preview/<name>/`, never `.github/workflows/`, so the `workflow`
+  scope is not needed. The sync runs before the branch is cut, which is what keeps the push free of
+  workflow changes.
 
 - **Variable** `UNIVERSE_SUBMIT` — set to `true`. It gates the `universe-pr` job. While it is
   unset, a tag publishes the GitHub Release and silently skips the Universe PR.
@@ -178,6 +185,10 @@ section is the contract to hand to anyone downstream.
 - **The formatter is pinned to `typstyle` 0.15.1.** `just fmt --check` runs as its own CI
   job; if you bump the pin, run `just fmt` and commit the reformat in the same change, or
   `Format` goes red for the whole tree.
+- **The submission PR is opened by hand.** The `universe-pr` job pushes the branch and publishes
+  the GitHub Release, then tries `gh pr create`. When the token is refused it writes the compare
+  link and the PR body to the job summary and exits 0, so the run is green. Open the link, paste
+  the title and body, and submit. A refused PR is not a failed release.
 - **Never re-point an existing tag at new commits.** `actions/checkout` uses
   `inputs.tag || github.ref`, and `github.ref` for a tag push is the tag. If you delete and
   re-push a tag after amending the release commit, `universe-pr` can stage the *old* tree
