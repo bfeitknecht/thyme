@@ -2,13 +2,15 @@
 #
 # Necessary configuration in the repository settings:
 # - Secret UNIVERSE_TOKEN: a personal access token with `Contents: read and write`
-#   on the `typst/packages` fork and `Pull requests: read and write` on
-#   `typst/packages`. The token user pushes the release branch and opens the PR.
+#   on `UNIVERSE_REPO` and `Pull requests: read and write` on `typst/packages`.
+#   The token user pushes the release branch and opens the submission PR.
 #   A fine-grained token must be scoped to both repositories for this to work.
 # - Variable UNIVERSE_SUBMIT: set to `true` to enable the `universe-pr` job.
 #   Leave it unset while a dependency is unpublished.
-# - Variable UNIVERSE_FORK (optional): the fork of `typst/packages` that gets the
-#   release branch. The default is `bfeitknecht/packages`.
+# - Variable UNIVERSE_REPO (optional): the fork of `typst/packages` that receives
+#   the release branch. Accepts `owner/repo`, `host/owner/repo` or a full URL. The
+#   host also addresses the upstream, so the fork must live on the host that serves
+#   `typst/packages`. The default is `github.com/bfeitknecht/packages`.
 
 name: Release & submit to Typst Universe
 
@@ -102,7 +104,7 @@ jobs:
       PKG_NAME: ${{ needs.verify.outputs.pkg_name }}
       PKG_VER: ${{ needs.verify.outputs.pkg_version }}
       UPSTREAM_REPO: typst/packages
-      FORK_REPO: ${{ vars.UNIVERSE_FORK || 'bfeitknecht/packages' }}
+      UNIVERSE_REPO: ${{ vars.UNIVERSE_REPO || 'github.com/bfeitknecht/packages' }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -113,9 +115,32 @@ jobs:
           GH_TOKEN: ${{ secrets.UNIVERSE_TOKEN }}
         run: |
           if [ -z "$GH_TOKEN" ]; then
-            echo "::error::missing UNIVERSE_TOKEN secret — add a PAT with push access to ${FORK_REPO} and PR access to ${UPSTREAM_REPO}."
+            echo "::error::missing UNIVERSE_TOKEN secret — add a token with push access to ${UNIVERSE_REPO} and PR access to ${UPSTREAM_REPO}."
             exit 1
           fi
+
+      # Split UNIVERSE_REPO into a host and an owner/repo slug once, because `gh`
+      # takes a bare slug while the git remote needs the host in the URL.
+      - name: Resolve UNIVERSE_REPO
+        run: |
+          set -eu
+          repo="${UNIVERSE_REPO#https://}"
+          repo="${repo#http://}"
+          repo="${repo%/}"
+          repo="${repo%.git}"
+          case "$repo" in
+            */*/*) host="${repo%%/*}"; slug="${repo#*/}" ;;
+            *)     host="github.com";   slug="$repo" ;;
+          esac
+          # Pattern match, not a slash count: `grep -c` counts lines, so a slug with two
+          # slashes would pass and every later path would be wrong.
+          case "$slug" in
+            */*/*) echo "::error::UNIVERSE_REPO must name one repository, got '$UNIVERSE_REPO'."; exit 1 ;;
+            */*)   ;;
+            *)     echo "::error::UNIVERSE_REPO must be owner/repo, got '$UNIVERSE_REPO'."; exit 1 ;;
+          esac
+          echo "UNIVERSE_HOST=$host" >> "$GITHUB_ENV"
+          echo "UNIVERSE_SLUG=$slug" >> "$GITHUB_ENV"
 
       - name: Stage Universe payload
         run: just _stage universe-stage "$PKG_NAME" "$PKG_VER"
@@ -163,18 +188,18 @@ jobs:
         run: |
           set -eu
           branch="${PKG_NAME}-${PKG_VER}"
-          fork_owner="${FORK_REPO%%/*}"
+          fork_owner="${UNIVERSE_SLUG%%/*}"
           staged="$(pwd)/universe-stage/packages/preview/${PKG_NAME}/${PKG_VER}"
 
           # Sync the fork before branching. A stale fork main makes the PR contain
           # unrelated upstream commits, or makes the push fail outright.
-          if ! gh repo view "$FORK_REPO" >/dev/null 2>&1; then
+          if ! gh repo view "$UNIVERSE_SLUG" >/dev/null 2>&1; then
             gh repo fork "$UPSTREAM_REPO" --clone=false --default-branch-only
           fi
-          gh repo sync "$FORK_REPO" --source "$UPSTREAM_REPO" --branch main
+          gh repo sync "$UNIVERSE_SLUG" --source "$UPSTREAM_REPO" --branch main
 
           git clone --depth 1 --no-checkout --filter=blob:none \
-            "https://github.com/${UPSTREAM_REPO}.git" packages-checkout
+            "https://${UNIVERSE_HOST}/${UPSTREAM_REPO}.git" packages-checkout
           cd packages-checkout
           git sparse-checkout init --cone
           git sparse-checkout set "packages/preview/${PKG_NAME}"
@@ -189,7 +214,7 @@ jobs:
           git add "packages/preview/${PKG_NAME}/${PKG_VER}"
           git commit -m "${PKG_NAME}:${PKG_VER}"
 
-          git remote add fork "https://x-access-token:${GH_TOKEN}@github.com/${FORK_REPO}.git"
+          git remote add fork "https://x-access-token:${GH_TOKEN}@${UNIVERSE_HOST}/${UNIVERSE_SLUG}.git"
           git push --force fork "HEAD:refs/heads/${branch}"
 
           cat > ../pr-body.md <<EOF
