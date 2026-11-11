@@ -9,7 +9,7 @@ _link-pkg dir=".tmp-pkg":
     # Throwaway package path for `typst compile --package-path`: map this checkout to
     # @preview/thyme so the sources resolve without a published release. The OS package
     # cache is not used. The vendor/* glob below is the last reference to vendoring; remove
-    # it when @preview/exemel:0.3.0 reaches Typst Universe.
+    # it when @preview/syndicate:0.1.0 reaches Typst Universe.
     rm -rf "{{dir}}"
     mkdir -p "{{dir}}/preview"
     for manifest in typst.toml vendor/*/typst.toml; do

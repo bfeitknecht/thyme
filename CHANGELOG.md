@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Syntactic HTML MathML Normalizer (`with-html-math`)**: Pure AST `show` rules (zero `measure()`, zero SVG) unwrapping single-line auto-`math.lr` delimiters (`$F(e)$`) while keeping tall delimiters stretchy (`$F(union.sq.big_n d_n)$`) and coercing lone operator glyphs in scripts (`$d^*$`) to `math.class("normal", ...)`.
   - **Tadi Web `.typ` Source Transparency**: Capability `path(...)` mounting (`src: path("site.typ")`, `#mount(path("..."))`, `#post(path("..."))`) reads and co-emits verbatim `.typ` sources at sibling URLs (`/site.typ`, `/<slug>.typ`, `/posts/<slug>.typ`) with `.typ` links in the top utility bar and `<link rel="alternate" type="text/plain">` discovery.
   - **Single-URL Zero-JS CSS i18n & `hreflang` (`src/i18n.typ`)**: `#tr(en: [...], de: [...])` and `@preview/linguify`-compatible `lang.toml` dictionary lookup (`#tr("key", from: toml("lang.toml"))`) with per-branch `set text(lang: code)` (honored in paged PDF output as well), primary-branch-only word-count isolation, keyboard-accessible visually-hidden radio controls + `:focus-visible` ring, conditional `en · de` top-bar switcher only on bilingual pages, and `alternates` (`<link rel="alternate" hreflang="...">` + `xhtml:link` in `sitemap.xml`).
-  - **Syndication, Full-HTML Feeds & Academic SEO (`src/seo.typ`)**: Structured XML `sitemap.xml`, Atom 1.0 (`atom.xml`), and RSS 2.0 (`rss.xml` with inferred `<lastBuildDate>`) via `@preview/exemel:0.3.0` supporting both `"summary"` and `"full"` semantic HTML (`content-to-feed-html` with `<table>` and cross-bundle `<label>` URL resolution), dynamic Atom `<id>` epoch inference, and opt-in OpenGraph (`og:*`, `article:*`) + Google Scholar Highwire (`citation_*`) `<meta>` tags (`render-seo-meta`).
+  - **Syndication, Full-HTML Feeds & Academic SEO (`src/seo.typ`)**: Structured XML `sitemap.xml`, Atom 1.0 (`atom.xml`), and RSS 2.0 (`rss.xml` with inferred `<lastBuildDate>`) via `@preview/syndicate:0.1.0` supporting both `"summary"` and `"full"` semantic HTML (`content-to-feed-html` with `<table>` and cross-bundle `<label>` URL resolution), dynamic Atom `<id>` epoch inference, and opt-in OpenGraph (`og:*`, `article:*`) + Google Scholar Highwire (`citation_*`) `<meta>` tags (`render-seo-meta`).
 - **Scholarly Monochrome Blog Preset (`#import "@preview/thyme:0.1.0": blog` / `blog.site`)**:
   - Unified directly onto `core.typ` so `webpage` subpages (`#mount`), `favicon`, per-post `theme` CSS custom-property overrides, and user `stylesheets` work seamlessly inside `blog` sites.
   - Perceptual `oklch` / `oklab` + `light-dark()` monochrome stylesheet with full-byte 32-bit FNV-1a content-addressed `?v=<hash>` cache keys (`short-hash`), zero-reflow keyboard-accessible narrow-screen sidenote expansion, `@media (prefers-reduced-motion: reduce)`, and dedicated two-column `@media print` preservation.
@@ -107,8 +107,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   separate `stage-universe` recipe and no `--allow-vendored` flag, since this project will not
   vendor again. `typst-package-check` decides whether the archive is submittable.
 - **`just install-packages` was removed.** It linked this checkout into the OS `@preview` cache
-  for editor LSPs. That assumed `@preview/exemel` was absent from Typst Universe, and this release
-  ends that condition. Once exemel is live, `vendor/` goes and plain `typst watch` resolves
+  for editor LSPs. That assumed the dependency was absent from Typst Universe, and this release
+  ends that condition. Once syndicate is live, `vendor/` goes and plain `typst watch` resolves
   everything. For the same reason no code branches on `vendor/` now. The directory is temporary,
   and a check for its absence would outlive its purpose.
 - **Documentation.** Added `docs/api.md`, which lists the 88 exported names for the core and the
@@ -118,6 +118,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Removed a CHANGELOG claim that `webpage` had a `route` alias. No such alias was ever exported.
 
 ### Removed
+- **`@preview/exemel` was replaced by `@preview/syndicate`.** The upstream maintainer declined the
+  RSS 2.0 feed and sitemap additions that thyme needs, so those encoders now live in
+  `bfeitknecht/syndicate`, which thyme owns. `src/seo.typ` imports `atom`, `rss` and `sitemap` from
+  it. The generated XML keeps the same shape: Atom 1.0, RSS 2.0 with `<content:encoded>`, and a
+  sitemap `urlset`. `sitemap.urlset` and `atom.feed` take the entries as arguments instead of a
+  `urls:`/`posts:` list, and `rss.item` names its summary `description`. A temporary copy sits in
+  `vendor/syndicate` until the package reaches Typst Universe.
 - `.pre-commit-config.yaml` and `docs/autoformat.md`. The hooks duplicated `just fmt` / `just lint`
   and needed `typstyle` on the host anyway, so CI is the only place the checks are enforced. The
   removed doc also claimed `typst fmt` existed and that `just lint` scanned the justfile; it did
