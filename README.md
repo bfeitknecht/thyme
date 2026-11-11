@@ -149,7 +149,9 @@ and `CHANGELOG.md` and runs the full gate. It requires a release branch, not `ma
 and requires your branch to match `origin`. It then rebuilds `docs/manual.pdf` and
 `thumbnail.png`, commits, and pushes the commit and the tag together. The tag starts
 `.github/workflows/release.yaml`, which publishes a GitHub Release with `docs/manual.pdf`
-attached and opens the Typst Universe PR.
+attached and pushes the submission branch to your fork. It then tries to open the Typst
+Universe PR. The `typst` org does not let a fine-grained token do that, so when it is refused the
+job writes the compare link to its summary and one click finishes the submission.
 
 The ordered sequence, including the gate that must open first and the checks to run on the
 upstream PR, is in [`docs/release-checklist.md`](docs/release-checklist.md).

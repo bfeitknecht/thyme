@@ -2,9 +2,12 @@
 #
 # Necessary configuration in the repository settings:
 # - Secret UNIVERSE_TOKEN: a personal access token with `Contents: read and write`
-#   on `UNIVERSE_REPO` and `Pull requests: read and write` on `typst/packages`.
-#   The token user pushes the release branch and opens the submission PR.
-#   A fine-grained token must be scoped to both repositories for this to work.
+#   on `UNIVERSE_REPO`. That is enough to sync the fork, push the release branch and
+#   publish the GitHub Release.
+#
+#   It does not need access to `typst/packages`, because the `typst` org does not let a
+#   fine-grained token open a pull request there. The job tries, and when that is refused
+#   it writes the compare link to the job summary. Opening the PR is then one click.
 # - Variable UNIVERSE_SUBMIT: set to `true` to enable the `universe-pr` job.
 #   Leave it unset while a dependency is unpublished.
 # - Variable UNIVERSE_REPO (optional): the fork of `typst/packages` that receives
@@ -95,7 +98,7 @@ jobs:
           fi
 
   universe-pr:
-    name: Open Typst Universe PR
+    name: Publish to Typst Universe
     needs: [verify, github-release]
     runs-on: ubuntu-latest
     # Off until UNIVERSE_TOKEN is configured, so a tag never fails for that reason.
@@ -227,15 +230,39 @@ jobs:
           - [x] Excluded documentation PDFs, preview images, and \`examples/\` from the compiler download archive
           EOF
 
+          # Opening the PR is best-effort. The branch and the GitHub Release are the
+          # deliverables; a pull request into typst/packages needs permissions that a
+          # fine-grained token cannot have, because the org restricts them. So a refused
+          # PR must not mark the release as failed. It writes the compare link to the job
+          # summary instead, and one click finishes the submission.
+          compare="https://${UNIVERSE_HOST}/${UPSTREAM_REPO}/compare/main...${fork_owner}:${branch}"
           existing="$(gh pr list --repo "${UPSTREAM_REPO}" --head "${fork_owner}:${branch}" --state open --json url --jq '.[0].url // empty')"
           if [ -n "$existing" ]; then
-            echo "Updated existing Draft PR: ${existing}"
-          else
-            gh pr create \
+            echo "The submission PR is already open: ${existing}"
+          elif gh pr create \
               --draft \
               --repo "${UPSTREAM_REPO}" \
               --base main \
               --head "${fork_owner}:${branch}" \
               --title "${PKG_NAME}:${PKG_VER}" \
-              --body-file ../pr-body.md
+              --body-file ../pr-body.md; then
+            echo "Opened the submission PR."
+          else
+            {
+              echo "## One step left: open the submission PR"
+              echo
+              echo "\`${PKG_NAME}:${PKG_VER}\` is published as a GitHub Release and the branch"
+              echo "\`${branch}\` is pushed to \`${UNIVERSE_SLUG}\`."
+              echo
+              echo "The token cannot open a pull request on \`${UPSTREAM_REPO}\`. Open it here:"
+              echo
+              echo "${compare}"
+              echo
+              echo "Use \`${PKG_NAME}:${PKG_VER}\` as the title, and this as the body:"
+              echo
+              echo "\`\`\`markdown"
+              cat ../pr-body.md
+              echo "\`\`\`"
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning::The token cannot open a PR on ${UPSTREAM_REPO}. Open it here: ${compare}"
           fi
