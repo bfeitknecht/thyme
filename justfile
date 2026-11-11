@@ -430,6 +430,27 @@ release *args:
         if subprocess.run(["git", "remote", "get-url", "origin"], capture_output=True).returncode:
             problems.append("no 'origin' remote configured")
 
+        # A tag on a commit that CI never saw, or that origin does not have, produces a
+        # release whose workflow either never runs or runs against a different tree.
+        branch = subprocess.run(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"], capture_output=True, text=True,
+        ).stdout.strip()
+        if branch in ("main", "master", "HEAD"):
+            problems.append(
+                f"current branch is {branch!r}; release from a topic branch so the tag is not on the default branch"
+            )
+        subprocess.run(["git", "fetch", "--quiet", "--tags", "origin"], check=False)
+        head = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
+        remote = subprocess.run(
+            ["git", "rev-parse", f"origin/{branch}"], capture_output=True, text=True,
+        )
+        if remote.returncode:
+            problems.append(f"origin has no branch {branch!r}; push it first")
+        elif remote.stdout.strip() != head:
+            problems.append(
+                f"HEAD is not what origin has for {branch!r}; push or pull first"
+            )
+
     for problem in problems:
         print(f"::error::{problem}")
     if problems:
@@ -470,6 +491,7 @@ release *args:
     if subprocess.run(["git", "diff", "--cached", "--quiet"], capture_output=True).returncode:
         subprocess.run(["git", "commit", "-m", message], check=True)
     subprocess.run(["git", "tag", "-a", tag, "-m", message], check=True)
-    subprocess.run(["git", "push", "origin", "HEAD"], check=True)
-    subprocess.run(["git", "push", "origin", tag], check=True)
+    # One push, so a failed tag push cannot leave the release commit on the remote
+    # without the tag that triggers its workflow.
+    subprocess.run(["git", "push", "--atomic", "origin", "HEAD", tag], check=True)
     print(f"released {tag}; CI is cutting the GitHub release and the Typst Universe PR")

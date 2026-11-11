@@ -117,6 +117,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   renames are hard renames with no deprecation aliases; commit history was the only record before.
   Removed a CHANGELOG claim that `webpage` had a `route` alias. No such alias was ever exported.
 
+- **`just release` refuses to tag from a state that CI cannot see.** It now requires a release
+  branch rather than `main`/`master`, and requires `HEAD` to equal `origin/<branch>`. A tag on a
+  commit that was never pushed, or that the workflow never saw, produces a release against a
+  different tree; both cases now stop before anything is written. The commit and the tag are
+  pushed in one `--atomic` operation, so a failed tag push cannot leave the release commit on the
+  remote without the tag that starts its workflow.
+- **The Universe job syncs the fork first.** `bfeitknecht/packages` was 98 commits behind
+  `typst/packages`. A branch cut from a stale fork carries unrelated upstream commits, or fails
+  to push. The job now runs `gh repo sync` before it branches, and creates the fork if it is
+  missing. The workflow header records what each repository setting is for, and the checkout and
+  cache actions are on their current major versions.
+
 ### Removed
 - **`@preview/exemel` was replaced by `@preview/syndicate`.** The upstream maintainer declined the
   RSS 2.0 feed and sitemap additions that thyme needs, so those encoders now live in
