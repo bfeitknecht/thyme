@@ -5,11 +5,14 @@
 > **Actionable step-by-step sequence: [`docs/release-checklist.md`](docs/release-checklist.md).**
 > This file is the broader rollout context (glob, apex, infra); that one is the shortlist.
 
-## 1. End-to-End Rollout Checklist (`exemel` → `thyme` → `glob` → `apex`)
+## 1. End-to-End Rollout Checklist (`syndicate` → `thyme` → `glob` → `apex`)
 
-### Step 1 — Wait for `@preview/exemel:0.3.0` on Typst Universe
-- [ ] Merge the `exemel` `v0.3.0` PR (`sitemap-encode`, `sitemap-url`, `atom-encode`, `rss-encode`) into [`wensimehrp/exemel`](https://github.com/wensimehrp/exemel).
-- [ ] Wait until `exemel:0.3.0` is merged into [`typst/packages`](https://github.com/typst/packages) and live at `https://typst.app/universe/package/exemel`.
+### Step 1 — Publish `@preview/syndicate:0.1.0` on Typst Universe
+- [ ] Cut `syndicate` `v0.1.0` in [`bfeitknecht/syndicate`](https://github.com/bfeitknecht/syndicate) and open its `typst/packages` PR.
+- [ ] Wait until `syndicate:0.1.0` is merged into [`typst/packages`](https://github.com/typst/packages) and live at `https://typst.app/universe/package/syndicate`.
+
+`syndicate` exists because the upstream `wensimehrp/exemel` maintainer declined the RSS 2.0 and
+sitemap additions. Thyme no longer depends on `exemel`.
 
 ### Step 2 — Publish `bfeitknecht/thyme` & submit `@preview/thyme:0.1.0`
 
@@ -19,7 +22,7 @@
 > then `universe-pr` (stage, `typst-package-check`, push to the fork, open the Draft PR).
 >
 > `universe-pr` is **skipped unless the repository variable `UNIVERSE_SUBMIT` is `true`**, so a
-> tag pushed while `vendor/exemel` still exists does not fail the run. Set the variable only after
+> tag pushed while `vendor/syndicate` still exists does not fail the run. Set the variable only after
 > Step 1 is done and `vendor/` is gone. It must be a *variable* (`vars.UNIVERSE_SUBMIT`), because
 > a secret cannot gate a job-level `if`.
 
@@ -28,7 +31,7 @@
   - Fork `https://github.com/typst/packages` to `https://github.com/bfeitknecht/packages` (or set repo variable `UNIVERSE_FORK` if using another owner/fork).
   - Add repository secret `UNIVERSE_TOKEN` on `bfeitknecht/thyme` (fine-grained PAT with `Contents: Read and write` on `bfeitknecht/packages` and `Pull requests: Read and write` on `typst/packages`).
   - Leave repository variable `UNIVERSE_SUBMIT` unset (or `false`) until Step 1 completes.
-- [ ] **Remove temporary `exemel` vendoring once `exemel:0.3.0` is live**
+- [ ] **Remove temporary `syndicate` vendoring once `syndicate:0.1.0` is live**
   ```sh
   rm -rf vendor
   ```
@@ -59,7 +62,7 @@
     ```sh
     rm -rf infra public
       ```
-- [ ] **Push & tag `bfeitknecht/glob` (once both `exemel:0.3.0` and `thyme:0.1.0` are live on Universe)**
+- [ ] **Push & tag `bfeitknecht/glob` (once both `syndicate:0.1.0` and `thyme:0.1.0` are live on Universe)**
   ```sh
   just compile
   git init -b main

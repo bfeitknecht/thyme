@@ -1,4 +1,4 @@
-// Unit & regression tests for `@preview/thyme` and `@preview/exemel`.
+// Unit & regression tests for `@preview/thyme` and `@preview/syndicate`.
 #import "@preview/thyme:0.1.0": *
 #import blog: *
 #import "../src/paths.typ": heading-anchor-id
@@ -9,7 +9,7 @@
   theme-override-css,
 )
 #import "../src/blog/notes.typ": is-sidenote-link
-#import "@preview/exemel:0.3.0": format-rfc3339, rss-encode, rss-post
+#import "@preview/syndicate:0.1.0": rfc3339, rss
 
 // 1. Plain-text & word-count invariants (`smartquote`, fenced raw exclusion, `#tr(...)` primary branch)
 #assert.eq(
@@ -159,7 +159,7 @@
 #assert(feed-frag.contains("<strong>Theorem.</strong>"))
 #assert(feed-frag.contains("<p>◻</p>"))
 
-// 5. `exemel` RFC 3339, `smartquote` preservation, & RSS `updated: auto` `<lastBuildDate>` inference
+// 5. `syndicate` RFC 3339, `smartquote` preservation, & RSS `updated: auto` `<lastBuildDate>` inference
 #let dt = datetime(
   year: 2026,
   month: 10,
@@ -168,26 +168,28 @@
   minute: 5,
   second: 0,
 )
-#assert.eq(format-rfc3339(dt), "2026-10-30T14:05:00Z")
-#assert.eq(format-rfc3339(dt, tz: "+01:00"), "2026-10-30T14:05:00+01:00")
-#assert.eq(format-rfc3339(dt, tz: "+0200"), "2026-10-30T14:05:00+02:00")
-#let rss-str = rss-encode(
+#assert.eq(rfc3339(dt), "2026-10-30T14:05:00Z")
+#assert.eq(rfc3339(dt, tz: "+01:00"), "2026-10-30T14:05:00+01:00")
+#assert.eq(rfc3339(dt, tz: "+0200"), "2026-10-30T14:05:00+02:00")
+#let rss-str = rss.feed(
   title: [Hilbert's "Notes"],
-  site-link: "https://example.org/",
+  link: "https://example.org/",
+  description: "Notes",
   updated: auto,
-  tz: "+0100",
-  posts: (
-    rss-post(
+  tz: "+01:00",
+  items: (
+    rss.item(
       [Noether's Ring],
       link: "https://example.org/p/",
-      is-permalink: false,
+      guid: "https://example.org/p/",
+      permalink: false,
       published: dt,
-      tz: "+0100",
     ),
   ),
 )
-#assert(rss-str.contains("Hilbert&apos;s &quot;Notes&quot;"))
-#assert(rss-str.contains("Noether&apos;s Ring"))
+// `syndicate` escapes only `&` and `<` in text; quotes stay literal (valid XML).
+#assert(rss-str.contains("Hilbert's \"Notes\""))
+#assert(rss-str.contains("Noether's Ring"))
 #assert(rss-str.contains("+0100</lastBuildDate>"))
 #assert(rss-str.contains("+0100</pubDate>"))
 #assert(rss-str.contains("isPermaLink=\"false\""))

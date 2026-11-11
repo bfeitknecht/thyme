@@ -22,7 +22,7 @@ Passing capability paths (`#post(path("posts/fixed-points.typ"))`) lets `thyme` 
 
 - [x] Zero custom CLI wrappers — driven purely by `typst watch` and `typst compile`
 - [x] Hypertagged HTML (`htm` & `h`) backed by Typst's typed `html.*` constructors
-- [x] Automatic `sitemap.xml`, `robots.txt`, `rss.xml`, and `atom.xml` via `exemel`
+- [x] Automatic `sitemap.xml`, `robots.txt`, `rss.xml`, and `atom.xml` via `syndicate`
 - [x] Tadi Web sibling `.typ` source co-emission and single-URL zero-JS CSS `#tr(...)` i18n
 - [ ] Client-side JavaScript runtimes or framework lock-in
 
