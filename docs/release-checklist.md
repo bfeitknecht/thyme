@@ -1,27 +1,26 @@
 # Release checklist: `@preview/thyme:0.1.0` to Typst Universe
 
 The pipeline is already wired. This file lists the actions to take.
-The only current blocker is that `@preview/exemel:0.3.0` is not live on Typst Universe yet.
+The current blocker is that `@preview/syndicate:0.1.0` is not live on Typst Universe yet.
 
-At the time of writing, `wensimehrp/exemel` PR #1 is still `OPEN`. The version is
-`0.1.0` everywhere (`typst.toml`, README, template, examples, tests, `docs/manual.typ`),
-so **you do not need to run `just bump`**. Tag `v0.1.0` directly.
+Thyme depends on `bfeitknecht/syndicate` for XML, Atom, RSS and sitemap encoding. That
+package must reach Typst Universe before thyme, because thyme imports it as
+`@preview/syndicate`. The version is `0.1.0` everywhere (`typst.toml`, README, template,
+examples, tests, `docs/manual.typ`), so **you do not need to run `just bump`**. Tag
+`v0.1.0` directly.
 
 ---
 
-## 0. Wait until exemel resolves from Typst Universe
+## 0. Publish syndicate, then wait until it resolves
 
-Three separate events must occur, in this order:
+Two releases are needed, and syndicate comes first:
 
-1. Upstream `wensimehrp/exemel` PR #1 merges.
-2. A PR that adds `packages/preview/exemel/0.3.0` merges into `typst/packages`.
-3. `@preview/exemel:0.3.0` resolves from a clean package cache.
-
-Confirm item 3 before you continue:
+1. Publish `@preview/syndicate:0.1.0` through the PR flow in `bfeitknecht/syndicate`.
+2. Confirm that `@preview/syndicate:0.1.0` resolves from a clean package cache:
 
 ```sh
-rm -rf "$HOME/.local/share/typst/packages/preview/exemel"   # drop any local copy
-typst query @preview/exemel:0.3.0 --field version            # should print 0.3.0
+rm -rf "$HOME/.local/share/typst/packages/preview/syndicate"   # drop any local copy
+typst query @preview/syndicate:0.1.0 --field version            # should print 0.1.0
 ```
 
 If the query fails, stop. All later steps fail too.
@@ -36,6 +35,10 @@ Also delete the TODO at the top of `src/seo.typ` (lines 5–6) that asks for exa
 drop the `vendor/*` glob from `_link-pkg` in the `justfile`. That glob is the last reference to
 vendoring in the repository. No other change is needed: `just release` builds the payload from
 `typst.toml`, and `typst-package-check` rejects an archive whose imports cannot resolve.
+
+`vendor/syndicate/` is a verbatim copy of `lib.typ`, `src/`, `typst.toml`, `LICENSE` and
+`README.md` from `bfeitknecht/syndicate`. If that package changes before release, copy the
+files again rather than editing them here.
 
 ## 2. Re-verify against Universe without the local copy
 
@@ -104,13 +107,17 @@ branch `thyme-0.1.0` to your fork, and opens a **draft** PR on `typst/packages`.
 
 ## 7. Then unfreeze the downstreams
 
-Only after `@preview/thyme:0.1.0` resolves from a clean cache:
+Only after `@preview/thyme:0.1.0` resolves from a clean cache. `glob` and `apex` both import
+`@preview/thyme:0.1.0`, and `apex` also vendors a copy:
 
 ```sh
-# glob / apex
-rm -rf vendor
-# switch imports to @preview/thyme:0.1.0 at the version you just published
+# glob: already imports @preview/thyme:0.1.0 from Universe; nothing to change
+# apex: drop the vendored snapshot and resolve from Universe
+rm -rf apex/ssg/vendor/thyme
 ```
+
+`apex` needs its `just packages` recipe and the two `vendor/` copies in its `Dockerfile` edited
+in the same change, or the build breaks.
 
 Pin the exact version and let their CI hold it. The README's *Stability & Versioning*
 section is the contract to hand to anyone downstream.

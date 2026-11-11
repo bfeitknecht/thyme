@@ -1,13 +1,9 @@
 // XML sitemap (`sitemap.xml`), `robots.txt`, Atom 1.0 (`atom.xml`), RSS 2.0 (`rss.xml`)
 // builders (summary or full semantic HTML), plus opt-in OpenGraph & Google Scholar
-// Highwire `<meta>` helpers, backed by `@preview/exemel`.
+// Highwire `<meta>` helpers, backed by `@preview/syndicate`.
 
-// TODO: Remove `vendor/exemel` once upstream merges the RSS 2.0 + Sitemap PR and publishes
-// `@preview/exemel:0.3.0` on Typst Universe.
-#import "@preview/exemel:0.3.0": (
-  atom-author, atom-encode, atom-post, atom-site-id, rss-encode, rss-post,
-  sitemap-encode, sitemap-url,
-)
+// TODO: Remove `vendor/syndicate` once `@preview/syndicate:0.1.0` is on Typst Universe.
+#import "@preview/syndicate:0.1.0": atom, rss, sitemap
 #import "i18n.typ": normalize-alternates
 #import "paths.typ": (
   canonical-page-url, date-sort-key, format-date, url-authority,
@@ -61,6 +57,13 @@
     none
   }
 }
+
+// `normalize-alternates` returns `(hreflang: .., href: ..)` records. `syndicate`
+// wants a `(hreflang: url)` dictionary, so collapse them here.
+#let _alternates-dict(records) = records.fold(
+  (:),
+  (acc, r) => acc + ((r.hreflang, r.href),).to-dict(),
+)
 
 #let _resolve-feed-url(dest-str, site-url, doc-path) = {
   let s = str(dest-str).trim()
@@ -648,7 +651,7 @@
 }
 
 /// Generate a spec-compliant `sitemap.xml` (`http://www.sitemaps.org/schemas/sitemap/0.9`)
-/// via `@preview/exemel` (`sitemap-encode`) covering `index.html`, all public pages/posts,
+/// via `@preview/syndicate` (`sitemap.urlset`) covering `index.html`, all public pages/posts,
 /// and any `hreflang` alternate URLs.
 /// -> str
 #let sitemap-xml(
@@ -669,10 +672,13 @@
 
   let root-urls = if include-root {
     (
-      sitemap-url(
+      sitemap.url(
         canonical-page-url(site-url, "index.html"),
         lastmod: latest,
-        alternates: normalize-alternates(root-alternates, site-url: site-url),
+        alternates: _alternates-dict(normalize-alternates(
+          root-alternates,
+          site-url: site-url,
+        )),
       ),
     )
   } else {
@@ -681,16 +687,16 @@
 
   let page-urls = entries
     .filter(e => str(e.at("html-path", default: "")).trim("/") != "index.html")
-    .map(e => sitemap-url(
+    .map(e => sitemap.url(
       canonical-page-url(site-url, e.html-path),
       lastmod: _entry-lastmod(e),
-      alternates: normalize-alternates(
+      alternates: _alternates-dict(normalize-alternates(
         e.at("alternates", default: none),
         site-url: site-url,
-      ),
+      )),
     ))
 
-  sitemap-encode(urls: root-urls + page-urls)
+  sitemap.urlset(..(root-urls + page-urls))
 }
 
 /// Generate a standard `robots.txt` pointing crawlers to `sitemap.xml`.
@@ -750,7 +756,7 @@
   out
 }
 
-/// Generate an Atom 1.0 XML feed string via `@preview/exemel` (`atom-encode`),
+/// Generate an Atom 1.0 XML feed string via `@preview/syndicate` (`atom.feed`),
 /// supporting both summary-only (`feed-content: "summary"`) and full semantic HTML
 /// (`feed-content: "full"`) entries.
 /// -> str
@@ -786,10 +792,12 @@
   let clean-url = str(site-url).trim("/", at: end)
   let authority = url-authority(clean-url)
   let plain-author = _plain-or-none(author)
+  // RFC 4287 requires an author on the feed or on every entry, and `syndicate`
+  // enforces that. Fall back to the site title so a site with no `author` still builds.
   let feed-authors = if plain-author != none {
-    (atom-author(plain-author, uri: clean-url + "/"),)
+    (atom.author(plain-author, uri: clean-url + "/"),)
   } else {
-    ()
+    (atom.author(to-plain-text(site-title), uri: clean-url + "/"),)
   }
   let epoch = _infer-feed-epoch(posts, feed-epoch)
   let include-full = feed-content == "full"
@@ -813,7 +821,7 @@
     let p-lang = p.at("primary-lang", default: none)
     let p-author = _plain-or-none(p.at("author", default: none), lang: p-lang)
     let entry-authors = if p-author != none and p-author != plain-author {
-      (atom-author(p-author),)
+      (atom.author(p-author),)
     } else {
       ()
     }
@@ -830,14 +838,10 @@
     } else {
       none
     }
-    atom-post(
+    atom.entry(
       to-plain-text(p.title, lang: p-lang),
       link: post-url,
-      id: atom-site-id(
-        authority: authority,
-        time: id-dt,
-        identifier: p.slug,
-      ),
+      id: atom.tag-uri(authority, id-dt, p.slug),
       updated: mod-dt,
       published: pub-dt,
       summary: _entry-summary(p, lang: p-lang),
@@ -849,23 +853,19 @@
     )
   })
 
-  atom-encode(
+  atom.feed(
     title: to-plain-text(site-title),
     subtitle: _plain-or-none(site-subtitle),
-    site-link: clean-url + "/",
-    feed-link: clean-url + "/" + str(atom-path).trim("/", at: start),
-    id: atom-site-id(
-      authority: authority,
-      time: epoch,
-      identifier: "feed",
-    ),
+    link: clean-url + "/",
+    self-link: clean-url + "/" + str(atom-path).trim("/", at: start),
+    id: atom.tag-uri(authority, epoch, "feed"),
     updated: if entries.len() > 0 { auto } else { epoch },
     authors: feed-authors,
-    posts: entries,
+    entries: entries,
   )
 }
 
-/// Generate an RSS 2.0 XML feed string via `@preview/exemel` (`rss-encode`),
+/// Generate an RSS 2.0 XML feed string via `@preview/syndicate` (`rss.feed`),
 /// supporting both `<description>` summaries (`feed-content: "summary"`) and full
 /// `<content:encoded>` HTML (`feed-content: "full"`).
 /// -> str
@@ -919,11 +919,11 @@
     } else {
       none
     }
-    rss-post(
+    rss.item(
       to-plain-text(p.title, lang: p-lang),
       link: canonical-page-url(clean-url, p.html-path),
       published: p.at("created", default: none),
-      summary: _entry-summary(p, lang: p-lang),
+      description: _entry-summary(p, lang: p-lang),
       content: if html-body != none and html-body != "" { html-body } else {
         none
       },
@@ -931,13 +931,17 @@
     )
   })
 
-  rss-encode(
+  rss.feed(
     title: to-plain-text(site-title),
-    subtitle: _plain-or-none(site-subtitle),
-    site-link: clean-url + "/",
-    feed-link: clean-url + "/" + str(rss-path).trim("/", at: start),
+    description: if _plain-or-none(site-subtitle) == none {
+      to-plain-text(site-title)
+    } else {
+      _plain-or-none(site-subtitle)
+    },
+    link: clean-url + "/",
+    self-link: clean-url + "/" + str(rss-path).trim("/", at: start),
     updated: if type(latest) == datetime { latest } else { auto },
     language: language,
-    posts: items,
+    items: items,
   )
 }
