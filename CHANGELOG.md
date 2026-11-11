@@ -128,6 +128,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   to push. The job now runs `gh repo sync` before it branches, and creates the fork if it is
   missing. The workflow header records what each repository setting is for, and the checkout and
   cache actions are on their current major versions.
+- **`UNIVERSE_REPO` replaced `UNIVERSE_FORK` and carries the host.** The old variable held an
+  `owner/repo` slug, so the fork was assumed to be on `github.com`. It now accepts `owner/repo`,
+  `host/owner/repo` or a full URL, and the job splits it into the slug that `gh` takes and the host
+  that the git remote needs. The default is unchanged: `github.com/bfeitknecht/packages`. The
+  `UNIVERSE_*` prefix is the project-wide convention; `syndicate` and `spicky` adopt it too.
 
 ### Removed
 - **`@preview/exemel` was replaced by `@preview/syndicate`.** The upstream maintainer declined the

@@ -28,7 +28,7 @@ sitemap additions. Thyme no longer depends on `exemel`.
 
 - [ ] **Configure GitHub repo & Universe fork**
   - Create `bfeitknecht/thyme` on GitHub.
-  - Fork `https://github.com/typst/packages` to `https://github.com/bfeitknecht/packages` (or set repo variable `UNIVERSE_FORK` if using another owner/fork).
+  - Fork `https://github.com/typst/packages` to `https://github.com/bfeitknecht/packages` (or set repo variable `UNIVERSE_REPO` if using another owner, host or fork).
   - Add repository secret `UNIVERSE_TOKEN` on `bfeitknecht/thyme` (fine-grained PAT with `Contents: Read and write` on `bfeitknecht/packages` and `Pull requests: Read and write` on `typst/packages`).
   - Leave repository variable `UNIVERSE_SUBMIT` unset (or `false`) until Step 1 completes.
 - [ ] **Remove temporary `syndicate` vendoring once `syndicate:0.1.0` is live**
