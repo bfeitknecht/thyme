@@ -128,6 +128,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   to push. The job now runs `gh repo sync` before it branches, and creates the fork if it is
   missing. The workflow header records what each repository setting is for, and the checkout and
   cache actions are on their current major versions.
+- **A refused submission PR no longer fails the release.** The `typst` org does not let a
+  fine-grained token open a pull request, so `gh pr create` returns `Resource not accessible by
+  personal access token` even when the fork sync and the branch push succeed. The job now treats
+  that as the expected outcome: it writes the compare link and the PR body to the job summary, emits
+  a warning and exits 0. The token needs only `Contents: read and write` on the fork; adding
+  `typst/packages` to it does not help. `syndicate:0.1.0` hit this on its first release.
 - **`UNIVERSE_REPO` replaced `UNIVERSE_FORK` and carries the host.** The old variable held an
   `owner/repo` slug, so the fork was assumed to be on `github.com`. It now accepts `owner/repo`,
   `host/owner/repo` or a full URL, and the job splits it into the slug that `gh` takes and the host
