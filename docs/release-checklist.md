@@ -56,9 +56,12 @@ graph works.
 
 Neither is visible to the agent token; check them yourself.
 
-- **Secret** `UNIVERSE_TOKEN`. `spicky` already has a working token as `REGISTRY_TOKEN`, and
-  the fork already carries a `spicky-0.1.0` branch, so the simplest path is to copy that token
-  to here as `UNIVERSE_TOKEN`. If you create a new one, it needs:
+`UNIVERSE_*` is the project-wide convention, so the same names apply in `syndicate` and `spicky`
+and one token value works in all three repositories.
+
+- **Secret** `UNIVERSE_TOKEN`. `spicky` has a working token today, and the fork carries a
+  `spicky-0.1.0` branch to prove that pipeline runs. Reuse that value once `spicky` renames its
+  secret to `UNIVERSE_TOKEN`. If you create a new one, it needs:
 
   | Scope | Repository | Why |
   | :--- | :--- | :--- |
@@ -72,7 +75,10 @@ Neither is visible to the agent token; check them yourself.
 - **Variable** `UNIVERSE_SUBMIT` — set to `true`. It gates the `universe-pr` job. While it is
   unset, a tag publishes the GitHub Release and silently skips the Universe PR.
 
-- **Variable** `UNIVERSE_FORK` (optional) — defaults to `bfeitknecht/packages`.
+- **Variable** `UNIVERSE_REPO` (optional) — the fork that receives the release branch. Accepts
+  `owner/repo`, `host/owner/repo` or a full URL. The default is
+  `github.com/bfeitknecht/packages`, so leave it unset unless you move the fork to another
+  owner or host.
 
 Verify the fork is reachable and current. It is a fork of `typst/packages`, and `gh repo sync`
 runs before branching, so it does not need to be ahead:
@@ -82,8 +88,8 @@ gh api repos/bfeitknecht/packages -q '.parent.full_name'   # typst/packages
 gh api repos/bfeitknecht/packages/branches -q '.[].name'    # main, plus any old release branches
 ```
 
-`syndicate` needs its own `PACKAGES_TOKEN` (same scopes) before it can open its submission PR.
-Set both, and cut `syndicate` first: thyme imports it.
+Set `UNIVERSE_TOKEN` and `UNIVERSE_SUBMIT` in `syndicate` too, then cut `syndicate` first: thyme
+imports it.
 
 ## 4. Validate before tagging
 
