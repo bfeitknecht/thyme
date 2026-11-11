@@ -145,8 +145,9 @@ rename a non-event for anyone who is not actively upgrading.
 ### Releasing
 
 To publish a version, run `just release vX.Y.Z`. The recipe checks the tag against `typst.toml`
-and `CHANGELOG.md` and runs the full gate. It then rebuilds `docs/manual.pdf` and
-`thumbnail.png`, commits, and pushes the tag. The tag starts
+and `CHANGELOG.md` and runs the full gate. It requires a release branch, not `main` or `master`,
+and requires your branch to match `origin`. It then rebuilds `docs/manual.pdf` and
+`thumbnail.png`, commits, and pushes the commit and the tag together. The tag starts
 `.github/workflows/release.yaml`, which publishes a GitHub Release with `docs/manual.pdf`
 attached and opens the Typst Universe PR.
 

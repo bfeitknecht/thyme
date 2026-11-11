@@ -54,16 +54,36 @@ graph works.
 
 ## 3. Confirm the two repo settings
 
-Neither is visible to the agent token — check them yourself:
+Neither is visible to the agent token; check them yourself.
 
-- **Secret** `UNIVERSE_TOKEN` — fine-grained PAT with `Contents: read and write` on
-  `bfeitknecht/packages` and `Pull requests: read and write` on `typst/packages`.
-- **Variable** `UNIVERSE_SUBMIT` — set to `true`. It gates the `universe-pr` job and is
-  currently unset/false, which means a tag today would publish the GitHub Release and
-  silently skip the Universe PR.
+- **Secret** `UNIVERSE_TOKEN`. `spicky` already has a working token as `REGISTRY_TOKEN`, and
+  the fork already carries a `spicky-0.1.0` branch, so the simplest path is to copy that token
+  to here as `UNIVERSE_TOKEN`. If you create a new one, it needs:
 
-The fork already exists (`bfeitknecht/packages`, confirmed fork of `typst/packages`) and
-there is no existing `thyme-*` branch or open submission PR on it, so you start clean.
+  | Scope | Repository | Why |
+  | :--- | :--- | :--- |
+  | `Contents: read and write` | `bfeitknecht/packages` | push the release branch |
+  | `Pull requests: read and write` | `typst/packages` | open the submission PR |
+
+  A fine-grained token must be scoped to both repositories. A classic token needs `public_repo`
+  (that is what `syndicate`'s workflow documents). The push only rewrites
+  `packages/preview/<name>/`, never `.github/workflows/`, so the `workflow` scope is not needed.
+
+- **Variable** `UNIVERSE_SUBMIT` — set to `true`. It gates the `universe-pr` job. While it is
+  unset, a tag publishes the GitHub Release and silently skips the Universe PR.
+
+- **Variable** `UNIVERSE_FORK` (optional) — defaults to `bfeitknecht/packages`.
+
+Verify the fork is reachable and current. It is a fork of `typst/packages`, and `gh repo sync`
+runs before branching, so it does not need to be ahead:
+
+```sh
+gh api repos/bfeitknecht/packages -q '.parent.full_name'   # typst/packages
+gh api repos/bfeitknecht/packages/branches -q '.[].name'    # main, plus any old release branches
+```
+
+`syndicate` needs its own `PACKAGES_TOKEN` (same scopes) before it can open its submission PR.
+Set both, and cut `syndicate` first: thyme imports it.
 
 ## 4. Validate before tagging
 
