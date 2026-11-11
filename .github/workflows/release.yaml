@@ -1,3 +1,15 @@
+# Publishes a release when `just release` pushes a tag `v<version>`.
+#
+# Necessary configuration in the repository settings:
+# - Secret UNIVERSE_TOKEN: a personal access token with `Contents: read and write`
+#   on the `typst/packages` fork and `Pull requests: read and write` on
+#   `typst/packages`. The token user pushes the release branch and opens the PR.
+#   A fine-grained token must be scoped to both repositories for this to work.
+# - Variable UNIVERSE_SUBMIT: set to `true` to enable the `universe-pr` job.
+#   Leave it unset while a dependency is unpublished.
+# - Variable UNIVERSE_FORK (optional): the fork of `typst/packages` that gets the
+#   release branch. The default is `bfeitknecht/packages`.
+
 name: Release & submit to Typst Universe
 
 on:
@@ -25,7 +37,7 @@ jobs:
       pkg_name: ${{ steps.meta.outputs.pkg_name }}
       pkg_version: ${{ steps.meta.outputs.pkg_version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.tag || github.ref }}
 
@@ -55,7 +67,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.tag || github.ref }}
 
@@ -92,7 +104,7 @@ jobs:
       UPSTREAM_REPO: typst/packages
       FORK_REPO: ${{ vars.UNIVERSE_FORK || 'bfeitknecht/packages' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.tag || github.ref }}
 
@@ -109,7 +121,7 @@ jobs:
         run: just _stage universe-stage "$PKG_NAME" "$PKG_VER"
 
       - name: Cache typst-package-check
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cargo/bin/typst-package-check
           key: typst-package-check-${{ runner.os }}-v0.7.0
@@ -153,6 +165,13 @@ jobs:
           branch="${PKG_NAME}-${PKG_VER}"
           fork_owner="${FORK_REPO%%/*}"
           staged="$(pwd)/universe-stage/packages/preview/${PKG_NAME}/${PKG_VER}"
+
+          # Sync the fork before branching. A stale fork main makes the PR contain
+          # unrelated upstream commits, or makes the push fail outright.
+          if ! gh repo view "$FORK_REPO" >/dev/null 2>&1; then
+            gh repo fork "$UPSTREAM_REPO" --clone=false --default-branch-only
+          fi
+          gh repo sync "$FORK_REPO" --source "$UPSTREAM_REPO" --branch main
 
           git clone --depth 1 --no-checkout --filter=blob:none \
             "https://github.com/${UPSTREAM_REPO}.git" packages-checkout
