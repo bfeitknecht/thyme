@@ -283,3 +283,26 @@
 #htm(
   "<p class=\"multiline-inline\">\n  <a href=\"#a\">alpha</a>\n  or\n  <a href=\"#b\">beta</a>\n</p>",
 )
+
+// 11. `robots` and `llms` are pass-through files. Nothing is generated, so the only
+// contract is that a `path(...)` is copied byte for byte. `robots-txt` stays exported as a
+// starting point for an author who wants one, and it must remain valid on its own terms.
+#let robots = robots-txt(
+  site-url: "https://e.org",
+  sitemap-path: "sitemap.xml",
+)
+#assert(robots.starts-with("User-agent: *"), message: robots)
+#assert(robots.contains("Sitemap: https://e.org/sitemap.xml"), message: robots)
+// A trailing slash on the site URL must not produce a doubled slash in the sitemap line.
+#assert(
+  not robots-txt(
+    site-url: "https://e.org/",
+    sitemap-path: "/sitemap.xml",
+  ).contains("//sitemap.xml"),
+)
+// With no sitemap there is no `Sitemap:` line, rather than an empty one.
+#assert(
+  not robots-txt(site-url: "https://e.org", sitemap-path: none).contains(
+    "Sitemap:",
+  ),
+)

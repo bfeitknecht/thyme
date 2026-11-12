@@ -7,18 +7,13 @@ _link-pkg dir=".tmp-pkg":
     #!/usr/bin/env sh
     set -eu
     # Throwaway package path for `typst compile --package-path`: map this checkout to
-    # @preview/thyme so the sources resolve without a published release. The OS package
-    # cache is not used; every other @preview import resolves from it.
+    # @preview/thyme so the sources resolve without a published release. Every other
+    # @preview import resolves from the OS package cache.
+    name="$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml", "rb"))["package"]["name"])')"
+    version="$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml", "rb"))["package"]["version"])')"
     rm -rf "{{dir}}"
-    mkdir -p "{{dir}}/preview"
-    for manifest in typst.toml; do
-        [ -f "$manifest" ] || continue
-        p_dir="$(cd "$(dirname "$manifest")" && pwd)"
-        p_name="$(python3 -c 'import tomllib, sys; print(tomllib.load(open(sys.argv[1], "rb"))["package"]["name"])' "$manifest")"
-        p_ver="$(python3 -c 'import tomllib, sys; print(tomllib.load(open(sys.argv[1], "rb"))["package"]["version"])' "$manifest")"
-        mkdir -p "{{dir}}/preview/$p_name"
-        ln -s "$p_dir" "{{dir}}/preview/$p_name/$p_ver"
-    done
+    mkdir -p "{{dir}}/preview/$name"
+    ln -s "$(pwd)" "{{dir}}/preview/$name/$version"
 
 # Format every .typ file (`just fmt --check` verifies without writing)
 fmt args="--inplace":
@@ -116,8 +111,24 @@ check:
             ET.fromstring((bundle / "sitemap.xml").read_text())
         except Exception as e:
             fail(f"invalid {bundle}/sitemap.xml: {e}")
-        if "Sitemap:" not in (bundle / "robots.txt").read_text():
-            fail(f"missing Sitemap in {bundle}/robots.txt")
+        # `robots` and `llms` are pass-through files: the bundle carries exactly the bytes
+        # the author pointed at, or no file at all. Assert that, because it is the contract
+        # that replaced generating them.
+        # Only the blog example opts in, by pointing at `examples/blog/*.txt`. The bundle
+        # directory is named after the site path with `/` replaced, so match that rather
+        # than the bare name. Compare against the repository file, not against the bundle
+        # itself, or the check passes no matter what the recipe does.
+        opts_in = bundle.name == "examples_blog"
+        for name in ("robots.txt", "llms.txt"):
+            got = bundle / name
+            if opts_in:
+                source = pathlib.Path.cwd() / "examples" / "blog" / name
+                if not got.is_file():
+                    fail(f"missing {bundle}/{name}")
+                if got.read_bytes() != source.read_bytes():
+                    fail(f"{bundle}/{name} is not a byte-for-byte copy of {source}")
+            elif got.exists():
+                fail(f"{bundle}/{name} exists but the site did not pass `path(...)`")
         # The Tadi source for the home page is `site.typ` (`source-path-for("index.html")`),
         # not `index.typ`. Assert the documented mapping rather than a literal name.
         if not (bundle / "site.typ").is_file():
@@ -429,15 +440,12 @@ release *args:
         if subprocess.run(["git", "remote", "get-url", "origin"], capture_output=True).returncode:
             problems.append("no 'origin' remote configured")
 
-        # A tag on a commit that CI never saw, or that origin does not have, produces a
-        # release whose workflow either never runs or runs against a different tree.
+        # A tag on a commit that origin does not have produces a release whose workflow
+        # either never runs or runs against a different tree. The branch itself does not
+        # matter: tagging the default branch is normal for a single-maintainer project.
         branch = subprocess.run(
             ["git", "rev-parse", "--abbrev-ref", "HEAD"], capture_output=True, text=True,
         ).stdout.strip()
-        if branch in ("main", "master", "HEAD"):
-            problems.append(
-                f"current branch is {branch!r}; release from a topic branch so the tag is not on the default branch"
-            )
         subprocess.run(["git", "fetch", "--quiet", "--tags", "origin"], check=False)
         head = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
         remote = subprocess.run(

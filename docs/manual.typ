@@ -494,7 +494,7 @@
     ),
     [Core SSG],
     [`#import "@preview/thyme:0.1.0": *`],
-    [Unopinionated zero-CSS `site`, `webpage`, `mount(path(...))`, `file`, `backlinks`, `htm` / `h` typed hypertagged HTML, `#tr(...)` zero-JS CSS i18n + `hreflang` alternates, sibling `.typ` source co-emission, `sitemap.xml`, `robots.txt`, OpenGraph/Scholar `<meta>`, and summary or full-HTML `rss.xml` / `atom.xml`.],
+    [Unopinionated zero-CSS `site`, `webpage`, `mount(path(...))`, `file`, `backlinks`, `htm` / `h` typed hypertagged HTML, `#tr(...)` zero-JS CSS i18n + `hreflang` alternates, sibling `.typ` source co-emission, `sitemap.xml`, OpenGraph/Scholar `<meta>`, and summary or full-HTML `rss.xml` / `atom.xml`.],
 
     [`blog` Preset],
     [`#import blog: *` / `blog.site`],

@@ -3,7 +3,7 @@
 //
 // Emits `index.html`, `404.html`, `posts/<slug>/index.html`, mounted `webpage` subpages,
 // static `/tags/` & `/tags/<tag>/` archive pages, co-located post assets, Tadi Web `.typ`
-// plaintext sources, content-hashed `css/style.css`, `sitemap.xml`, `robots.txt`,
+// plaintext sources, content-hashed `css/style.css`, `sitemap.xml`,
 // `rss.xml`, and `atom.xml`.
 
 #import "../core.typ": (
@@ -202,7 +202,7 @@
 /// `#post(path("posts/foo.typ")) <foo>` as `<posts-dir>/foo/index.html` (`<foo>`) and any
 /// `#mount(path("about.typ")) <about>` subpages, generates static `/tags/` archive pages,
 /// co-emits sibling Tadi Web `.typ` plaintext sources, and builds content-hashed `css/style.css`
-/// (`<stylesheet>`), `404.html`, `sitemap.xml` (`<sitemap>`), `robots.txt`, `rss.xml` (`<rss>`),
+/// (`<stylesheet>`), `404.html`, `sitemap.xml` (`<sitemap>`), `rss.xml` (`<rss>`),
 /// and `atom.xml` (`<atom>`).
 /// -> content
 #let site(
@@ -257,9 +257,12 @@
   /// Output bundle path for the XML sitemap (`"sitemap.xml"`), or `none` to disable.
   /// -> str | none
   sitemap-path: "sitemap.xml",
-  /// Emit `robots.txt` pointing to `sitemap-path` (`auto` enables whenever `sitemap-path != none`).
-  /// -> auto | bool
-  robots: auto,
+  /// `robots.txt`. `path(...)` copies your file into the bundle root; `none` emits no file.
+  /// -> path | none
+  robots: none,
+  /// `llms.txt`. `path(...)` copies your file into the bundle root; `none` emits no file.
+  /// -> path | none
+  llms: none,
   /// Output bundle path for the RSS 2.0 feed, or `none` to disable RSS generation.
   /// -> str | none
   rss-path: "rss.xml",
@@ -380,6 +383,7 @@
     not-found-page: not-found-page,
     sitemap-path: sitemap-path,
     robots: robots,
+    llms: llms,
     rss-path: rss-path,
     atom-path: atom-path,
     feed-content: feed-content,

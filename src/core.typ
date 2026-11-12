@@ -1194,9 +1194,13 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
   /// Output path for the XML sitemap (`"sitemap.xml"`), or `none` to disable sitemap generation.
   /// -> str | none
   sitemap-path: "sitemap.xml",
-  /// Emit `robots.txt` pointing to `sitemap-path` (`auto` enables whenever `sitemap-path != none`).
-  /// -> auto | bool
-  robots: auto,
+  /// `robots.txt`. `path(...)` copies your file into the bundle root; `none` emits no file.
+  /// -> path | none
+  robots: none,
+  /// `llms.txt`, a curated Markdown index for language models (`https://llmstxt.org`).
+  /// `path(...)` copies your file into the bundle root; `none` emits no file.
+  /// -> path | none
+  llms: none,
   /// Output path for the RSS 2.0 feed (e.g. `"rss.xml"`), or `none` to omit RSS on non-blog sites.
   /// -> str | none
   rss-path: none,
@@ -1726,17 +1730,14 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
         )
         [#asset(sitemap-path, bytes(sm-xml))<sitemap>]
       }
-      // `robots: auto` means "on whenever a sitemap is emitted". This was documented and
-      // `robots-txt` was exported, but nothing ever called it, so no bundle contained a
-      // robots.txt at all.
-      let emit-robots = if robots == auto { sitemap-path != none } else {
-        robots == true
+      // Both files are the author's. They have formats this package would only guess at,
+      // so nothing is generated: a `path` is copied, byte for byte, and `none` emits
+      // nothing. `robots-txt(...)` is exported for an author who wants a starting point.
+      if type(robots) == path {
+        [#asset("robots.txt", read(robots, encoding: none))<robots>]
       }
-      if emit-robots {
-        [#asset("robots.txt", bytes(robots-txt(
-          site-url: url,
-          sitemap-path: sitemap-path,
-        )))<robots>]
+      if type(llms) == path {
+        [#asset("llms.txt", read(llms, encoding: none))<llms>]
       }
       if rss-path != none {
         let rss-xml = rss-xml(
