@@ -22,7 +22,7 @@ The core is zero-CSS and unopinionated. Import it (`#import "@preview/thyme:0.1.
 - **Typed Hypertagged HTML (`htm` & `h`)**: Author raw HTML fragments (`developit/htm`-style) with `{slot}` Typst `content` interpolation (`math`, `@label` links, components), full named/decimal/hex HTML entity decoding, and HTML5 tag-balance validation, or CSS-selector hyperscript (`#h("section#work.grid", ...)`), backed directly by Typst `0.15.1`'s built-in [typed `html.*` constructors](https://typst.app/docs/reference/html/typed/) (`#h(1fr)` still forwards transparently to `std.h`).
 - **Tadi Web `.typ` Source Transparency**: Mounting pages via capability `path(...)` (`src: path("site.typ")`, `#mount(path("contact.typ"))`, `#post(path("posts/foo.typ"))`) co-emits verbatim `.typ` source files (`/site.typ`, `/contact.typ`, `/posts/foo.typ`) and adds a monospace `.typ` link in the top bar.
 - **Single-URL Zero-JS CSS i18n & `hreflang` Alternates**: Write `#tr(en: [...], de: [...])` inline or look up keys from a `@preview/linguify`-compatible `lang.toml` dictionary (`#tr("key", from: toml("lang.toml"))`); `thyme` emits a CSS `:root:has(#thyme-lang-de:checked)` switcher (`en · de`) in the top bar **only on bilingual pages**, honors `set text(lang: ...)` in paged PDFs, and supports multi-URL `alternates` across `<head>` and `sitemap.xml`.
-- **SEO, Full-HTML Syndication & Academic Metadata**: Emits valid `sitemap.xml`, `robots.txt`, `404.html`, and summary or **full semantic HTML** RSS 2.0 (`rss.xml`) & Atom 1.0 (`atom.xml`) feeds (`feed-content: "summary" | "full"`) via `@preview/syndicate`, plus opt-in OpenGraph (`og:*`) and Google Scholar Highwire (`citation_*`) `<meta>` tags.
+- **SEO, Full-HTML Syndication & Academic Metadata**: Emits valid `sitemap.xml`, `robots.txt`, `llms.txt`, `404.html`, and summary or **full semantic HTML** RSS 2.0 (`rss.xml`) & Atom 1.0 (`atom.xml`) feeds (`feed-content: "summary" | "full"`) via `@preview/syndicate`, plus opt-in OpenGraph (`og:*`) and Google Scholar Highwire (`citation_*`) `<meta>` tags.
 - **Scholarly `blog` Preset**: Perceptual `oklch` / `light-dark()` monochrome palette, unified _STIX Two Text_ (`smcp` / `c2sc` small caps) + _STIX Two Math_ + _Helvetica Neue_ + _Commit Mono_ stacks (`font-faces: auto | none | str`, deterministic zero-`local()` `@font-face` rules, and one-line self-hosting via `font-base: "/fonts/"` + `font-version`), AST-normalized native MathML (`with-html-math` — crisp inline `$F(e)$` & `$F(d^*)` without `measure()` or SVG hacks), content-hashed `css/style.css?v=<hash>`, conditional copy-button JS (`copy-button: auto` — zero `<script>` on codeless pages), `@preview/marge` sidenotes + `#mcite` margin bibliography citations, static `/tags/<tag>/` archive pages, `#toc()`, compile-time `#backlinks()`, `#post-nav()`, `spicky`-style math/proof environments, `zebraw`, `tablem`, and `cheq`.
 
 ---
@@ -104,6 +104,46 @@ Bring your own `styles.css` with zero preset styles injected (see [`examples/por
 
 ---
 
+## `llms.txt` for Language Models
+
+Every bundle emits `llms.txt`, a curated Markdown index that follows the proposal at
+[llmstxt.org](https://llmstxt.org): one `#` title, one `>` summary, then `##` sections of
+`- [title](url): description` lines. `llms: auto` follows the sitemap, so it appears whenever
+`sitemap-path` is set.
+
+It is auto-generated from the public pages. Override it three ways, exactly as you override
+`robots.txt`:
+
+```typ
+// 1. Reference your own file, copied verbatim into the bundle.
+#show: site.with(url: "https://example.org", llms-content: path("llms.txt"))
+
+// 2. Write it inline as Markdown. `raw(...)` keeps the text verbatim, so the
+//    blank lines that separate Markdown blocks survive.
+#show: site.with(
+  url: "https://example.org",
+  llms-content: raw("# My Site
+
+> One sentence about the site.
+
+## Docs
+
+- [Guide](https://example.org/guide): How to start.
+"),
+)
+
+// 3. Keep the generator and tune it: a dictionary is forwarded to `llms-txt(...)`.
+#show: site.with(
+  url: "https://example.org",
+  llms-content: (max-per-section: 10, full-path: "llms-full.txt"),
+)
+```
+
+`llms: false` omits the file, and `llms: "ai.txt"` changes the output path. Use `llms-txt(...)`
+directly when you want the string without a bundle, for example to serve a different section.
+
+---
+
 ## Serving `.typ` Sources Inline (`Content-Type: text/plain`)
 
 To ensure browsers display co-emitted `.typ` sources inline in a tab rather than downloading them, configure your static web server to send `Content-Type: text/plain; charset=utf-8` for `*.typ`. With [`static-web-server`](https://static-web-server.net) (`sws.toml`):
@@ -130,7 +170,7 @@ What the version number promises:
 | Names re-exported by `#import "@preview/thyme:0.1.0": *` | **Stable** across `0.x` patch releases; renamed only in a minor release, with the old name gone (no deprecation aliases; see below). |
 | Names re-exported by `#import blog: *` | Same as above. |
 | Named arguments of `site`, `blog.site`, `webpage`, `post`, `mount`, `file`, `page-asset` | **Stable** across patch releases. Additive parameters are non-breaking. |
-| Emitted file layout (`index.html`, `404.html`, `.typ` siblings, `sitemap.xml`, `robots.txt`, `rss.xml`, `atom.xml`, `tags/`) | **Stable**; new optional outputs only behind opt-in options. |
+| Emitted file layout (`index.html`, `404.html`, `.typ` siblings, `sitemap.xml`, `robots.txt`, `llms.txt`, `rss.xml`, `atom.xml`, `tags/`) | **Stable**; new optional outputs only behind opt-in options. |
 | CSS class names (`blog-*`, `thyme-*`) | Treat as **semi-public**. They are used for theming and styling, so a change ships with a CHANGELOG note. |
 | Anything prefixed `_` in `src/` | **Private**. No guarantee; may change in any release. |
 

@@ -283,3 +283,121 @@
 #htm(
   "<p class=\"multiline-inline\">\n  <a href=\"#a\">alpha</a>\n  or\n  <a href=\"#b\">beta</a>\n</p>",
 )
+
+// 11. `llms.txt` follows the proposal at llmstxt.org: one `#` title, one `>` summary,
+// `##` sections of `- [title](url): description`, and an `## Optional` tail for the
+// pages that `max-per-section` dropped.
+#let llms-pages = (
+  (
+    html-path: "index.html",
+    title: [Home],
+    summary: [Start here.],
+    collection: "pages",
+    unlisted: false,
+  ),
+  (
+    html-path: "about.html",
+    title: [About],
+    description: [Who writes this.],
+    collection: "pages",
+    unlisted: false,
+  ),
+  (
+    html-path: "secret.html",
+    title: [Secret],
+    summary: [Unlisted.],
+    collection: "pages",
+    unlisted: true,
+  ),
+  (
+    html-path: "posts/one/index.html",
+    title: [On Machines],
+    summary: [First post.],
+    collection: "posts",
+    unlisted: false,
+  ),
+)
+#let llms = llms-txt(
+  site-title: "Example",
+  summary: "A monochrome site.",
+  site-url: "https://e.org",
+  pages: llms-pages,
+)
+#assert(llms.starts-with("# Example\n"), message: llms)
+#assert(llms.contains("\n> A monochrome site.\n"), message: llms)
+#assert(llms.contains("## Pages\n"), message: llms)
+#assert(llms.contains("## Posts\n"), message: llms)
+// `index.html` becomes the bare origin, and a nested page keeps its trailing slash.
+#assert(llms.contains("- [Home](https://e.org/): Start here."), message: llms)
+#assert(
+  llms.contains("- [On Machines](https://e.org/posts/one/): First post."),
+  message: llms,
+)
+// `summary` wins over `description`, and a missing one leaves the line bare.
+#assert(
+  llms.contains("- [About](https://e.org/about.html): Who writes this."),
+  message: llms,
+)
+// Sections keep the declared order regardless of page order.
+#assert(llms.find("## Pages") < llms.find("## Posts"), message: llms)
+// Every line in a section is a Markdown link, so the file stays parseable.
+#assert.eq(
+  llms
+    .split("\n")
+    .filter(l => l.starts-with("- "))
+    .all(l => l.starts-with("- [")),
+  true,
+)
+// `max-per-section` moves the remainder into `## Optional` instead of dropping it.
+#let llms-capped = llms-txt(
+  site-title: "Example",
+  summary: "S.",
+  site-url: "https://e.org",
+  pages: llms-pages,
+  max-per-section: 1,
+)
+#assert(llms-capped.contains("## Optional\n"), message: llms-capped)
+#assert(llms-capped.contains("about.html"), message: llms-capped)
+// `include-unlisted: false` removes the page from the index entirely.
+#assert(
+  not llms-txt(
+    site-title: "Example",
+    summary: "S.",
+    site-url: "https://e.org",
+    pages: llms-pages,
+    include-unlisted: false,
+  ).contains("secret.html"),
+)
+// `full-path` advertises the companion file the proposal defines.
+#assert(
+  llms-txt(
+    site-title: "Example",
+    summary: "S.",
+    site-url: "https://e.org",
+    pages: (),
+    full-path: "llms-full.txt",
+  ).contains("(https://e.org/llms-full.txt)"),
+)
+
+// 12. `llms-content` overrides: a dictionary is forwarded to `llms-txt`, and a plain `str`
+// is copied as the file body. These are the two shapes `site()` dispatches on, so assert the
+// generator side directly.
+#assert.eq(
+  llms-txt(site-title: "T", summary: "S", site-url: "https://e.org", pages: ()),
+  "# T\n\n> S\n",
+)
+// No summary and no pages still yields a valid file: an H1 and nothing else to break.
+#assert.eq(
+  llms-txt(site-title: "T", site-url: "https://e.org", pages: ()),
+  "# T\n",
+)
+// A dictionary that only sets `full-path` still emits the proposal's `## Optional`-style tail.
+#assert(
+  llms-txt(
+    site-title: "T",
+    summary: "S",
+    site-url: "https://e.org",
+    pages: (),
+    full-path: "llms-full.txt",
+  ).contains("- [Full content](https://e.org/llms-full.txt)"),
+)

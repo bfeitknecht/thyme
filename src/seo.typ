@@ -717,6 +717,144 @@
   }
 }
 
+/// Generate an `llms.txt` index for language models, following the proposal at
+/// `https://llmstxt.org`. The shape is one `#` title, one `>` blockquote summary, and
+/// `##` sections of `- [title](url): description` lines. It is a curated map, not an
+/// inventory, so pass only the pages worth reading and let `max-per-section` cap the rest.
+/// The result is plain Markdown, which is what the proposal asks for.
+/// -> str
+#let llms-txt(
+  /// Site or project name. Rendered as the single `#` heading.
+  /// -> str | content
+  site-title: "Untitled",
+  /// One-sentence summary of the site. Rendered as the `>` blockquote.
+  /// -> str | content
+  summary: none,
+  /// Canonical site origin URL (`"https://example.com"`), used for every absolute link.
+  /// -> str
+  site-url: "https://example.com",
+  /// Pages to index. Each is a record with `html-path` and `title`, plus optional
+  /// `description`, `summary`, `slug`, `collection`, and `alternates`. `query-pages()`
+  /// returns records of this shape, so pass it straight in.
+  /// -> array
+  pages: (),
+  /// Extra prose between the blockquote and the first section, for context that does not
+  /// fit in one sentence.
+  /// -> str | content | none
+  intro: none,
+  /// Section order and titles. A page lands in the section named by its `collection`;
+  /// anything else goes to the last group. The default is the two collections this
+  /// package emits.
+  /// -> array
+  sections: (("pages", "Pages"), ("posts", "Posts")),
+  /// Drop pages whose `unlisted` field is `true`. Listed by default, because an author who
+  /// set the flag asked for search-engine silence, not for language models to skip them.
+  /// -> bool
+  include-unlisted: true,
+  /// How many links to keep per section (`none` keeps all). The proposal favours a curated
+  /// file, so keeping this small is usually better than listing everything.
+  /// -> int | none
+  max-per-section: none,
+  /// Append an `## Optional` section linking the pages that did not fit, which the proposal
+  /// reserves for content a model can skip when context is tight.
+  /// -> bool
+  optional-section: true,
+  /// Optional link to a `llms-full.txt` companion file, relative to the site root.
+  /// -> str | none
+  full-path: none,
+) = {
+  let clean-url = str(site-url).trim("/", at: end)
+  let plain(v) = if v == none { none } else { to-plain-text(v) }
+  let url-of(p) = canonical-page-url(clean-url, p.at(
+    "html-path",
+    default: "index.html",
+  ))
+  // The description is the feed summary when there is one, because that field is already
+  // written for machines, and the longer `description` otherwise.
+  let desc-of(p) = {
+    let d = plain(p.at("summary", default: none))
+    if d == none or d == "" { plain(p.at("description", default: none)) } else {
+      d
+    }
+  }
+  let line-of(p) = {
+    let title = plain(p.at("title", default: none))
+    let d = desc-of(p)
+    let head = (
+      "- ["
+        + (if title == none or title == "" { url-of(p) } else { title })
+        + "]("
+        + url-of(p)
+        + ")"
+    )
+    if d == none or d == "" { head } else { head + ": " + d.replace("\n", " ") }
+  }
+  let wanted = if include-unlisted {
+    pages
+  } else {
+    pages.filter(p => not p.at("unlisted", default: false))
+  }
+  // Group by collection, in the declared order. A page whose collection has no section
+  // falls into the last one rather than disappearing.
+  let names = sections.map(s => s.at(0))
+  let fallback = if names.len() > 0 { names.last() } else { "pages" }
+  let grouped = sections.map(((key, title)) => {
+    let in-group = wanted.filter(p => {
+      let c = p.at("collection", default: fallback)
+      if c == key { true } else if key == fallback {
+        not names.contains(c)
+      } else { false }
+    })
+    (title, in-group)
+  })
+  let out = ()
+  out.push("# " + plain(site-title))
+  out.push("")
+  if summary != none and plain(summary) != "" {
+    // The proposal shows the blockquote wrapped; one line is still valid Markdown and
+    // avoids inventing a wrap width.
+    out.push("> " + plain(summary).replace("\n", " "))
+    out.push("")
+  }
+  if intro != none and plain(intro) != "" {
+    out.push(plain(intro))
+    out.push("")
+  }
+  let overflow = ()
+  for (title, group) in grouped {
+    if group.len() == 0 { continue }
+    let shown = if max-per-section == none {
+      group
+    } else {
+      group.slice(0, calc.min(group.len(), max-per-section))
+    }
+    if group.len() > shown.len() { overflow += group.slice(shown.len()) }
+    out.push("## " + title)
+    out.push("")
+    for p in shown { out.push(line-of(p)) }
+    out.push("")
+  }
+  if optional-section and overflow.len() > 0 {
+    out.push("## Optional")
+    out.push("")
+    for p in overflow { out.push(line-of(p)) }
+    out.push("")
+  }
+  if full-path != none {
+    out.push("## Full text")
+    out.push("")
+    out.push(
+      "- [Full content]("
+        + clean-url
+        + "/"
+        + str(full-path).trim("/", at: start)
+        + ")",
+    )
+    out.push("")
+  }
+  out.join("\n").trim("\n", at: end) + "\n"
+}
+
 #let _infer-feed-epoch(posts, explicit-epoch) = {
   if type(explicit-epoch) == datetime {
     return explicit-epoch

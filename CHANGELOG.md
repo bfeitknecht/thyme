@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.0] - 2026-11-09
+## [0.1.0] - 2026-11-12
 
 ### Added
 - **Unopinionated Core SSG (`#import "@preview/thyme:0.1.0": *`)**:
@@ -27,6 +27,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Right-margin sidenotes via `@preview/marge:0.1.0` (`sidenote`, `#footnote` redirect, `mcite` & `citations-as-sidenotes` margin bibliography citations, `wide` clearance, and superscript-baseline underlines in paged PDF output via `typographic: false` + `is-sidenote-link`), static `/tags/` & `/tags/<tag>/` archive pages (`tag-pages`, live `tag-cloud` links), `#toc()`, compile-time `#backlinks()`, chronological `#post-nav()`, semantic `<time datetime>` Obsidian `<dl>` frontmatter (`author`, optional `monograph`, `created`, `modified`, prose-only `words` & `reading`, linked `#tag`s), Reader-Mode-safe `spicky`-style math environments (`div.blog-sbox`: `definition`, `theorem`, `lemma`, `proposition`, `corollary`, `example`, `recipe`, `remark`; `proof` with hollow QED `□`; `div.blog-callout[role="note"]`), `#diagram(invert-dark: bool)`, `zebraw`, `tablem`, and `cheq`.
 - **Documentation, Tests & Tooling**:
   - `@preview/tidy:0.4.3`-generated reference manual (`docs/manual.pdf`), unit & integration test suite (`tests/unit.typ` + `just check`), `template/`, `examples/{portfolio,blog}/`, `justfile`, and CI + automated Typst Universe Draft PR workflow.
+
+- **`llms.txt`, a curated index for language models.** Every bundle now emits `llms.txt`
+  following the proposal at [llmstxt.org](https://llmstxt.org): one `#` title, one `>` summary,
+  and `##` sections of `- [title](url): description` lines. It is generated from the public
+  pages, grouped by collection, so a blog lists its posts separately from its other pages.
+- **`llms-txt(...)`** renders the file as a string, for callers that serve it themselves. It
+  takes a page list in the same shape as `query-pages()`, so the two compose directly.
+- **The content is replaceable, like `robots.txt`.** `llms-content: path(...)` copies your own
+  file, `raw(...)` writes Markdown inline, and a dictionary is forwarded to `llms-txt(...)` to
+  keep the generator and tune it (`max-per-section`, `full-path`, custom `sections`). `llms`
+  sets the output path, or `false` to omit the file.
+- **Overflow pages are kept.** With `max-per-section`, the links that do not fit move into an
+  `## Optional` section, which the proposal reserves for content a model can skip. They are not
+  dropped.
 
 ### Fixed
 - **`robots.txt` was never emitted.** It is documented in the README, the manual and

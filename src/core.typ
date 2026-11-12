@@ -15,7 +15,9 @@
   slug-from-typ-path, slugify, source-path-for, unwrap-typ-path,
   with-html-headings, with-smart-refs,
 )
-#import "seo.typ": atom-xml, render-seo-meta, robots-txt, rss-xml, sitemap-xml
+#import "seo.typ": (
+  atom-xml, llms-txt, render-seo-meta, robots-txt, rss-xml, sitemap-xml,
+)
 #import "blog/theme.typ": css-hex, default-theme
 #import "text.typ": count-words, estimate-reading-minutes, to-plain-text
 #import "tree.typ": collect-content, find-content, map-containers
@@ -1197,6 +1199,17 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
   /// Emit `robots.txt` pointing to `sitemap-path` (`auto` enables whenever `sitemap-path != none`).
   /// -> auto | bool
   robots: auto,
+  /// Emit `llms.txt`, a curated Markdown index for language models
+  /// (`https://llmstxt.org`). `auto` enables it with the sitemap, `false` disables it, and a
+  /// string sets the output path. Pass `llms` to control the content.
+  /// -> auto | bool | str
+  llms: auto,
+  /// Content or file for `llms.txt`. `auto` indexes the public pages with the site title
+  /// and `description`; a `content` value is copied as-is, so write raw Markdown with
+  /// `raw(...)`; `path(...)` reads a file and copies it; a dictionary or array is passed to
+  /// `llms-txt(...)`. A plain `str` is treated as the text itself.
+  /// -> auto | str | content | path | dictionary | array
+  llms-content: auto,
   /// Output path for the RSS 2.0 feed (e.g. `"rss.xml"`), or `none` to omit RSS on non-blog sites.
   /// -> str | none
   rss-path: none,
@@ -1737,6 +1750,52 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
           site-url: url,
           sitemap-path: sitemap-path,
         )))<robots>]
+      }
+      // `llms: auto` follows the sitemap, like `robots: auto`. The file is plain Markdown
+      // and lists the same public pages, so it is curated by `llms-content` rather than
+      // generated from everything the sitemap contains.
+      let llms-path = if llms == false or llms == none {
+        none
+      } else if type(llms) == str {
+        llms
+      } else if llms == auto {
+        if sitemap-path != none { "llms.txt" } else { none }
+      } else {
+        "llms.txt"
+      }
+      if llms-path != none {
+        let body = if llms-content == auto {
+          llms-txt(
+            site-title: resolved-title,
+            summary: description,
+            site-url: url,
+            pages: public-pages,
+          )
+        } else if (
+          type(llms-content) == dictionary or type(llms-content) == array
+        ) {
+          // A dictionary carries the `llms-txt` arguments; an array is the page list.
+          let kwargs = if type(llms-content) == dictionary {
+            llms-content
+          } else { (pages: llms-content) }
+          llms-txt(
+            site-title: resolved-title,
+            site-url: url,
+            pages: public-pages,
+            ..kwargs,
+          )
+        } else if type(llms-content) == content {
+          // Markdown written inline. `to-plain-text` keeps the link syntax, which is what
+          // the proposal needs, and drops formatting that would not survive as text.
+          to-plain-text(llms-content)
+        } else if type(llms-content) == path {
+          read(llms-content)
+        } else {
+          panic(
+            "`llms-content` expects `auto`, a `str`, a `content` value, a `path`, a dictionary or an array",
+          )
+        }
+        [#asset(llms-path, bytes(body))<llms>]
       }
       if rss-path != none {
         let rss-xml = rss-xml(

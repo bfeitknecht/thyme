@@ -494,7 +494,7 @@
     ),
     [Core SSG],
     [`#import "@preview/thyme:0.1.0": *`],
-    [Unopinionated zero-CSS `site`, `webpage`, `mount(path(...))`, `file`, `backlinks`, `htm` / `h` typed hypertagged HTML, `#tr(...)` zero-JS CSS i18n + `hreflang` alternates, sibling `.typ` source co-emission, `sitemap.xml`, `robots.txt`, OpenGraph/Scholar `<meta>`, and summary or full-HTML `rss.xml` / `atom.xml`.],
+    [Unopinionated zero-CSS `site`, `webpage`, `mount(path(...))`, `file`, `backlinks`, `htm` / `h` typed hypertagged HTML, `#tr(...)` zero-JS CSS i18n + `hreflang` alternates, sibling `.typ` source co-emission, `sitemap.xml`, `robots.txt`, `llms.txt`, OpenGraph/Scholar `<meta>`, and summary or full-HTML `rss.xml` / `atom.xml`.],
 
     [`blog` Preset],
     [`#import blog: *` / `blog.site`],
@@ -543,7 +543,7 @@ When pages are mounted via Typst capability paths (`src: path("site.typ")`, `#mo
 == Zero-JS Single-URL CSS i18n (`src/i18n.typ`)
 #render-src-module("../src/i18n.typ", "i18n")
 
-== Sitemap, `robots.txt` & Feeds (`src/seo.typ`)
+== Sitemap, `robots.txt`, `llms.txt` & Feeds (`src/seo.typ`)
 #render-src-module("../src/seo.typ", "seo")
 
 == URLs, Slugs, AST Traversal & Plain Text (`src/paths.typ`, `src/text.typ`, `src/tree.typ`)
