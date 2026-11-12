@@ -165,11 +165,11 @@ rename a non-event for anyone who is not actively upgrading.
 
 To publish a version, run `just release X.Y.Z`. The version is the only argument; the recipe
 derives the `vX.Y.Z` tag from it. The recipe checks that version against `typst.toml` and
-`CHANGELOG.md` and runs the full gate. It requires a release branch, not `main` or `master`,
-and requires your branch to match `origin`. It then rebuilds `docs/manual.pdf` and
-`thumbnail.png`, commits, and pushes the commit and the tag together. The commit and tag message
-is the first sentence of that version's changelog section, so the release never stops to ask for
-one. The tag starts
+`CHANGELOG.md`, requires a clean worktree, and requires your branch to match `origin`. It then
+runs the full gate, rebuilds `docs/manual.pdf` and `thumbnail.png`, commits, and pushes the
+commit and the tag together. The commit is `Release X.Y.Z` and the tag `thyme X.Y.Z`, so the
+release never stops to ask for a message; the changelog section is only used for the release
+notes. The tag starts
 `.github/workflows/release.yaml`, which publishes a GitHub Release with `docs/manual.pdf`
 attached and pushes the submission branch to your fork. It then tries to open the Typst
 Universe PR. The `typst` org does not let a fine-grained token do that, so when it is refused the
