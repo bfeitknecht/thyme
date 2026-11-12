@@ -233,9 +233,9 @@ jobs:
           git remote add fork "https://x-access-token:${GH_TOKEN}@${UNIVERSE_HOST}/${UNIVERSE_SLUG}.git"
           git push --force fork "HEAD:refs/heads/${branch}"
 
-          # The same text `just submission` prints, so the PR the workflow opens and the
+          # The same text `just release --pr` prints, so the PR the workflow opens and the
           # PR the maintainer opens by hand cannot say different things.
-          just submission > submission.txt
+          just release --pr > submission.txt
           # Drop the compare link and the blank line that follows it: the workflow
           # already knows where the PR goes.
           sed '1,2d' submission.txt > ../pr-body.md
