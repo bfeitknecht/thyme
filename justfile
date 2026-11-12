@@ -84,16 +84,20 @@ check:
     base = pathlib.Path(sys.argv[1])
     unit_html = (base / "unit.html").read_text()
 
-    if "disabled=" in unit_html or 'data-ok="true"' not in unit_html:
-        fail("boolean attr handling failed")
-    # Assert the semantics (entities decoded, optional-close <li> unwound + balanced) and
-    # stay agnostic about inter-tag whitespace, which differs between exporters.
+    # Native `html.*` constructors are Typst's own, so the test asserts that `thyme` does
+    # not interfere with them: an attribute value stays the string it was given, an empty
+    # element keeps its open/close pair, and nesting is preserved.
+    if '<button disabled="false" data-ok="true">' not in unit_html:
+        fail("attribute rendering failed")
+    if '<div class="empty-box"></div>' not in unit_html:
+        fail("empty native element lost its self-closing form")
     if not re.search(r"<li>first</li>\s*<li>second — … …</li>", unit_html):
         m = re.search(r"<li>first.{0,140}", unit_html, re.S)
-        fail(f"htm entity/tag-balance test failed; got {m.group(0)!r}" if m else "htm entity/tag-balance test failed; no <li>first")
-    if '<div class="empty-box"></div>' not in unit_html or '<div class="empty-htm"></div>' not in unit_html:
-        fail("empty h/htm element test failed")
-    if "<pre>line 1\n  indented line 2</pre>" not in unit_html:
+        fail(f"native element nesting failed; got {m.group(0)!r}" if m else "native element nesting failed")
+    # The exporter writes a real newline inside `<pre>`, so the literal is built rather
+    # than written: a real newline would break this Python block across two lines.
+    pre_literal = "<pre><code>line 1" + chr(10) + "  indented line 2</code></pre>"
+    if pre_literal not in unit_html:
         fail("<pre> whitespace preservation failed")
     if '<mo form="prefix" stretchy="false">(</mo><mi>𝑒</mi><mo stretchy="false">)</mo>' not in unit_html:
         fail("with-html-math failed to suppress auto-lr stretch on F(e)")

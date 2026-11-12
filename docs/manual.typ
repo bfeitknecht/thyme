@@ -2,11 +2,14 @@
 #import "@preview/tidy:0.4.3"
 #import "@preview/thyme:0.1.0" as thyme
 #import "@preview/thyme:0.1.0": *
-#import blog: checklist, default-theme, kbd, sidenote, wide, zebraw, zebraw-init
+#import blog: kbd, sidenote, theme-default, wide, zebraw
 
+// `checklist` and `zebraw-init` are upstream packages that `blog` wraps. The manual
+// documents the wrapper, not the pass-through, so it imports them from the source.
+#import "../src/blog/components.typ": checklist, zebraw-init
 #import "../src/blog/notes.typ": is-sidenote-link
 
-#let t = default-theme
+#let t = theme-default
 #let combined-scope = dictionary(thyme) + dictionary(thyme.blog)
 
 #set document(
@@ -417,6 +420,38 @@
   )
 }
 
+// Two-column table for the public-surface listing. Kept separate from `render-src-module`
+// because the public surface is a chosen list with one-line summaries, not a parse of a
+// module: `tidy` would emit every parameter of every function and bury the names.
+#let surface-table(rows) = {
+  table(
+    columns: (auto, 1fr, auto),
+    stroke: (x, y) => (
+      top: if y == 0 { 0.65pt + t.frame-light } else {
+        0.45pt + t.border-light
+      },
+      bottom: 0.5pt + t.border-light,
+      left: none,
+      right: none,
+    ),
+    inset: (x: 0.55em, y: 0.42em),
+    fill: (_, y) => if y == 0 { t.surface-1-light } else { none },
+    align: (left + horizon, left + horizon, right + horizon),
+    table.header(
+      text(font: t.sans-fonts, size: 7.8pt, weight: "bold")[NAME],
+      text(font: t.sans-fonts, size: 7.8pt, weight: "bold")[PURPOSE],
+      text(font: t.sans-fonts, size: 7.8pt, weight: "bold")[GROUP],
+    ),
+    ..rows
+      .map(((name, purpose, group)) => (
+        text(font: t.mono-fonts, size: 8.4pt, raw(name)),
+        purpose,
+        text(font: t.sans-fonts, size: 7.8pt, fill: t.muted-light, group),
+      ))
+      .flatten(),
+  )
+}
+
 // ─── Title Block ─────────────────────────────────────────────────────────────
 
 #block(width: 100%, below: 1.5em, {
@@ -494,11 +529,11 @@
     ),
     [Core SSG],
     [`#import "@preview/thyme:0.1.0": *`],
-    [Unopinionated zero-CSS `site`, `webpage`, `mount(path(...))`, `file`, `backlinks`, `htm` / `h` typed hypertagged HTML, `#tr(...)` zero-JS CSS i18n + `hreflang` alternates, sibling `.typ` source co-emission, `sitemap.xml`, OpenGraph/Scholar `<meta>`, and summary or full-HTML `rss.xml` / `atom.xml`.],
+    [Seven names: `site`, `webpage`, `mount(path(...))`, `file`, `backlinks`, `#tr(...)` zero-JS CSS i18n + `hreflang` alternates, and `robots-txt`. Markup beyond content uses Typst's own `html.elem`. `sitemap.xml`, OpenGraph/Scholar `<meta>`, and summary or full-HTML `rss.xml` / `atom.xml` are emitted for you.],
 
     [`blog` Preset],
     [`#import blog: *` / `blog.site`],
-    [Opinionated scholarly monochrome blog (`oklch` / `light-dark()` + 2-column `@media print`), _STIX Two_ + _Helvetica Neue_ + _Commit Mono_, `@preview/marge` sidenotes + `#mcite` margin citations, static `/tags/` archives, `#toc()`, `#post-nav()`, Obsidian `<dl>` frontmatter, theorem/proof boxes, `zebraw`, `tablem`, and `cheq`.],
+    [Opinionated scholarly monochrome blog (`oklch` / `light-dark()` + 2-column `@media print`), _STIX Two_ + _Helvetica Neue_ + _Commit Mono_, `@preview/marge` sidenotes + `#mcite` margin citations, static `/tags/` archives and post navigation, `#toc()`, Obsidian `<dl>` frontmatter, theorem/proof boxes, `zebraw`, `tablem`, and `cheq`.],
   )
 ]
 
@@ -514,56 +549,121 @@ When pages are mounted via Typst capability paths (`src: path("site.typ")`, `#mo
   ```
 ]
 
-= Core SSG Reference (`src/*.typ`)
+= Public Surface
 
-== Site Bundler, Subpages & Raw Assets (`src/core.typ`)
-#render-src-module(
-  "../src/core.typ",
-  "core",
-  omit-names: (
-    "normalize-assets",
-    "extract-page-meta",
-    "extract-page-assets",
-    "extract-raw-files",
-    "emit-bundle-asset",
-    "extract-mounts",
-    "transform-mounts",
-    "lookup-source-href",
-    "query-doc-tr-codes",
-    "extract-first-h1",
-    "render-top-bar",
-    "render-core-shell",
-    "resolve-core-mount",
+Two small re-export lists are the public API. Everything a site file writes by hand is
+in one of them; everything else in `src/` is a module-level function that the engine and
+the presets call.
+
+== Core — `#import "@preview/thyme:0.1.0": *`
+
+#let core-surface = (
+  (
+    "site",
+    [Root site bundler: `#show: site.with(title:, url:, ...)`.],
+    [Build],
+  ),
+  (
+    "webpage",
+    [A mounted sub-page document: `#show: webpage.with(...)`.],
+    [Build],
+  ),
+  (
+    "mount",
+    [Mount a `.typ` file, a directory, or a literal body into the bundle.],
+    [Build],
+  ),
+  ("file", [Co-emit a static file at a bundle route.], [Build]),
+  ("backlinks", [Compile-time backlinks to the pages that link here.], [Build]),
+  ("tr", [Declare text once per language: `tr(en: [...], de: [...])`.], [i18n]),
+  (
+    "robots-txt",
+    [Build a `robots.txt` string, as a starting point you then own.],
+    [SEO],
   ),
 )
 
-== Typed Hypertagged HTML & Hyperscript (`src/htm.typ`)
-#render-src-module("../src/htm.typ", "htm")
+#surface-table(core-surface)
 
-== Zero-JS Single-URL CSS i18n (`src/i18n.typ`)
-#render-src-module("../src/i18n.typ", "i18n")
+Seven names. Everything a `site` or `webpage` applies for you is absent on purpose:
 
-== Sitemap, `robots.txt` & Feeds (`src/seo.typ`)
-#render-src-module("../src/seo.typ", "seo")
+- Inline MathML is normalised for HTML export.
+- Markup beyond plain content uses Typst's own `html.elem`.
+- `sitemap.xml`, `rss.xml` and `atom.xml` are emitted by `site`. A `robots.txt` or
+  `llms.txt` is copied byte for byte when you pass `path(...)`.
+- Per-page assets go in the page's `assets:` parameter.
 
-== URLs, Slugs, AST Traversal & Plain Text (`src/paths.typ`, `src/text.typ`, `src/tree.typ`)
-#render-src-module("../src/paths.typ", "paths")
-#render-src-module("../src/text.typ", "text")
-#render-src-module("../src/tree.typ", "tree")
+== `blog` — `#import "@preview/thyme:0.1.0": blog` then `#import blog: *`
 
-= `blog` Preset Reference (`src/blog/*.typ`)
+#let blog-surface = (
+  ("site", [The blog bundler: `#show: blog.site.with(...)`.], [Engine]),
+  ("webpage", [A mounted sub-page document.], [Engine]),
+  ("mount", [Mount a `.typ` file, a directory, or a literal body.], [Engine]),
+  ("file", [Co-emit a static file at a bundle route.], [Engine]),
+  ("backlinks", [Compile-time backlinks.], [Engine]),
+  ("post", [One post, with its route, feed entry and metadata.], [Posts]),
+  ("posts", [Posts with dates, descriptions and reading times.], [Posts]),
+  (
+    "theme-default",
+    [The palette dictionary, for reading a colour or font in your markup.],
+    [Theme],
+  ),
+  ("sidenote", [Numbered note in the right margin.], [Notes]),
+  ("sn", [Short form of `sidenote`.], [Notes]),
+  ("mn", [Margin note without a number.], [Notes]),
+  ("mcite", [Bibliography citation placed in the margin.], [Notes]),
+  ("callout", [Boxed aside.], [Blocks]),
+  ("sbox", [Generic boxed block.], [Blocks]),
+  ("definition", [Academic environment.], [Blocks]),
+  ("theorem", [Academic environment.], [Blocks]),
+  ("lemma", [Academic environment.], [Blocks]),
+  ("proposition", [Academic environment.], [Blocks]),
+  ("corollary", [Academic environment.], [Blocks]),
+  ("example", [Academic environment.], [Blocks]),
+  ("recipe", [Academic environment.], [Blocks]),
+  ("remark", [Academic environment.], [Blocks]),
+  ("proof", [Academic environment.], [Blocks]),
+  ("note-box", [Boxed aside.], [Blocks]),
+  ("tip-box", [Boxed aside.], [Blocks]),
+  ("warning-box", [Boxed aside.], [Blocks]),
+  ("important-box", [Boxed aside.], [Blocks]),
+  ("epigraph", [Opening quotation.], [Blocks]),
+  ("codeblock", [Fenced code with a copy button.], [Blocks]),
+  ("diagram", [Captioned figure for a diagram.], [Blocks]),
+  ("wide", [Break out of the text column.], [Blocks]),
+  ("kbd", [Keyboard key.], [Blocks]),
+  ("hr", [Section divider.], [Blocks]),
+  ("links", [Link row: `links(direction: "row", ...)`.], [Blocks]),
+  ("toc", [Table of contents for the current document.], [Blocks]),
+  ("tablem", [Markdown-style table.], [Tables]),
+  ("three-line-table", [Booktabs-style table.], [Tables]),
+  ("grid-table", [Grid table.], [Tables]),
+  ("zebraw", [Striped table rows.], [Tables]),
+)
 
-== Blog Bundler (`src/blog/site.typ`)
-#render-src-module("../src/blog/site.typ", "site")
+#surface-table(blog-surface)
 
-== Post Template (`src/blog/post.typ`)
-#render-src-module("../src/blog/post.typ", "blog-post")
+Applied for you by `blog.site`, and absent on purpose:
 
-== Scholarly Environments & Components (`src/blog/components.typ`)
-#render-src-module("../src/blog/components.typ", "blog-components")
+- `blog.site(post-nav: true)` puts newer/older links under every post.
+- `blog.site` builds the `/tags/` index and the per-tag archives.
+- A post's `assets: ((name, bytes),)` parameter emits a co-located asset.
 
-== Right-Margin Sidenotes (`src/blog/notes.typ`)
-#render-src-module("../src/blog/notes.typ", "blog-notes")
+`checklist`, `showybox`, `zebraw-init` and `zebraw-themes` are `@preview` packages that
+`blog` wraps; import them from their own package when you need them directly.
+
+#surface-table(blog-surface)
+
+The preset applies `with-html-math` itself, so a post does not need to. `checklist`,
+`showybox`, `zebraw-init` and `zebraw-themes` are `@preview` packages that `blog` wraps;
+import them from their own package when you need them directly.
+
+= Internal Modules (`src/**/*.typ`)
+
+These modules build a site. They are documented for anyone extending `thyme` or reading
+`site`'s behaviour, and their import paths stay stable. The names inside them do not:
+they carry no compatibility promise and change whenever the engine or a preset needs
+them to.
 
 == Monochrome Theme & Fonts (`src/blog/theme.typ`)
 #render-src-module("../src/blog/theme.typ", "blog-theme")

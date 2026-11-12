@@ -1,145 +1,111 @@
 # API surface
 
-The public surface of `@preview/thyme` is exactly what `src/lib.typ` (core) and `src/blog/mod.typ`
-(the `blog` preset) re-export. Everything else in `src/` is private, and anything named with a
-leading `_` carries no guarantee at all.
+The public surface of `@preview/thyme` is **nine names in core and forty-one in
+`blog`**. It holds only what a site author writes by hand; everything that `site`, the
+page shell or the presets apply for you is not in it.
 
-This file is the index; `docs/manual.pdf` is the reference, generated from the source doc-comments.
-If a name is listed here but missing from the manual, treat this file as authoritative for
-*existence* and the source doc-comment for *behaviour*.
+Everything else in `src/` is a module-level function. The modules can be imported
+directly (`#import "../src/text.typ": to-plain-text`) and their paths stay stable, but
+the names inside them carry no guarantee.
+
+This file is the index; `docs/manual.pdf` is the reference. If a name is listed here but
+missing from the manual, treat this file as authoritative for *existence* and the source
+doc-comment for *behaviour*.
 
 ## Core — `#import "@preview/thyme:<v>": *`
+
+| Name | Purpose |
+| :--- | :--- |
+| `site` | Root site bundler: `#show: site.with(title:, url:, ...)`. |
+| `webpage` | A mounted sub-page document: `#show: webpage.with(...)`. |
+| `mount` | Mount a `.typ` file, a directory, or a literal body into the bundle. |
+| `file` | Co-emit a static file at a bundle route. |
+| `backlinks` | Compile-time backlinks to the pages that link here. |
+| `tr` | Declare a document's text once per language: `tr(en: [...], de: [...])`. |
+| `robots-txt` | Build a `robots.txt` string, as a starting point you then own. |
+
+That is the whole core surface.
+
+**Applied for you, so not exported:**
+
+- Inline MathML is normalised for HTML export. No show rule to install.
+- Markup that content cannot express uses Typst's own `html.elem`. There is no builder to
+  learn and none to keep working.
+- `sitemap.xml`, `rss.xml` and `atom.xml` are emitted by `site`. Pass `path(...)` to
+  `robots` or `llms` to have your own file copied into the bundle.
+- Per-page assets go in the page's `assets:` parameter, not through a helper.
+
+## Blog preset — `#import "@preview/thyme:<v>": blog` then `#import blog: *`
 
 ### Engine
 
 | Name | Purpose |
 | :--- | :--- |
-| `site` | Root site bundler: `#show: site.with(title:, url:, ...)`. |
-| `webpage` | A mounted sub-page document (`webpage[body]`, `path:` routes it). |
-| `mount` | Mount a `.typ` file, a directory, or a literal body into the bundle. |
-| `file` | Co-emit an arbitrary static file (bytes or path) at a bundle route. |
-| `page-asset` | Declare a per-document asset (font, image, download) with its URL. |
-| `query-pages` | Query all mounted pages in the current site (title, path, meta). |
-| `backlinks` | Compile-time backlink list for the current document. |
-
-### Typed HTML / hyperscript
-
-| Name | Purpose |
-| :--- | :--- |
-| `htm` | Tagged-template HTML fragments with `{slot}` content interpolation. |
-| `h` | CSS-selector hyperscript (`h("div.card", ...)`). |
-| `enable-htm` | Enable `htm` parsing for the scope it is shown into. |
-| `with-html-math` | AST normaliser for inline MathML in HTML export. |
-
-### i18n
-
-| Name | Purpose |
-| :--- | :--- |
-| `tr` | Inline translation: `tr(en: [...], de: [...])` or a `lang.toml` key. |
-| `lang-switcher` | Zero-JS `:root:has(...)` language switcher. |
-| `i18n-css` | The stylesheet that drives the switcher. |
-| `resolve-page-langs` | Discover the language set of a document tree. |
-| `normalize-alternates` | Normalise `alternates` into `(hreflang, href)` pairs. |
-
-### Paths & slugs
-
-| Name | Purpose |
-| :--- | :--- |
-| `slugify` | Unicode-aware slug generation. |
-| `heading-anchor-id` | Collision-free heading anchor ids (dedupe + symbol fallback). |
-| `source-path-for` | `.typ` source URL for a given output document path. |
-| `canonical-page-url` | Absolute canonical URL for a document path. |
-| `query-backlinks` | The raw backlink records behind `backlinks()`. |
-
-### Syndication & SEO
-
-| Name | Purpose |
-| :--- | :--- |
-| `sitemap-xml` | Render `sitemap.xml`. |
-| `robots-txt` | Render `robots.txt` pointing at the sitemap. |
-| `rss-xml` | Render RSS 2.0. |
-| `atom-xml` | Render Atom 1.0. |
-| `content-to-feed-html` | Semantic-HTML body for full-text feeds. |
-| `render-seo-meta` | OpenGraph / Google Scholar `<meta>` emission. |
-
-### Text utilities
-
-| Name | Purpose |
-| :--- | :--- |
-| `to-plain-text` | Strip markup to plain text. |
-| `count-words` | Word count of a content tree. |
-| `estimate-reading-minutes` | Reading-time estimate from a word count. |
-| `word-hint` | Prose word-count hint used by `htm`. |
-| `short-hash` | 32-bit FNV-1a content hash for `?v=` cache keys. |
-
-### Tree traversal
-
-| Name | Purpose |
-| :--- | :--- |
-| `find-content` | First matching node. |
-| `any-content` | Does any node match? |
-| `collect-content` | All matching nodes. |
-| `map-containers` | Rebuild the tree, short-circuiting subtrees. |
-
-## Blog preset — `#import "@preview/thyme:<v>": blog` then `#import blog: *`
-
-The preset re-exports everything above, plus:
-
-### Site & posts
-
-| Name | Purpose |
-| :--- | :--- |
-| `site` (`blog.site`) | Bundler with tags, feeds, post lists, sidenotes, and the monochrome theme. |
-| `post` | One blog post (`post(path(...))` or a literal body). |
-| `post-asset` | Per-post asset (alias of `page-asset`). |
-| `post-nav` | Chronological previous/next navigation. |
-| `post-list` | Rendered list of posts. |
-| `tag-cloud` | Live tag cloud; `/tags/` archives are emitted by `site`. |
-| `toc` | Table of contents for the current document. |
+| `site` | The blog bundler: `#show: blog.site.with(...)`. |
+| `webpage`, `mount`, `file`, `backlinks` | As in core. |
+| `post` | One blog post, with its route, feed entry and metadata. |
+| `posts` | Posts with dates, descriptions and reading times. |
 
 ### Theme
 
 | Name | Purpose |
 | :--- | :--- |
-| `default-theme` | The `oklch(L, 0, 0deg)` monochrome palette and font stacks. |
-| `resolve-theme` | Merge a partial `theme` override onto `default-theme`. |
-| `active-theme` | The theme currently in effect for the enclosing document. |
-| `css-oklch` | Convert a Typst colour to a CSS `oklch(...)` string. |
-| `css-hex` | Convert a Typst colour to lowercase `#rrggbb` (needed for `theme-color`). |
-| `stylesheet-css` | The rendered preset stylesheet as a string. |
-| `stylesheet-href` | Content-addressed `?v=<hash>` stylesheet URL. |
-| `stylesheet-asset-path` | Bundle path of the stylesheet (`css/style.css`). |
-| `theme-override-css` | Per-document `:root` override block. |
-| `default-woff2-files` | The bundled font file list, for self-hosting. |
+| `theme-default` | The palette dictionary, for reading a colour or font in your own markup. |
 
-### Notes & margin material
+### Notes and margin material
 
 | Name | Purpose |
 | :--- | :--- |
-| `sidenote` / `sn` | Right-margin sidenote with a numbered reference. |
-| `marginnote` / `mn` | Unnumbered margin note. |
-| `mcite` | Margin bibliography citation. |
-| `container` | The underlying margin container. |
+| `sidenote` | Numbered note in the right margin. |
+| `sn` | Short form of `sidenote`. |
+| `mn` | Margin note without a number. |
+| `mcite` | Bibliography citation placed in the margin. |
 
 ### Blocks
 
 | Name | Purpose |
 | :--- | :--- |
-| `callout`, `note-box`, `tip-box`, `warning-box`, `important-box` | Reader-Mode-safe callouts. |
+| `callout`, `note-box`, `tip-box`, `warning-box`, `important-box` | Boxed asides. |
 | `sbox` | Generic boxed block. |
-| `codeblock` | Code block with copy affordance. |
 | `definition`, `theorem`, `lemma`, `proposition`, `corollary`, `example`, `recipe`, `remark`, `proof` | Academic environments. |
-| `epigraph` | Pull quote. |
-| `diagram` | Figure wrapper with `invert-dark`. |
-| `wide` | Break out of the measure into the margin. |
-| `kbd`, `hr`, `links` | Inline utilities (`links(direction: "row" \| "column")`). |
+| `epigraph` | Opening quotation. |
+| `codeblock` | Fenced code with a copy button. |
+| `diagram` | Captioned figure for a diagram. |
+| `wide` | Break out of the text column. |
+| `kbd` | Keyboard key. |
+| `hr` | Section divider. |
+| `links` | Inline link row (`links(direction: "row", ...)`). |
+| `toc` | Table of contents for the current document. |
 
 ### Tables
 
 | Name | Purpose |
 | :--- | :--- |
-| `tablem`, `three-line-table`, `grid-table`, `zebraw` | Table styles; `zebraw` is the preset default. |
+| `tablem` | Markdown-style table. |
+| `three-line-table` | Booktabs-style table. |
+| `grid-table` | Grid table. |
+| `zebraw` | Striped table rows. |
 
-### Re-exported upstream packages
+**Applied for you by `blog.site`, so not exported:**
 
-`checklist` (cheq), `showybox`, `zebraw-init`, `zebraw-themes`.
+- `post-nav` — `blog.site(post-nav: true)` puts newer/older links under every post.
+- `tag-cloud` — `blog.site` builds the `/tags/` index and the per-tag archives.
+- `post-asset` — a post's `assets: ((name, bytes),)` parameter does the same job.
+- `with-html-math` — applied by the page shell.
+
+## What left the surface
+
+| Name | Now | Why |
+| :--- | :--- | :--- |
+| `slugify`, `canonical-page-url`, `heading-anchor-id`, `source-path-for`, `query-backlinks` | `src/paths.typ` | `site` and `webpage` call them. A site file sets `path:` and `title:` instead. |
+| `sitemap-xml`, `rss-xml`, `atom-xml`, `render-seo-meta`, `content-to-feed-html` | `src/seo.typ` | `site` emits these files. |
+| `to-plain-text`, `count-words`, `estimate-reading-minutes`, `word-hint`, `short-hash` | `src/text.typ` | Internal text measurement. |
+| `any-content`, `collect-content`, `find-content`, `map-containers` | `src/tree.typ` | Content-tree walks used by the engine. |
+| `resolve-page-langs`, `i18n-css`, `lang-switcher`, `normalize-alternates`, `missing-translations`, `assert-complete-translations` | `src/i18n.typ` | `site` and `blog.post` drive these. `tr` is the only one a site file writes. |
+| `with-html-math` | `src/core.typ` | The page shell applies it. Installing a show rule was never the author's job. |
+| `htm`, `h` | removed | Typst's own `html.*` constructors do the same, so a second builder was an opinion with a parser to maintain. |
+| `page-asset`, `post-asset` | `src/core.typ`, `src/blog/post.typ` | The `assets:` parameter on `webpage` and `post` replaces them. |
+| `query-pages`, `post-nav`, `tag-cloud` | `src/core.typ`, `src/blog/*` | `blog.site` calls them. `posts` is the one an author writes. |
+| `css-oklch`, `css-hex`, `stylesheet-css`, `stylesheet-href`, `stylesheet-asset-path`, `resolve-theme`, `active-theme`, `theme-override-css`, `default-woff2-files` | `src/blog/theme.typ` | Palette construction. `theme:` takes a dictionary. |
+| `container`, `marginnote` | `src/blog/notes.typ` | `sidenote`, `sn`, `mn` and `mcite` cover the use. |
+| `checklist`, `showybox`, `zebraw-init`, `zebraw-themes` | `@preview` packages | `blog` wraps them. Import them from their own package. |

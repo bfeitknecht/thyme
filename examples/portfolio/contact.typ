@@ -13,8 +13,11 @@
   de: [Direkter Kontakt per E-Mail oder Signaturprüfung über `/pgp.txt`.],
 )
 
-#h(
-  "ul",
-  h("li", [Email: ], link("mailto:ada@example.org")[`ada@example.org`]),
-  h("li", [OpenPGP: ], link("../pgp.txt")[`pgp.txt`]),
-)
+// `html.elem` comes from Typst itself, so no helper is needed for markup that plain
+// Typst content cannot express.
+#html.elem("ul", {
+  html.elem("li", {
+    [Email: ] + link("mailto:ada@example.org")[`ada@example.org`]
+  })
+  html.elem("li", { [OpenPGP: ] + link("../pgp.txt")[`pgp.txt`] })
+})

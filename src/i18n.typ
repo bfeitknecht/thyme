@@ -4,7 +4,7 @@
 // and top-bar switcher labels.
 
 #import "paths.typ": canonical-page-url
-#import "text.typ": _tr-nonprimary-depth
+#import "text.typ": _tr-nonprimary-depth, to-plain-text
 #import "tree.typ": any-content, collect-content
 
 #let _block-funcs = (
@@ -186,6 +186,98 @@
   }
 }
 
+/// Report every `#tr(...)` block whose entries do not cover all of `langs`.
+///
+/// A page-level guard, called from `site` and `blog.post` once the page's language set is
+/// known. Content is scanned for the `#thyme-tr-meta` metadata that `tr` emits, so a block
+/// that is missing a language is found even when it sits deep inside a post body.
+///
+/// Returns an array of human-readable messages, so a caller can decide whether to panic or
+/// only warn. An empty array means every block covers every language.
+/// -> array
+#let missing-translations(
+  /// Content nodes to scan, usually the page body.
+  /// -> array
+  nodes,
+  /// Language codes the page declares (e.g. `("en", "de", "fr")`).
+  /// -> array
+  langs,
+) = {
+  if langs.len() < 2 {
+    return ()
+  }
+  let wanted = langs.map(l => str(l).trim()).filter(l => l != "")
+  if wanted.len() < 2 {
+    return ()
+  }
+  // `collect-content` walks one content value, so unwrap an array of them first.
+  let roots = if type(nodes) == array { nodes } else { (nodes,) }
+  let found = roots.fold((), (acc, root) => (
+    acc
+      + collect-content(
+        root,
+        n => {
+          if not (
+            n.func() == metadata
+              and type(n.value) == dictionary
+              and n.value.at("thyme-tr", default: false)
+          ) {
+            return ()
+          }
+          let have = n.value.entries.keys().map(k => str(k).trim())
+          let absent = wanted.filter(l => l not in have)
+          if absent.len() == 0 {
+            return ()
+          }
+          // Use the first entry as a stand-in for the block's position in the text. It tells a
+          // reader which block to look for without dumping the whole content value.
+          let first-entry = n.value.entries.pairs().first()
+          let sample = to-plain-text(first-entry.at(1)).trim()
+          if sample.len() > 40 {
+            sample = sample.slice(0, 40) + "..."
+          }
+          (
+            (
+              "`#tr(...)` block is missing "
+                + absent.map(l => "`" + l + "`").join(", ")
+                + " (page declares "
+                + wanted.map(l => "`" + l + "`").join(", ")
+                + "; block text: \""
+                + sample
+                + "\")"
+            ),
+          )
+        },
+      )
+  ))
+  found
+}
+
+/// Panic unless every `#tr(...)` block in `nodes` has an entry for each language in `langs`.
+///
+/// A page with two languages shows a missing translation as an obvious gap. A page with six
+/// shows four empty strings in the middle of a long post, which is easy to ship. This turns
+/// that silence into a compile error. Call it once the page's language set is resolved.
+#let assert-complete-translations(
+  /// Content nodes to scan, usually the page body.
+  /// -> array
+  nodes,
+  /// Language codes the page declares (e.g. `("en", "de", "fr")`).
+  /// -> array
+  langs,
+) = {
+  let gaps = missing-translations(nodes, langs)
+  if gaps.len() > 0 {
+    panic(
+      "incomplete translations:\n  "
+        + gaps.join("\n  ")
+        + "\nEvery `#tr(...)` block on a page must cover "
+        + langs.map(l => "`" + l + "`").join(", ")
+        + ". Add the missing branches, or remove the language from the page's `lang`.",
+    )
+  }
+}
+
 /// Declare inline or block multilingual content (`#tr(en: [Hello], de: [Grüezi])`), or
 /// look up all translations for a key from a `@preview/linguify`-compatible `lang.toml`
 /// dictionary (`#tr("abstract", from: toml("lang.toml"))`).
@@ -253,7 +345,8 @@
 }
 
 /// Generate the minimal CSS stylesheet rules driving zero-JavaScript, keyboard-accessible
-/// `<input type="radio">` language switching for a bilingual/multilingual page's `langs` tuple.
+/// `<input type="radio">` language switching for a page's `langs` array, which holds two
+/// or more language codes.
 /// -> str
 #let i18n-css(
   /// Ordered list of active language codes on the page (e.g. `("en", "de")`).
