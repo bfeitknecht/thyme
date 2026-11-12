@@ -167,7 +167,9 @@ To publish a version, run `just release X.Y.Z`. The version is the only argument
 derives the `vX.Y.Z` tag from it. The recipe checks that version against `typst.toml` and
 `CHANGELOG.md` and runs the full gate. It requires a release branch, not `main` or `master`,
 and requires your branch to match `origin`. It then rebuilds `docs/manual.pdf` and
-`thumbnail.png`, commits, and pushes the commit and the tag together. The tag starts
+`thumbnail.png`, commits, and pushes the commit and the tag together. The commit and tag message
+is the first sentence of that version's changelog section, so the release never stops to ask for
+one. The tag starts
 `.github/workflows/release.yaml`, which publishes a GitHub Release with `docs/manual.pdf`
 attached and pushes the submission branch to your fork. It then tries to open the Typst
 Universe PR. The `typst` org does not let a fine-grained token do that, so when it is refused the
