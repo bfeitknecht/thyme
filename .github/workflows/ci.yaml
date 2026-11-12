@@ -70,8 +70,21 @@ jobs:
       - name: Stage the payload
         run: just _stage universe-stage thyme "$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml","rb"))["package"]["version"])')"
 
+      # Job logs redirect to storage that some environments cannot fetch, so the findings
+      # are repeated as annotations, which the API always returns.
       - name: Run typst-package-check
-        run: typst-package-check check "universe-stage/packages/preview/thyme/$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml","rb"))["package"]["version"])')"
+        run: |
+          set -o pipefail
+          version="$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml","rb"))["package"]["version"])')"
+          typst-package-check check "universe-stage/packages/preview/thyme/${version}" 2>&1 | tee package-check.log
+
+      - name: Annotate findings
+        if: failure()
+        run: |
+          tail -n 60 package-check.log || true
+          grep -aE '^(error|warning)\[[a-z/-]+\]' package-check.log | sort -u | while IFS= read -r line; do
+            echo "::error::${line}"
+          done
 
   check:
     name: Build & verify
