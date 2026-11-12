@@ -79,7 +79,7 @@ Making markup your own is Typst's job. A site writes plain Typst content, and re
   validates the generated XML, sources, tag cloud, backlinks, accessibility and internal links
   without writing to the tree. `fmt` and `lint` cover formatting. `preview` serves the template
   with live reload.
-- **`just release vX.Y.Z` cuts a release.** It checks the tag against `typst.toml` and this
-  file, runs the full gate, rebuilds `docs/manual.pdf` and `thumbnail.png`, then pushes the
+- **`just release X.Y.Z` cuts a release.** It takes the version, derives the `vX.Y.Z` tag, checks
+  it against `typst.toml` and this file, runs the full gate, rebuilds `docs/manual.pdf` and `thumbnail.png`, then pushes the
   commit and the tag together. The tag starts a workflow that publishes the GitHub Release and
   submits the package to Typst Universe.

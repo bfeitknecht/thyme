@@ -387,7 +387,7 @@ bump version:
         p.write_text(txt)
     print(f"bumped thyme {old_ver} -> {new_ver} (then update CHANGELOG.md; `just check` rebuilds the manual)")
 
-# Cut a release: `just release [TAG]`, `just release TAG --check`, `just release --notes`
+# Cut a release: `just release [VERSION]`, `just release VERSION --check`, `just release --notes`
 release *args:
     #!/usr/bin/env python3
     import os, pathlib, re, subprocess, sys, tomllib
@@ -405,10 +405,19 @@ release *args:
         sys.exit(f"release: --check and --notes are mutually exclusive (got {flags})")
     if len(positional) > 1:
         sys.exit(
-            f"release: expected at most one argument (the tag), got {positional}. "
+            f"release: expected at most one argument (the version), got {positional}. "
             "The commit message is prompted for at cut time."
         )
-    tag = positional[0] if positional else ""
+    # The argument is the version, without a `v`. The tag is derived from it, because a
+    # release tag is `v<version>` and typing that prefix by hand adds nothing.
+    given = positional[0] if positional else ""
+    if not given and "--notes" not in flags:
+        sys.exit("release: pass a version, e.g. `just release 0.1.0`")
+    if given.startswith("v"):
+        sys.exit(
+            f"release: pass the version without a 'v' prefix (got {given!r}, want {given[1:]!r})"
+        )
+    tag = f"v{given}" if given else ""
 
     # The release notes are this section of CHANGELOG.md. Both read-only modes need them,
     # and so does the publish step.
@@ -430,7 +439,7 @@ release *args:
         problems.append(f"typst.toml version {version!r} is not plain X.Y.Z")
     if tag != f"v{version}":
         problems.append(
-            f"tag {tag!r} does not match typst.toml version (want 'v{version}'; run `just bump` first)"
+            f"version {given!r} does not match typst.toml (want {version!r}; run `just bump` first)"
         )
     if not re.search(rf"^## \[{re.escape(version)}\] - \d\d\d\d-\d\d-\d\d", changelog, re.M):
         problems.append(f"CHANGELOG.md needs a dated '## [{version}] - YYYY-MM-DD' section")
