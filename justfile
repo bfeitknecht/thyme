@@ -416,6 +416,41 @@ bump version:
         p.write_text(txt)
     print(f"bumped thyme {old_ver} -> {new_ver} (then update CHANGELOG.md; `just check` rebuilds the manual)")
 
+# Print the Typst Universe submission link and the PR text, filled in from typst.toml
+submission:
+    #!/usr/bin/env python3
+    import pathlib, re, sys, tomllib
+
+    # The template is typst/packages' own, kept in the repository so a submission is never
+    # retyped. `annotations` turns the two placeholders into what typst.toml and this
+    # release say, and `[!_]` placeholders raise instead of leaking an instruction into a
+    # pull request.
+    package = tomllib.loads(pathlib.Path("typst.toml").read_text())["package"]
+    name, version = package["name"], package["version"]
+
+    fork = "bfeitknecht"  # the fork that receives the branch
+    print(f"https://github.com/typst/packages/compare/main...{fork}:{name}-{version}")
+    print()
+
+    body = pathlib.Path(".github/universe-pr.md").read_text()
+    for pattern, value in {
+        r"Explain what the package does and why it's useful\.": package["description"],
+        r"https://github\.com/bfeitknecht/thyme/releases/download/v[0-9.]+/manual\.pdf":
+            f"https://github.com/{package['repository'].removeprefix('https://github.com/')}"
+            f"/releases/download/v{version}/manual.pdf",
+    }.items():
+        body = re.sub(pattern, value, body)
+
+    # A new submission leaves exactly one box unchecked, the "an update" one. Anything
+    # else unchecked means a claim that was not made, so refuse rather than open a PR
+    # that contradicts itself.
+    unchecked = re.findall(r"^- \[ \] (.+)$", body, re.M)
+    if unchecked != ["an update for a package"]:
+        sys.exit("submission: the template has unchecked boxes: " + ", ".join(unchecked))
+    # `end=""` keeps the output a byte-for-byte copy of the template, so the release
+    # workflow can drop the two link lines and post the rest unchanged.
+    print(body, end="")
+
 # Cut a release: `just release [VERSION]`, `just release VERSION --check`, `just release --notes`
 release *args:
     #!/usr/bin/env python3
