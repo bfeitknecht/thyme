@@ -175,6 +175,12 @@ attached and pushes the submission branch to your fork. It then tries to open th
 Universe PR. The `typst` org does not let a fine-grained token do that, so when it is refused the
 job writes the compare link to its summary and one click finishes the submission.
 
+A fine-grained token cannot open a pull request into `typst/packages` at all, because the
+organisation restricts who may. When the workflow is refused it prints the compare link,
+and the submission text is the same text `just submission` prints locally: it fills in
+`.github/universe-pr.md` from `typst.toml`. Open the link, paste the body, and the PR is
+done.
+
 ### Freezing a downstream
 
 To stabilise a site against upstream churn, pin the exact patch version and let CI hold it:
