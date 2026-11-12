@@ -163,17 +163,15 @@ rename a non-event for anyone who is not actively upgrading.
 
 ### Releasing
 
-To publish a version, run `just release vX.Y.Z`. The recipe checks the tag against `typst.toml`
-and `CHANGELOG.md` and runs the full gate. It requires a release branch, not `main` or `master`,
+To publish a version, run `just release X.Y.Z`. The version is the only argument; the recipe
+derives the `vX.Y.Z` tag from it. The recipe checks that version against `typst.toml` and
+`CHANGELOG.md` and runs the full gate. It requires a release branch, not `main` or `master`,
 and requires your branch to match `origin`. It then rebuilds `docs/manual.pdf` and
 `thumbnail.png`, commits, and pushes the commit and the tag together. The tag starts
 `.github/workflows/release.yaml`, which publishes a GitHub Release with `docs/manual.pdf`
 attached and pushes the submission branch to your fork. It then tries to open the Typst
 Universe PR. The `typst` org does not let a fine-grained token do that, so when it is refused the
 job writes the compare link to its summary and one click finishes the submission.
-
-The ordered sequence, including the gate that must open first and the checks to run on the
-upstream PR, is in [`docs/release-checklist.md`](docs/release-checklist.md).
 
 ### Freezing a downstream
 
@@ -205,8 +203,8 @@ The CI setup action pins the same version, so local and CI formatting cannot dri
 Releasing is one command, with a read-only mode so you can validate before you tag:
 
 ```sh
-just release v0.1.0 --check    # tag vs typst.toml vs CHANGELOG.md, nothing written
-just release v0.1.0            # the gate, then commit, tag, and push
+just release 0.1.0 --check     # version vs typst.toml vs CHANGELOG.md, nothing written
+just release 0.1.0             # the gate, then commit, tag v0.1.0, and push
 just release --notes           # the CHANGELOG section, as CI publishes it
 ```
 

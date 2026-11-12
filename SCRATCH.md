@@ -2,8 +2,7 @@
 
 > Local maintainer scratch file (excluded from the Typst Universe package archive via `typst.toml` `exclude`).
 >
-> **Actionable step-by-step sequence: [`docs/release-checklist.md`](docs/release-checklist.md).**
-> This file is the broader rollout context (glob, apex, infra); that one is the shortlist.
+> This file is the rollout context (glob, apex, infra) and the release sequence.
 
 ## 1. End-to-End Rollout Checklist (`syndicate` → `thyme` → `glob` → `apex`)
 
@@ -45,7 +44,7 @@ sitemap additions. Thyme no longer depends on `exemel`.
   ```sh
   git init -b main
   git remote add origin git@github.com:bfeitknecht/thyme.git
-  just release v0.1.0    # prompts for the commit message; falls back to the tag
+  just release 0.1.0     # prompts for the commit message; derives tag v0.1.0
   ```
   - Verify GitHub Actions (`release.yaml`) publishes the `v0.1.0` GitHub Release (with `docs/manual.pdf` attached), runs `typst-package-check`, pushes branch `thyme-0.1.0` to `bfeitknecht/packages`, and opens a **Draft PR** on `typst/packages`.
   - Review the Draft PR diff on `typst/packages`, confirm upstream CI is green, mark **Ready for review**, and wait for `@preview/thyme:0.1.0` to merge.
@@ -64,7 +63,7 @@ sitemap additions. Thyme no longer depends on `exemel`.
   just compile
   git init -b main
   git remote add origin git@github.com:bfeitknecht/glob.git
-  just release v0.1.0 "Initial release"
+  just release 0.1.0 "Initial release"
   ```
   *(Triggers `.github/workflows/publish-image.yaml` via `bfeitknecht/infra`, pushing `ghcr.io/bfeitknecht/glob:latest` for Flux/Keel to deploy.)*
 
@@ -77,7 +76,7 @@ sitemap additions. Thyme no longer depends on `exemel`.
   ```sh
   rm -rf public
   just compile
-  just release v0.2.0 "Migrate static site to thyme"
+  just release 0.2.0 "Migrate static site to thyme"
   ```
 
 ---
