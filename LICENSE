@@ -5,7 +5,7 @@ Scope of Licenses
   (`assets/`) are licensed under the MIT License below.
 - Template and example starter files (`template/` and `examples/`) are licensed
   under the MIT No Attribution License (MIT-0) below, so projects scaffolded
-  with `typst init @preview/typica` may be modified and distributed without
+  with `typst init @preview/thyme` may be modified and distributed without
   attribution or license-redistribution requirements.
 
 -------------------------------------------------------------------------------

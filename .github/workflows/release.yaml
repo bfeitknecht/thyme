@@ -233,15 +233,13 @@ jobs:
           git remote add fork "https://x-access-token:${GH_TOKEN}@${UNIVERSE_HOST}/${UNIVERSE_SLUG}.git"
           git push --force fork "HEAD:refs/heads/${branch}"
 
-          cat > ../pr-body.md <<EOF
-          I am submitting \`${PKG_NAME}:${PKG_VER}\` from https://github.com/${GITHUB_REPOSITORY}/releases/tag/v${PKG_VER}.
-
-          - [x] Added a \`typst.toml\` file with all required keys
-          - [x] Added a \`README.md\` with documentation and runnable \`@preview\` examples
-          - [x] Dual-licensed under \`MIT AND MIT-0\` (\`MIT\` for library code, \`MIT-0\` for \`template/\` and \`examples/\`)
-          - [x] Tested locally and in CI across \`bundle\`, \`html\`, and \`paged\` targets with \`typst-package-check\`
-          - [x] Excluded documentation PDFs, preview images, and \`examples/\` from the compiler download archive
-          EOF
+          # The same text `just submission` prints, so the PR the workflow opens and the
+          # PR the maintainer opens by hand cannot say different things.
+          just submission > submission.txt
+          # Drop the compare link and the blank line that follows it: the workflow
+          # already knows where the PR goes.
+          sed '1,2d' submission.txt > ../pr-body.md
+          rm submission.txt
 
           # Opening the PR is best-effort. The branch and the GitHub Release are the
           # deliverables; a pull request into typst/packages needs permissions that a
