@@ -1,4 +1,4 @@
-// Scholarly blog site bundler (`blog.site`, `post-list`, `tag-cloud`) built directly
+// Scholarly blog site bundler (`blog.site`, `posts`, `tag-cloud`) built directly
 // atop `thyme` core (`src/core.typ`).
 //
 // Emits `index.html`, `404.html`, `posts/<slug>/index.html`, mounted `webpage` subpages,
@@ -24,7 +24,7 @@
   stylesheet-href,
 )
 
-// Shared entry card renderer for both inline `#post(...)` mounts and `#post-list()`.
+// Shared entry card renderer for both inline `#post(...)` mounts and `#posts()`.
 #let _render-entry-card(
   title: none,
   dest: none,
@@ -65,7 +65,7 @@
 
 /// Render a newest-first `<ul class="entries">` list of all public posts in the bundle.
 /// -> content
-#let post-list(
+#let posts(
   /// Include each post's `summary` (or `subtitle` fallback) beneath its title row.
   /// -> bool
   show-summary: true,
@@ -77,10 +77,10 @@
   lang: none,
 ) = context {
   let t = active-theme()
-  let posts = query-pages(collection: "posts", tag: tag, lang: lang)
+  let entries = query-pages(collection: "posts", tag: tag, lang: lang)
   if target() == "html" {
     html.ul(class: "entries", {
-      for p in posts {
+      for p in entries {
         _render-entry-card(
           title: p.title,
           dest: p.doc-loc,
@@ -94,7 +94,7 @@
       }
     })
   } else {
-    for p in posts {
+    for p in entries {
       _render-entry-card(
         title: p.title,
         created-str: p.created-str,
@@ -296,7 +296,7 @@
   /// Additional `<head>` elements injected on `index.html`.
   /// -> content | none
   head: none,
-  /// Theme overrides merged onto `default-theme` across both HTML CSS and paged previews.
+  /// Theme overrides merged onto `theme-default` across both HTML CSS and paged previews.
   /// -> dictionary
   theme: (:),
   /// Homepage markup (`= Heading`, `#links(direction: "row", ...)`, and mounted `#post(path("...")) <slug>` entries).
@@ -651,7 +651,7 @@
                       include-feeds: false,
                       {
                         html.h1(html.code(tg-title))
-                        post-list(tag: tg)
+                        posts(tag: tg)
                       },
                     )
                   }

@@ -5,8 +5,8 @@
 // Tadi Web sites) and as the single shared bundle engine underneath presets like `blog`.
 
 #import "i18n.typ": (
-  i18n-css, lang-switcher, normalize-alternates, render-lang-inputs,
-  resolve-page-langs,
+  assert-complete-translations, i18n-css, lang-switcher, normalize-alternates,
+  render-lang-inputs, resolve-page-langs,
 )
 #import "paths.typ": (
   canonical-page-url, date-sort-key, emit-doc-marker, find-doc-containing,
@@ -16,7 +16,7 @@
   with-html-headings, with-smart-refs,
 )
 #import "seo.typ": atom-xml, render-seo-meta, robots-txt, rss-xml, sitemap-xml
-#import "blog/theme.typ": css-hex, default-theme
+#import "blog/theme.typ": css-hex, theme-default
 #import "text.typ": count-words, estimate-reading-minutes, to-plain-text
 #import "tree.typ": collect-content, find-content, map-containers
 
@@ -690,7 +690,7 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
   /// Theme dictionary used to derive `<meta name="theme-color">`. Browsers only
   /// honour sRGB there, so the `oklch` tokens are converted to hex for this one tag.
   /// -> dictionary
-  theme-config: default-theme,
+  theme-config: theme-default,
   body,
 ) = {
   let in-bundle = doc-path != none
@@ -944,6 +944,9 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
     description,
     body,
   ))
+  // A page that declares several languages must translate every block, or the switcher
+  // offers a language that renders as a gap.
+  assert-complete-translations((resolved-title, description, body), page-langs)
   let primary-lang = page-langs.first()
 
   let meta-payload = (
@@ -1035,9 +1038,9 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
       )
       // A preset may supply its resolved theme so `theme-color` tracks user overrides.
       let shell-theme = if site-config != none {
-        site-config.at("theme", default: default-theme)
+        site-config.at("theme", default: theme-default)
       } else {
-        default-theme
+        theme-default
       }
 
       render-core-shell(
@@ -1340,11 +1343,11 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
 
   // `site()` emits the mounted pages and the built-in 404 itself, so it needs the same
   // resolved theme `webpage()` derives: a preset (e.g. `blog`) supplies it through
-  // `_preset-config`, a plain core site keeps `default-theme`.
+  // `_preset-config`, a plain core site keeps `theme-default`.
   let shell-theme = if ext.at("_preset-config", default: none) != none {
-    ext.at("_preset-config").at("theme", default: default-theme)
+    ext.at("_preset-config").at("theme", default: theme-default)
   } else {
-    default-theme
+    theme-default
   }
   let site-config = (
     title: resolved-title,
@@ -1434,6 +1437,10 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
           scan-nodes: (resolved-title, description, body),
           queried-codes: query-doc-tr-codes(home-doc),
         )
+        assert-complete-translations(
+          (resolved-title, description, body),
+          eff-home-langs,
+        )
         let home-inner = {
           show: with-html-headings.with(
             shift: if emit-auto-h1 { 1 } else { 0 },
@@ -1489,8 +1496,8 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
             extra-head: head,
             wrap-main: wrap-main,
             theme-config: if site-config != none {
-              site-config.at("theme", default: default-theme)
-            } else { default-theme },
+              site-config.at("theme", default: theme-default)
+            } else { theme-default },
             home-inner,
           )
         }

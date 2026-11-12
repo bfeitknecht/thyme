@@ -1,35 +1,17 @@
-// Public exports of the `blog` scholarly monochrome blog preset inside `@preview/thyme`.
+// Public surface of the `blog` preset.
 //
-// Usage:
-//   #import "@preview/thyme:0.1.0": *
-//   #import blog: *
-//   // or order-independently:
-//   #show: blog.site.with(...)
+// Only the names a post or a site file calls by hand are re-exported. Everything else
+// here is module-level: the theme plumbing, the upstream components `blog` wraps, and
+// the pieces the bundler applies itself.
 //
-// Generic core functions (`site`, `webpage`, `mount`, `file`, ...) are exported by
-// `lib.typ` itself; this module only re-exports them so `#import blog: *` alone is
-// enough to build a site. In Typst every top-level `#let`/`#import` of a file is part
-// of that file's module, so the imports above are the public export surface.
+// Every `blog` module imports its real dependencies from `../core.typ`, `theme.typ` and
+// so on, so this file is a list of exports and nothing else.
 
-// Upstream packages re-exported so `#import blog: *` matches the documented surface
-// (the manual and examples rely on `checklist`, `showybox`, `zebraw-init`, ...).
-#import "@preview/cheq:0.4.0": checklist
-#import "@preview/showybox:2.0.4": showybox
-#import "@preview/zebraw:0.6.3": zebraw-init, zebraw-themes
+#import "../core.typ": backlinks, file, mount, webpage
 
-#import "../core.typ": (
-  backlinks, file, mount, page-asset, query-pages, webpage, with-html-math,
-)
+#import "theme.typ": theme-default
 
-#import "../htm.typ": enable-htm, h, htm
-
-#import "theme.typ": (
-  active-theme, css-hex, css-oklch, default-theme, default-woff2-files,
-  resolve-theme, stylesheet-asset-path, stylesheet-css, stylesheet-href,
-  theme-override-css,
-)
-
-#import "notes.typ": container, marginnote, mcite, mn, sidenote, sn
+#import "notes.typ": mcite, mn, sidenote, sn
 
 #import "components.typ": (
   callout, codeblock, corollary, definition, diagram, epigraph, example,
@@ -38,22 +20,26 @@
   toc, warning-box, wide, zebraw,
 )
 
-#import "post.typ": post, post-asset, post-nav
+#import "post.typ": post
 
-#import "site.typ": post-list, site, tag-cloud
+#import "site.typ": posts, site
 
-// Public surface of `blog` (everything imported above is re-exported by this module).
-//
-//   engine      site, webpage, mount, file, page-asset, query-pages, backlinks
-//   theme       default-theme, resolve-theme, active-theme, css-oklch, css-hex,
-//               stylesheet-css, stylesheet-href, stylesheet-asset-path,
-//               theme-override-css, default-woff2-files
-//   typography  htm, h, enable-htm, with-html-math
-//   notes       sidenote, sn, marginnote, mn, mcite, container
+//   engine      site, webpage, mount, file, backlinks
+//   theme       theme-default
+//   notes       sidenote, sn, mn, mcite
 //   blocks      callout, codeblock, sbox, academic environments
 //               (definition, theorem, lemma, proposition, corollary, example,
 //               recipe, remark, proof), note-box, tip-box, warning-box,
 //               important-box, epigraph, wide, diagram, kbd, hr, links, toc
 //   tables      tablem, three-line-table, grid-table, zebraw
-//   posts       post, post-asset, post-nav, post-list, tag-cloud
-//   upstream    checklist, showybox, zebraw-init, zebraw-themes
+//   posts       post, posts
+//
+// Applied for you, and therefore not exported:
+//
+//   post-nav    `blog.site(post-nav: true)` puts it under every post.
+//   tag-cloud   `blog.site` builds the `/tags/` index and the per-tag archives.
+//   post-asset  a post's `assets: ((name, bytes),)` parameter does the same job.
+//   with-html-math   applied by the page shell.
+//
+// `checklist`, `showybox`, `zebraw-init` and `zebraw-themes` are `@preview` packages
+// that `blog` wraps. Import them from their own package when you need them directly.
