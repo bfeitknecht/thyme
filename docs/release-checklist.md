@@ -1,22 +1,16 @@
 # Release checklist: `@preview/thyme:0.1.0` to Typst Universe
 
-The pipeline is already wired. This file lists the actions to take.
-The current blocker is that `@preview/syndicate:0.1.0` is not live on Typst Universe yet.
-
-Thyme depends on `bfeitknecht/syndicate` for XML, Atom, RSS and sitemap encoding. That
-package must reach Typst Universe before thyme, because thyme imports it as
-`@preview/syndicate`. The version is `0.1.0` everywhere (`typst.toml`, README, template,
-examples, tests, `docs/manual.typ`), so **you do not need to run `just bump`**. Tag
-`v0.1.0` directly.
+The pipeline is wired and the dependency is published. `@preview/syndicate:0.1.0` is live on
+Typst Universe, and the temporary vendored copy is gone. The version is `0.1.0` everywhere
+(`typst.toml`, README, template, examples, tests, `docs/manual.typ`), so **you do not need to run
+`just bump`**. Tag `v0.1.0` from a release branch.
 
 ---
 
-## 0. Publish syndicate, then wait until it resolves
+## 0. Confirm the dependency still resolves
 
-Two releases are needed, and syndicate comes first:
-
-1. Publish `@preview/syndicate:0.1.0` through the PR flow in `bfeitknecht/syndicate`.
-2. Confirm that `@preview/syndicate:0.1.0` resolves from a clean package cache:
+`@preview/syndicate:0.1.0` is on Typst Universe. Confirm it resolves from a clean cache, because
+every later step depends on it:
 
 ```sh
 rm -rf "$HOME/.local/share/typst/packages/preview/syndicate"   # drop any local copy
@@ -25,22 +19,10 @@ typst query @preview/syndicate:0.1.0 --field version            # should print 0
 
 If the query fails, stop. All later steps fail too.
 
-## 1. Drop the vendored dependency
+There is no vendored copy to fall back on. `src/seo.typ` imports the package by name, so a
+missing or unreachable release fails the build instead of resolving locally.
 
-```sh
-rm -rf vendor
-```
-
-Also delete the TODO at the top of `src/seo.typ` (lines 5–6) that asks for exactly this, and
-drop the `vendor/*` glob from `_link-pkg` in the `justfile`. That glob is the last reference to
-vendoring in the repository. No other change is needed: `just release` builds the payload from
-`typst.toml`, and `typst-package-check` rejects an archive whose imports cannot resolve.
-
-`vendor/syndicate/` is a verbatim copy of `lib.typ`, `src/`, `typst.toml`, `LICENSE` and
-`README.md` from `bfeitknecht/syndicate`. If that package changes before release, copy the
-files again rather than editing them here.
-
-## 2. Re-verify against Universe without the local copy
+## 1. Re-verify against Universe
 
 ```sh
 just check          # all 3 bundles, unit tests and PDFs; read-only
@@ -48,11 +30,10 @@ just fmt --check
 just lint
 ```
 
-`just check` matters more here. After you delete `vendor/`, each `@preview/*` import resolves
-through the real package cache. This build is the first proof that the published dependency
-graph works.
+`just check` is the proof that the published dependency graph works, because nothing resolves
+from the worktree. Run it before you tag.
 
-## 3. Confirm the two repo settings
+## 2. Confirm the two repo settings
 
 Neither is visible to the agent token; check them yourself.
 
@@ -95,10 +76,10 @@ gh api repos/bfeitknecht/packages -q '.parent.full_name'   # typst/packages
 gh api repos/bfeitknecht/packages/branches -q '.[].name'    # main, plus any old release branches
 ```
 
-Set `UNIVERSE_TOKEN` and `UNIVERSE_SUBMIT` in `syndicate` too, then cut `syndicate` first: thyme
-imports it.
+`syndicate` is already published, so nothing blocks thyme today. `syndicate` and `spicky` still
+read the older secret names; see the note at the end of this file.
 
-## 4. Validate before tagging
+## 3. Validate before tagging
 
 `release.yaml` has never executed. Exercise it without publishing anything:
 
@@ -112,7 +93,7 @@ the GitHub API calls are the only untested part. A rehearsal tag is not possible
 `just release` requires the tag to equal the version in `typst.toml` and refuses a `-rc.1`. Run
 both commands before you tag. A workflow error is cheaper to find now.
 
-## 5. Cut the release
+## 4. Cut the release
 
 `just release` takes one argument, the tag, and prompts for the commit message. It falls back to
 the tag when stdin is not a tty, so it is safe to call from a script:
@@ -125,7 +106,7 @@ It runs the gate (`just check`, `just fmt --check`, `just lint`), rebuilds `docs
 `thumbnail.png`, stages `dist/universe/`, then commits, tags and pushes. Do not replace this step
 with a manual `git tag`, or the tag carries whatever stale artefacts were last committed.
 
-## 6. Shepherd the upstream PR
+## 5. Shepherd the upstream PR
 
 `release.yaml` re-stages the payload at the tagged commit, runs `typst-package-check`, pushes
 branch `thyme-0.1.0` to your fork, and opens a **draft** PR on `typst/packages`.
@@ -138,7 +119,7 @@ branch `thyme-0.1.0` to your fork, and opens a **draft** PR on `typst/packages`.
 - Before merging, check the Universe preview page renders the template and that the
   thumbnail looks right.
 
-## 7. Then unfreeze the downstreams
+## 6. Then unfreeze the downstreams
 
 Only after `@preview/thyme:0.1.0` resolves from a clean cache. `glob` and `apex` both import
 `@preview/thyme:0.1.0`, and `apex` also vendors a copy:
