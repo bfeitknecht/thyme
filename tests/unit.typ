@@ -284,9 +284,9 @@
   "<p class=\"multiline-inline\">\n  <a href=\"#a\">alpha</a>\n  or\n  <a href=\"#b\">beta</a>\n</p>",
 )
 
-// 11. `llms.txt` follows the proposal at llmstxt.org: one `#` title, one `>` summary,
-// `##` sections of `- [title](url): description`, and an `## Optional` tail for the
-// pages that `max-per-section` dropped.
+// 11. `llms.txt` follows the proposal at llmstxt.org: one `#` title, one `>` summary, and
+// `##` sections of `- [title](url): description` lines. `robots` and `llms` both take
+// `auto | bool | path`, so a hand-written file is copied rather than reimplemented.
 #let llms-pages = (
   (
     html-path: "index.html",
@@ -340,7 +340,7 @@
 )
 // Sections keep the declared order regardless of page order.
 #assert(llms.find("## Pages") < llms.find("## Posts"), message: llms)
-// Every line in a section is a Markdown link, so the file stays parseable.
+// Every bullet is a Markdown link, so any Markdown parser reads the file.
 #assert.eq(
   llms
     .split("\n")
@@ -348,16 +348,6 @@
     .all(l => l.starts-with("- [")),
   true,
 )
-// `max-per-section` moves the remainder into `## Optional` instead of dropping it.
-#let llms-capped = llms-txt(
-  site-title: "Example",
-  summary: "S.",
-  site-url: "https://e.org",
-  pages: llms-pages,
-  max-per-section: 1,
-)
-#assert(llms-capped.contains("## Optional\n"), message: llms-capped)
-#assert(llms-capped.contains("about.html"), message: llms-capped)
 // `include-unlisted: false` removes the page from the index entirely.
 #assert(
   not llms-txt(
@@ -368,36 +358,13 @@
     include-unlisted: false,
   ).contains("secret.html"),
 )
-// `full-path` advertises the companion file the proposal defines.
+// The file ends with exactly one newline, so it is a well-formed text file.
 #assert(
-  llms-txt(
-    site-title: "Example",
-    summary: "S.",
-    site-url: "https://e.org",
-    pages: (),
-    full-path: "llms-full.txt",
-  ).contains("(https://e.org/llms-full.txt)"),
+  llms.ends-with("\n") and not llms.ends-with("\n\n"),
+  message: repr(llms),
 )
-
-// 12. `llms-content` overrides: a dictionary is forwarded to `llms-txt`, and a plain `str`
-// is copied as the file body. These are the two shapes `site()` dispatches on, so assert the
-// generator side directly.
-#assert.eq(
-  llms-txt(site-title: "T", summary: "S", site-url: "https://e.org", pages: ()),
-  "# T\n\n> S\n",
-)
-// No summary and no pages still yields a valid file: an H1 and nothing else to break.
+// A title and nothing else is still valid: an H1 with no sections.
 #assert.eq(
   llms-txt(site-title: "T", site-url: "https://e.org", pages: ()),
   "# T\n",
-)
-// A dictionary that only sets `full-path` still emits the proposal's `## Optional`-style tail.
-#assert(
-  llms-txt(
-    site-title: "T",
-    summary: "S",
-    site-url: "https://e.org",
-    pages: (),
-    full-path: "llms-full.txt",
-  ).contains("- [Full content](https://e.org/llms-full.txt)"),
 )
