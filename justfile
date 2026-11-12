@@ -1,18 +1,17 @@
 default:
     @just --list
 
-# Populate a throwaway @preview package directory from typst.toml, plus vendor/* while it lasts
+# Populate a throwaway @preview package directory from typst.toml
 [private]
 _link-pkg dir=".tmp-pkg":
     #!/usr/bin/env sh
     set -eu
     # Throwaway package path for `typst compile --package-path`: map this checkout to
     # @preview/thyme so the sources resolve without a published release. The OS package
-    # cache is not used. The vendor/* glob below is the last reference to vendoring; remove
-    # it when @preview/syndicate:0.1.0 reaches Typst Universe.
+    # cache is not used; every other @preview import resolves from it.
     rm -rf "{{dir}}"
     mkdir -p "{{dir}}/preview"
-    for manifest in typst.toml vendor/*/typst.toml; do
+    for manifest in typst.toml; do
         [ -f "$manifest" ] || continue
         p_dir="$(cd "$(dirname "$manifest")" && pwd)"
         p_name="$(python3 -c 'import tomllib, sys; print(tomllib.load(open(sys.argv[1], "rb"))["package"]["name"])' "$manifest")"
@@ -45,8 +44,8 @@ lint:
 
     # Python linting (if ruff is available)
     if command -v ruff >/dev/null 2>&1; then
-        ruff check . --exclude vendor,preview
-        ruff format --check . --exclude vendor,preview
+        ruff check .
+        ruff format --check .
     fi
     echo "linting passed"
 
