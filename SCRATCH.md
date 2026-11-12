@@ -44,7 +44,7 @@ sitemap additions. Thyme no longer depends on `exemel`.
   ```sh
   git init -b main
   git remote add origin git@github.com:bfeitknecht/thyme.git
-  just release 0.1.0     # prompts for the commit message; derives tag v0.1.0
+  just release 0.1.0     # message from the changelog; derives tag v0.1.0
   ```
   - Verify GitHub Actions (`release.yaml`) publishes the `v0.1.0` GitHub Release (with `docs/manual.pdf` attached), runs `typst-package-check`, pushes branch `thyme-0.1.0` to `bfeitknecht/packages`, and opens a **Draft PR** on `typst/packages`.
   - Review the Draft PR diff on `typst/packages`, confirm upstream CI is green, mark **Ready for review**, and wait for `@preview/thyme:0.1.0` to merge.
