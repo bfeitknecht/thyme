@@ -405,8 +405,7 @@ release *args:
         sys.exit(f"release: --check and --notes are mutually exclusive (got {flags})")
     if len(positional) > 1:
         sys.exit(
-            f"release: expected at most one argument (the version), got {positional}. "
-            "The commit message is prompted for at cut time."
+            f"release: expected at most one argument (the version), got {positional}."
         )
     # The argument is the version, without a `v`. The tag is derived from it, because a
     # release tag is `v<version>` and typing that prefix by hand adds nothing.
@@ -433,6 +432,13 @@ release *args:
             sys.exit(f"CHANGELOG.md has no '## [{version}]' section to publish")
         print(notes)
         sys.exit(0)
+
+    # The commit and tag message is the first sentence of the changelog section, so the
+    # release does not stop to ask a question whose answer is already written down. The
+    # section opens with `First release.` or `Rename the theme palette.`, which is what a
+    # tag message should say.
+    match = re.search(r"^(.*?\.)(?:\s|$)", notes, re.S)
+    message = " ".join(match.group(1).split()) if match else f"{package['name']} {version}"
 
     problems = []
     if not re.fullmatch(r"\d+\.\d+\.\d+", version):
@@ -503,10 +509,6 @@ release *args:
     )
     subprocess.run(["just", "_stage", "dist/universe", package["name"], version], check=True)
 
-    try:
-        message = input(f"release message [{tag}]: ").strip() or tag
-    except EOFError:
-        message = tag
     subprocess.run(["git", "add", "-A"], check=True)
     if subprocess.run(["git", "diff", "--cached", "--quiet"], capture_output=True).returncode:
         subprocess.run(["git", "commit", "-m", message], check=True)
