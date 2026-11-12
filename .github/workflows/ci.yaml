@@ -41,12 +41,28 @@ jobs:
   # its world; a package that renders an HTML shell while compiling paged fails there with
   # `unknown variable: html`, and no local target reproduces that. Running the same tool
   # on every push is the only thing that catches it before a tag does.
+  #
+  # The steps mirror the release workflow deliberately. In particular the staged payload
+  # has to be compiled first: that is what downloads the third-party packages it imports.
+  # The checker resolves dependencies from disk only and refuses to reach the network, so
+  # without that warm-up it fails with `failed to download package` instead of reporting
+  # anything about this repository.
   universe:
     name: Universe package check
     runs-on: ubuntu-latest
+    env:
+      PKG_NAME: thyme
+      PKG_VER: 0.1.0
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
+
+      - name: Read package metadata
+        run: |
+          set -eu
+          # Keep the version in one place: typst.toml is what the release reads too.
+          version="$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml","rb"))["package"]["version"])')"
+          echo "PKG_VER=${version}" >> "$GITHUB_ENV"
 
       - name: Cache typst-package-check
         uses: actions/cache@v6
@@ -65,18 +81,26 @@ jobs:
           fi
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
 
-      # `_stage` builds the payload exactly as it would be submitted, so the checker sees
-      # the same tree the release workflow hands to Typst Universe.
       - name: Stage the payload
-        run: just _stage universe-stage thyme "$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml","rb"))["package"]["version"])')"
+        run: just _stage universe-stage "$PKG_NAME" "$PKG_VER"
+
+      - name: Compile the staged payload as Universe would
+        run: |
+          set -eu
+          cache="${XDG_DATA_HOME:-$HOME/.local/share}/typst/packages"
+          staged="universe-stage/packages/preview/${PKG_NAME}/${PKG_VER}"
+          mkdir -p "${cache}/preview/${PKG_NAME}"
+          cp -R "$staged" "${cache}/preview/${PKG_NAME}/${PKG_VER}"
+          trap 'rm -rf "${cache}/preview/${PKG_NAME}"' EXIT
+          typst compile --features html,bundle --format bundle \
+            "${cache}/preview/${PKG_NAME}/${PKG_VER}/template/site.typ" bundle-check
 
       # Job logs redirect to storage that some environments cannot fetch, so the findings
       # are repeated as annotations, which the API always returns.
       - name: Run typst-package-check
         run: |
           set -o pipefail
-          version="$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml","rb"))["package"]["version"])')"
-          typst-package-check check "universe-stage/packages/preview/thyme/${version}" 2>&1 | tee package-check.log
+          typst-package-check check "universe-stage/packages/preview/${PKG_NAME}/${PKG_VER}" 2>&1 | tee package-check.log
 
       - name: Annotate findings
         if: failure()
