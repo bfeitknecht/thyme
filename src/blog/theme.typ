@@ -210,7 +210,7 @@
 /// Default perceptual `oklch(L, 0, 0deg)` monochrome palette, unified _STIX Two_ +
 /// _Helvetica Neue_ + _Commit Mono_ font stacks, and paged preview geometry.
 /// -> dictionary
-#let default-theme = (
+#let theme-default = (
   paper-light: oklch(96%, 0, 0deg),
   text-light: oklch(21%, 0, 0deg),
   muted-light: oklch(47%, 0, 0deg),
@@ -256,17 +256,17 @@
   font-size: 10.8pt,
 )
 
-/// Merge a user `theme` override dictionary onto `default-theme`.
+/// Merge a user `theme` override dictionary onto `theme-default`.
 /// -> dictionary
 #let resolve-theme(
-  /// Partial theme dictionary overriding any subset of `default-theme` keys.
+  /// Partial theme dictionary overriding any subset of `theme-default` keys.
   /// -> dictionary | none
   overrides,
 ) = {
   if overrides == none or overrides == (:) {
-    default-theme
+    theme-default
   } else {
-    default-theme + overrides
+    theme-default + overrides
   }
 }
 
@@ -284,7 +284,7 @@
     ) {
       found.first().value.theme
     } else {
-      default-theme
+      theme-default
     }
   }
 }
@@ -320,9 +320,9 @@
 /// `--serif` / `--math` / `--sans` / `--mono` font stacks, and `@font-face` declarations from `theme`.
 /// -> str
 #let stylesheet-css(
-  /// Theme dictionary (`default-theme` or user overrides).
+  /// Theme dictionary (`theme-default` or user overrides).
   /// -> dictionary
-  theme: default-theme,
+  theme: theme-default,
 ) = {
   let t = resolve-theme(theme)
   let token-map = (
@@ -444,7 +444,7 @@
 }
 
 // Compute a deterministic content-addressed `style.css?v=<hash>` href from the rendered CSS.
-#let stylesheet-href(root-prefix: "", css: none, theme: default-theme) = {
+#let stylesheet-href(root-prefix: "", css: none, theme: theme-default) = {
   let rendered = if css != none { css } else { stylesheet-css(theme: theme) }
   root-prefix + stylesheet-asset-path + "?v=" + short-hash(rendered)
 }

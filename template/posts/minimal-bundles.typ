@@ -21,7 +21,7 @@ Cross-references work natively across files: writing `@fixed-points` links to @f
 Passing capability paths (`#post(path("posts/fixed-points.typ"))`) lets `thyme` simultaneously evaluate each page and co-emit its verbatim `.typ` source alongside the rendered HTML (linked via `.typ` in the top bar). Readers who want an archival paper copy press #kbd("Ctrl+P") for a two-column `@media print` layout.
 
 - [x] Zero custom CLI wrappers — driven purely by `typst watch` and `typst compile`
-- [x] Hypertagged HTML (`htm` & `h`) backed by Typst's typed `html.*` constructors
+- [x] Typst's native typed `html.*` constructors, with no builder of our own
 - [x] Automatic `sitemap.xml`, `robots.txt`, `rss.xml`, and `atom.xml` via `syndicate`
 - [x] Tadi Web sibling `.typ` source co-emission and single-URL zero-JS CSS `#tr(...)` i18n
 - [ ] Client-side JavaScript runtimes or framework lock-in
@@ -47,13 +47,13 @@ When a table or figure benefits from the full width of prose plus margin, wrap i
     caption: [One Typst source tree compiling to HTML, raw .typ sources, sitemap.xml, and RSS / Atom feeds.],
   )[
     #set text(
-      font: default-theme.mono-fonts,
+      font: theme-default.mono-fonts,
       size: 8.5pt,
-      fill: default-theme.text-light,
+      fill: theme-default.text-light,
     )
     #let node(lbl) = box(
-      fill: default-theme.surface-1-light,
-      stroke: 0.75pt + default-theme.frame-light,
+      fill: theme-default.surface-1-light,
+      stroke: 0.75pt + theme-default.frame-light,
       inset: (x: 0.75em, y: 0.48em),
       radius: 2.5pt,
       lbl,
