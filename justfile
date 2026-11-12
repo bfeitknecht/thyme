@@ -63,7 +63,14 @@ check:
     done
 
     # 2. Compile unit tests, standalone HTML & paged PDF targets
+    #
+    # The template is also compiled as paged PDF, which is the target the Typst Universe
+    # package checker uses. It builds Typst's standard library with no in-development
+    # features, so `html` does not exist there at all; a site that renders its HTML shell
+    # in paged mode fails with `unknown variable: html`. Without this compile the gate
+    # would only ever see the html and bundle targets, where `html` is present.
     typst compile --root . --package-path "$tmp_pkg" tests/unit.typ "$tmp_check/unit.pdf"
+    typst compile --package-path "$tmp_pkg" template/site.typ "$tmp_check/template.pdf"
     typst compile --root . --package-path "$tmp_pkg" --features html --format html tests/unit.typ "$tmp_check/unit.html"
     typst compile --package-path "$tmp_pkg" --features html --format html template/posts/fixed-points.typ "$tmp_check/fixed-points.html"
     typst compile --package-path "$tmp_pkg" template/posts/fixed-points.typ "$tmp_check/fixed-points.pdf"

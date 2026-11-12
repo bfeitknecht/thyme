@@ -1421,7 +1421,13 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
     // `document()` and bundle assets only exist in the `bundle` target. In `html` mode
     // (single-page preview, `typst compile --format html`) fall back to rendering the
     // home page inline so the site still previews instead of disappearing.
-    let single-page = target() != "bundle"
+    //
+    // The inline shell builds `html.*` elements, so it must run only when the target is
+    // `html`. `paged` is not `html`: `png`, `svg` and `pdf` output falls through to the
+    // paged preview below, which needs no `html` module. Some embedders (notably the
+    // Typst Universe package checker) compile with the HTML feature disabled, so an
+    // `html.*` call in paged mode fails with `unknown variable: html`.
+    let single-page = target() == "html"
     let home-src-href = if root-raw-source != none { "site.typ" } else { none }
 
     let home-doc-content = {
