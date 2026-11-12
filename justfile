@@ -11,7 +11,10 @@ _link-pkg dir=".tmp-pkg":
     # @preview import resolves from the OS package cache.
     name="$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml", "rb"))["package"]["name"])')"
     version="$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml", "rb"))["package"]["version"])')"
-    rm -rf "{{dir}}"
+    # Only this package's own directory is replaced. Removing `{{dir}}` itself would
+    # delete an unrelated package path the caller pointed at, or the whole typst data
+    # directory if someone passed one.
+    rm -rf "{{dir}}/preview/$name"
     mkdir -p "{{dir}}/preview/$name"
     ln -s "$(pwd)" "{{dir}}/preview/$name/$version"
 
@@ -32,10 +35,19 @@ fmt args="--inplace":
 lint:
     #!/usr/bin/env sh
     set -eu
-    # Check Typst syntax (basic compilation check)
-    trap 'rm -rf ".tmp-lint"' EXIT
-    just _link-pkg ".tmp-lint"
-    typst compile --package-path ".tmp-lint" --features html,bundle --format bundle template/site.typ .tmp-lint/lint-check
+    # Check Typst syntax (basic compilation check). The scratch directory sits beside the
+    # package instead of inside it: a bundle export writes a directory, and pointing it at
+    # the package path would fill that path with `index.html` and friends.
+    #
+    # The signal traps matter: a plain EXIT trap does not fire when the run is interrupted,
+    # so Ctrl-C would leave the directory behind. They have to `exit` rather than share the
+    # EXIT trap — trapping INT without exiting swallows the interrupt and the recipe keeps
+    # going, which is worse than the directory it was trying to clean up.
+    tmp="$(mktemp -d)"
+    trap 'rm -rf "$tmp"' EXIT
+    trap 'exit 130' INT TERM
+    just _link-pkg "$tmp/pkg"
+    typst compile --package-path "$tmp/pkg" --features html,bundle --format bundle template/site.typ "$tmp/out"
 
     # Python linting (if ruff is available)
     if command -v ruff >/dev/null 2>&1; then
@@ -50,8 +62,9 @@ check:
     set -eu
     tmp_pkg=".tmp-pkg"
     tmp_check=".tmp-check"
-    rm -rf "$tmp_pkg" "$tmp_check"
+    rm -rf "$tmp_check"
     trap 'rm -rf "$tmp_pkg" "$tmp_check"' EXIT
+    trap 'exit 130' INT TERM
 
     just _link-pkg "$tmp_pkg"
     mkdir -p "$tmp_check"
@@ -64,11 +77,11 @@ check:
 
     # 2. Compile unit tests, standalone HTML & paged PDF targets
     #
-    # The template is also compiled as paged PDF, which is the target the Typst Universe
-    # package checker uses. It builds Typst's standard library with no in-development
-    # features, so `html` does not exist there at all; a site that renders its HTML shell
-    # in paged mode fails with `unknown variable: html`. Without this compile the gate
-    # would only ever see the html and bundle targets, where `html` is present.
+    # The template is compiled paged as well, so no recipe in this file can break the
+    # target that `typst compile` uses by default. This is not a guard for a disabled
+    # feature: `html` is present in a paged compile here, so a package that reaches for it
+    # in paged mode builds locally and still fails in the Universe checker, which enables
+    # no in-development features. The `universe` job in ci.yaml covers that gap.
     typst compile --root . --package-path "$tmp_pkg" tests/unit.typ "$tmp_check/unit.pdf"
     typst compile --package-path "$tmp_pkg" template/site.typ "$tmp_check/template.pdf"
     typst compile --root . --package-path "$tmp_pkg" --features html --format html tests/unit.typ "$tmp_check/unit.html"
@@ -211,6 +224,7 @@ preview:
     tmp_pkg=".tmp-pkg"
     out="preview"
     trap 'rm -rf "$tmp_pkg"' EXIT
+    trap 'exit 130' INT TERM
     just _link-pkg "$tmp_pkg"
 
     rm -rf "$out"
@@ -221,8 +235,11 @@ preview:
 
     # The landing page reuses the `theme-color` tags thyme itself emitted for the
     # template build, so the palette has exactly one source of truth (src/blog/theme.typ).
-    {
-    cat <<'HTML'
+    #
+    # The heredocs are written at the top level and concatenated afterwards. A `{ ... }`
+    # group would end wherever `just` happens to re-indent the script, which is a syntax
+    # error waiting for the next reindent.
+    cat > "$out/head.html" <<'HTML'
     <!DOCTYPE html>
     <html lang="en">
       <head>
@@ -230,8 +247,8 @@ preview:
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>thyme &mdash; preview</title>
     HTML
-      grep -o '<meta name="theme-color"[^>]*>' "$out/template/index.html"
-    cat <<'HTML'
+    grep -o '<meta name="theme-color"[^>]*>' "$out/template/index.html" > "$out/theme.html"
+    cat > "$out/tail.html" <<'HTML'
         <style>
           :root {
             color-scheme: light dark;
@@ -334,7 +351,8 @@ preview:
     </html>
 
     HTML
-    } > "$out/index.html"
+    cat "$out/head.html" "$out/theme.html" "$out/tail.html" > "$out/index.html"
+    rm -f "$out/head.html" "$out/theme.html" "$out/tail.html"
     echo "preview written to $out/index.html"
     echo "live reload: typst watch --features html,bundle -f bundle template/site.typ preview/template --serve"
 
@@ -348,14 +366,14 @@ _stage out name version:
 
     # Every @preview/<name>:<version> import must name the version being staged.
     expected = f"@preview/{name}:{version}"
-    stale = subprocess.run(
+    imports = subprocess.run(
         ["grep", "-rn", f"@preview/{name}:", "template", "examples", "tests/unit.typ",
          "docs/manual.typ", "README.md"],
         capture_output=True, text=True,
     ).stdout
-    stale = chr(10).join(l for l in stale.splitlines() if expected not in l)
-    if stale:
-        sys.exit(f"stage: imports do not name {expected}:" + chr(10) + stale)
+    wrong = chr(10).join(l for l in imports.splitlines() if expected not in l)
+    if wrong:
+        sys.exit(f"stage: imports do not name {expected}:" + chr(10) + wrong)
 
     dest = pathlib.Path("{{out}}") / "packages" / "preview" / name / version
     shutil.rmtree(dest, ignore_errors=True)
@@ -373,6 +391,7 @@ _stage out name version:
         shutil.copy2(pathlib.Path("assets") / item, dest / "assets" / item)
     for stray in dest.rglob(".DS_Store"):
         stray.unlink()
+    print(f"staged {dest}")
 
 # Bump package version across typst.toml, template/, examples/, tests/unit.typ, docs/manual.typ, and README.md
 bump version:
@@ -430,12 +449,12 @@ release *args:
 
     # The release notes are this section of CHANGELOG.md. Both read-only modes need them,
     # and so does the publish step.
-    match = re.search(
+    section = re.search(
         rf"^## \[{re.escape(version)}\][^\n]*\n(.*?)(?=^## \[|^\[[^\]]+\]:|\Z)",
         changelog,
         re.M | re.S,
     )
-    notes = match.group(1).strip() if match else ""
+    notes = section.group(1).strip() if section else ""
 
     if "--notes" in flags:
         if not notes:
@@ -443,12 +462,11 @@ release *args:
         print(notes)
         sys.exit(0)
 
-    # The commit and tag message is the first sentence of the changelog section, so the
-    # release does not stop to ask a question whose answer is already written down. The
-    # section opens with `First release.` or `Rename the theme palette.`, which is what a
-    # tag message should say.
-    match = re.search(r"^(.*?\.)(?:\s|$)", notes, re.S)
-    message = " ".join(match.group(1).split()) if match else f"{package['name']} {version}"
+    # The messages name the release, the way every other project does. Taking them from
+    # the changelog instead would repeat its punctuation in a commit subject, and a
+    # subject is a label, not a sentence.
+    commit_message = f"Release {version}"
+    tag_message = f"{package['name']} {version}"
 
     problems = []
     if not re.fullmatch(r"\d+\.\d+\.\d+", version):
@@ -495,6 +513,17 @@ release *args:
         print(f"{tag} is ready: typst.toml, CHANGELOG.md and the tag agree")
         sys.exit(0)
 
+    # A release commits everything that is dirty, so a file left behind by an interrupted
+    # run would ride along in it. Refuse instead, the way the other gates do.
+    dirty = subprocess.run(
+        ["git", "status", "--porcelain"], capture_output=True, text=True,
+    ).stdout.strip()
+    if dirty:
+        sys.exit(
+            "release: the worktree is not clean, so the release commit would include "
+            "changes that are not part of it:" + chr(10) + dirty
+        )
+
     # Run the full gate, then rebuild the committed artefacts so the tag cannot carry a
     # stale manual or thumbnail.
     for gate in (["check"], ["fmt", "--check"], ["lint"]):
@@ -512,7 +541,7 @@ release *args:
         env={**os.environ, "SOURCE_DATE_EPOCH": "0"},
     )
     subprocess.run(
-        ["typst", "compile", "--package-path", ".tmp-pkg", "-f", "png",
+        ["typst", "compile", "--package-path", ".tmp-pkg", "--format", "png",
          "--pages", "1", "--ppi", "250",
          "template/posts/fixed-points.typ", "thumbnail.png"],
         check=True,
@@ -521,8 +550,8 @@ release *args:
 
     subprocess.run(["git", "add", "-A"], check=True)
     if subprocess.run(["git", "diff", "--cached", "--quiet"], capture_output=True).returncode:
-        subprocess.run(["git", "commit", "-m", message], check=True)
-    subprocess.run(["git", "tag", "-a", tag, "-m", message], check=True)
+        subprocess.run(["git", "commit", "-m", commit_message], check=True)
+    subprocess.run(["git", "tag", "-a", tag, "-m", tag_message], check=True)
     # One push, so a failed tag push cannot leave the release commit on the remote
     # without the tag that triggers its workflow.
     subprocess.run(["git", "push", "--atomic", "origin", "HEAD", tag], check=True)
