@@ -104,43 +104,35 @@ Bring your own `styles.css` with zero preset styles injected (see [`examples/por
 
 ---
 
-## `llms.txt` for Language Models
+## `llms.txt` and `robots.txt` for Machines
 
-Every bundle emits `llms.txt`, a curated Markdown index that follows the proposal at
+Every bundle emits `llms.txt`, a Markdown index that follows the proposal at
 [llmstxt.org](https://llmstxt.org): one `#` title, one `>` summary, then `##` sections of
-`- [title](url): description` lines. `llms: auto` follows the sitemap, so it appears whenever
-`sitemap-path` is set.
+`- [title](url): description` lines. It is generated from the public pages, grouped by
+collection, so a blog lists its posts apart from its other pages.
 
-It is auto-generated from the public pages. Override it three ways, exactly as you override
-`robots.txt`:
+`robots` and `llms` take the same three values, so neither ties you to this package's idea of
+the format:
+
+| Value | Effect |
+| :--- | :--- |
+| `auto` (default) | Generate it. `llms.txt` and `robots.txt` both appear whenever `sitemap-path` is set. |
+| `true` / `false` | Generate it regardless of the sitemap, or omit the file entirely. |
+| `path(...)` | **Copy your own file verbatim.** Nothing is parsed, generated or reformatted. |
 
 ```typ
-// 1. Reference your own file, copied verbatim into the bundle.
-#show: site.with(url: "https://example.org", llms-content: path("llms.txt"))
-
-// 2. Write it inline as Markdown. `raw(...)` keeps the text verbatim, so the
-//    blank lines that separate Markdown blocks survive.
 #show: site.with(
   url: "https://example.org",
-  llms-content: raw("# My Site
-
-> One sentence about the site.
-
-## Docs
-
-- [Guide](https://example.org/guide): How to start.
-"),
-)
-
-// 3. Keep the generator and tune it: a dictionary is forwarded to `llms-txt(...)`.
-#show: site.with(
-  url: "https://example.org",
-  llms-content: (max-per-section: 10, full-path: "llms-full.txt"),
+  robots: path("my-robots.txt"),
+  llms: path("my-llms.txt"),
 )
 ```
 
-`llms: false` omits the file, and `llms: "ai.txt"` changes the output path. Use `llms-txt(...)`
-directly when you want the string without a bundle, for example to serve a different section.
+Write the file however you like and point at it. That is the whole contract: the contents are
+yours, and a change to this package cannot alter them. Both are plain text, so the file is
+emitted unchanged.
+
+Use `llms-txt(...)` directly when you want the generated string outside a bundle.
 
 ---
 

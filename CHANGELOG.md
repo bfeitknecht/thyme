@@ -34,13 +34,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   pages, grouped by collection, so a blog lists its posts separately from its other pages.
 - **`llms-txt(...)`** renders the file as a string, for callers that serve it themselves. It
   takes a page list in the same shape as `query-pages()`, so the two compose directly.
-- **The content is replaceable, like `robots.txt`.** `llms-content: path(...)` copies your own
-  file, `raw(...)` writes Markdown inline, and a dictionary is forwarded to `llms-txt(...)` to
-  keep the generator and tune it (`max-per-section`, `full-path`, custom `sections`). `llms`
-  sets the output path, or `false` to omit the file.
-- **Overflow pages are kept.** With `max-per-section`, the links that do not fit move into an
-  `## Optional` section, which the proposal reserves for content a model can skip. They are not
-  dropped.
+- **`robots` and `llms` take the same values, and neither owns the format.** `auto` generates
+  the file, `true`/`false` forces or omits it, and `path(...)` copies a file you wrote,
+  byte for byte. Nothing is parsed or reformatted, so a hand-written `llms.txt` or `robots.txt`
+  cannot be altered by a change to this package.
 
 ### Fixed
 - **`robots.txt` was never emitted.** It is documented in the README, the manual and

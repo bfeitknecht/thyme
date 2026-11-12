@@ -719,9 +719,10 @@
 
 /// Generate an `llms.txt` index for language models, following the proposal at
 /// `https://llmstxt.org`. The shape is one `#` title, one `>` blockquote summary, and
-/// `##` sections of `- [title](url): description` lines. It is a curated map, not an
-/// inventory, so pass only the pages worth reading and let `max-per-section` cap the rest.
-/// The result is plain Markdown, which is what the proposal asks for.
+/// `##` sections of `- [title](url): description` lines.
+///
+/// This returns a string. To ship a hand-written file instead, pass `llms: path(...)` to
+/// `site(...)`, which copies it without going through this function.
 /// -> str
 #let llms-txt(
   /// Site or project name. Rendered as the single `#` heading.
@@ -751,14 +752,6 @@
   /// set the flag asked for search-engine silence, not for language models to skip them.
   /// -> bool
   include-unlisted: true,
-  /// How many links to keep per section (`none` keeps all). The proposal favours a curated
-  /// file, so keeping this small is usually better than listing everything.
-  /// -> int | none
-  max-per-section: none,
-  /// Append an `## Optional` section linking the pages that did not fit, which the proposal
-  /// reserves for content a model can skip when context is tight.
-  /// -> bool
-  optional-section: true,
   /// Optional link to a `llms-full.txt` companion file, relative to the site root.
   /// -> str | none
   full-path: none,
@@ -820,36 +813,11 @@
     out.push(plain(intro))
     out.push("")
   }
-  let overflow = ()
   for (title, group) in grouped {
     if group.len() == 0 { continue }
-    let shown = if max-per-section == none {
-      group
-    } else {
-      group.slice(0, calc.min(group.len(), max-per-section))
-    }
-    if group.len() > shown.len() { overflow += group.slice(shown.len()) }
     out.push("## " + title)
     out.push("")
-    for p in shown { out.push(line-of(p)) }
-    out.push("")
-  }
-  if optional-section and overflow.len() > 0 {
-    out.push("## Optional")
-    out.push("")
-    for p in overflow { out.push(line-of(p)) }
-    out.push("")
-  }
-  if full-path != none {
-    out.push("## Full text")
-    out.push("")
-    out.push(
-      "- [Full content]("
-        + clean-url
-        + "/"
-        + str(full-path).trim("/", at: start)
-        + ")",
-    )
+    for p in group { out.push(line-of(p)) }
     out.push("")
   }
   out.join("\n").trim("\n", at: end) + "\n"

@@ -257,16 +257,14 @@
   /// Output bundle path for the XML sitemap (`"sitemap.xml"`), or `none` to disable.
   /// -> str | none
   sitemap-path: "sitemap.xml",
-  /// Emit `robots.txt` pointing to `sitemap-path` (`auto` enables whenever `sitemap-path != none`).
-  /// -> auto | bool
+  /// `robots.txt`. `auto` generates one pointing at `sitemap-path`, `false` omits it, and
+  /// `path(...)` copies your own file.
+  /// -> auto | bool | path
   robots: auto,
-  /// Emit `llms.txt` (`auto` follows the sitemap, `false` disables it, a `str` sets the path).
-  /// -> auto | bool | str
+  /// `llms.txt`. `auto` generates one indexing posts under `## Posts` and the other pages
+  /// under `## Pages`, `false` omits it, and `path(...)` copies your own file.
+  /// -> auto | bool | path
   llms: auto,
-  /// Content or path for `llms.txt`; `auto` indexes the public pages. On a blog the posts are
-  /// indexed under `## Posts` and the other pages under `## Pages`.
-  /// -> auto | str | content | path | dictionary | array
-  llms-content: auto,
   /// Output bundle path for the RSS 2.0 feed, or `none` to disable RSS generation.
   /// -> str | none
   rss-path: "rss.xml",
@@ -388,7 +386,6 @@
     sitemap-path: sitemap-path,
     robots: robots,
     llms: llms,
-    llms-content: llms-content,
     rss-path: rss-path,
     atom-path: atom-path,
     feed-content: feed-content,

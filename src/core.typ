@@ -1196,20 +1196,17 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
   /// Output path for the XML sitemap (`"sitemap.xml"`), or `none` to disable sitemap generation.
   /// -> str | none
   sitemap-path: "sitemap.xml",
-  /// Emit `robots.txt` pointing to `sitemap-path` (`auto` enables whenever `sitemap-path != none`).
-  /// -> auto | bool
+  /// `robots.txt`. `auto` generates one pointing at `sitemap-path` whenever that is set;
+  /// `true` generates one with no `Sitemap:` line; `false` omits the file; `path(...)`
+  /// copies your own file instead.
+  /// -> auto | bool | path
   robots: auto,
-  /// Emit `llms.txt`, a curated Markdown index for language models
-  /// (`https://llmstxt.org`). `auto` enables it with the sitemap, `false` disables it, and a
-  /// string sets the output path. Pass `llms` to control the content.
-  /// -> auto | bool | str
+  /// `llms.txt`, a curated Markdown index for language models
+  /// (`https://llmstxt.org`). `auto` generates one from the public pages whenever
+  /// `sitemap-path` is set; `true` generates one regardless; `false` omits the file;
+  /// `path(...)` copies your own file instead.
+  /// -> auto | bool | path
   llms: auto,
-  /// Content or file for `llms.txt`. `auto` indexes the public pages with the site title
-  /// and `description`; a `content` value is copied as-is, so write raw Markdown with
-  /// `raw(...)`; `path(...)` reads a file and copies it; a dictionary or array is passed to
-  /// `llms-txt(...)`. A plain `str` is treated as the text itself.
-  /// -> auto | str | content | path | dictionary | array
-  llms-content: auto,
   /// Output path for the RSS 2.0 feed (e.g. `"rss.xml"`), or `none` to omit RSS on non-blog sites.
   /// -> str | none
   rss-path: none,
@@ -1742,60 +1739,31 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
       // `robots: auto` means "on whenever a sitemap is emitted". This was documented and
       // `robots-txt` was exported, but nothing ever called it, so no bundle contained a
       // robots.txt at all.
-      let emit-robots = if robots == auto { sitemap-path != none } else {
-        robots == true
-      }
-      if emit-robots {
+      // Both files follow the same rule: `auto` derives one, `true` forces one, `false`
+      // omits it, and a `path` copies a file the author wrote. Nothing is parsed, so a
+      // hand-written file is never at the mercy of this package's idea of its format.
+      let derive-robots = robots == auto or robots == true
+      if robots == auto and sitemap-path == none { derive-robots = false }
+      if derive-robots {
         [#asset("robots.txt", bytes(robots-txt(
           site-url: url,
           sitemap-path: sitemap-path,
         )))<robots>]
+      } else if type(robots) == path {
+        [#asset("robots.txt", read(robots, encoding: none))<robots>]
       }
-      // `llms: auto` follows the sitemap, like `robots: auto`. The file is plain Markdown
-      // and lists the same public pages, so it is curated by `llms-content` rather than
-      // generated from everything the sitemap contains.
-      let llms-path = if llms == false or llms == none {
-        none
-      } else if type(llms) == str {
-        llms
-      } else if llms == auto {
-        if sitemap-path != none { "llms.txt" } else { none }
-      } else {
-        "llms.txt"
-      }
-      if llms-path != none {
-        let body = if llms-content == auto {
-          llms-txt(
-            site-title: resolved-title,
-            summary: description,
-            site-url: url,
-            pages: public-pages,
-          )
-        } else if (
-          type(llms-content) == dictionary or type(llms-content) == array
-        ) {
-          // A dictionary carries the `llms-txt` arguments; an array is the page list.
-          let kwargs = if type(llms-content) == dictionary {
-            llms-content
-          } else { (pages: llms-content) }
-          llms-txt(
-            site-title: resolved-title,
-            site-url: url,
-            pages: public-pages,
-            ..kwargs,
-          )
-        } else if type(llms-content) == content {
-          // Markdown written inline. `to-plain-text` keeps the link syntax, which is what
-          // the proposal needs, and drops formatting that would not survive as text.
-          to-plain-text(llms-content)
-        } else if type(llms-content) == path {
-          read(llms-content)
-        } else {
-          panic(
-            "`llms-content` expects `auto`, a `str`, a `content` value, a `path`, a dictionary or an array",
-          )
-        }
-        [#asset(llms-path, bytes(body))<llms>]
+      let derive-llms = llms == auto or llms == true
+      if llms == auto and sitemap-path == none { derive-llms = false }
+      if derive-llms {
+        let body = llms-txt(
+          site-title: resolved-title,
+          summary: description,
+          site-url: url,
+          pages: public-pages,
+        )
+        [#asset("llms.txt", bytes(body))<llms>]
+      } else if type(llms) == path {
+        [#asset("llms.txt", read(llms, encoding: none))<llms>]
       }
       if rss-path != none {
         let rss-xml = rss-xml(
