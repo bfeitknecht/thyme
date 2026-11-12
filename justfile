@@ -7,18 +7,13 @@ _link-pkg dir=".tmp-pkg":
     #!/usr/bin/env sh
     set -eu
     # Throwaway package path for `typst compile --package-path`: map this checkout to
-    # @preview/thyme so the sources resolve without a published release. The OS package
-    # cache is not used; every other @preview import resolves from it.
+    # @preview/thyme so the sources resolve without a published release. Every other
+    # @preview import resolves from the OS package cache.
+    name="$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml", "rb"))["package"]["name"])')"
+    version="$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml", "rb"))["package"]["version"])')"
     rm -rf "{{dir}}"
-    mkdir -p "{{dir}}/preview"
-    for manifest in typst.toml; do
-        [ -f "$manifest" ] || continue
-        p_dir="$(cd "$(dirname "$manifest")" && pwd)"
-        p_name="$(python3 -c 'import tomllib, sys; print(tomllib.load(open(sys.argv[1], "rb"))["package"]["name"])' "$manifest")"
-        p_ver="$(python3 -c 'import tomllib, sys; print(tomllib.load(open(sys.argv[1], "rb"))["package"]["version"])' "$manifest")"
-        mkdir -p "{{dir}}/preview/$p_name"
-        ln -s "$p_dir" "{{dir}}/preview/$p_name/$p_ver"
-    done
+    mkdir -p "{{dir}}/preview/$name"
+    ln -s "$(pwd)" "{{dir}}/preview/$name/$version"
 
 # Format every .typ file (`just fmt --check` verifies without writing)
 fmt args="--inplace":
@@ -118,6 +113,28 @@ check:
             fail(f"invalid {bundle}/sitemap.xml: {e}")
         if "Sitemap:" not in (bundle / "robots.txt").read_text():
             fail(f"missing Sitemap in {bundle}/robots.txt")
+        # `llms.txt` follows the proposal at llmstxt.org: one `#` title, one `>` summary,
+        # and only Markdown link bullets inside `##` sections. Assert the shape rather than
+        # the exact text, so editing a page description does not break the build.
+        llms = bundle / "llms.txt"
+        if not llms.is_file():
+            fail(f"missing {bundle}/llms.txt")
+        llms_txt = llms.read_text()
+        lines = llms_txt.splitlines()
+        if not lines or not lines[0].startswith("# "):
+            fail(f"{bundle}/llms.txt must start with an H1 title")
+        if sum(1 for l in lines if l.startswith("# ")) != 1:
+            fail(f"{bundle}/llms.txt must have exactly one H1")
+        if not any(l.startswith("> ") for l in lines):
+            fail(f"{bundle}/llms.txt must have a blockquote summary")
+        bullets = [l for l in lines if l.startswith("- ")]
+        if not bullets:
+            fail(f"{bundle}/llms.txt lists no links")
+        if any(not l.startswith("- [") for l in bullets):
+            fail(f"{bundle}/llms.txt has a bullet that is not a Markdown link")
+        for l in bullets:
+            if not re.search(r"^- \[[^\]]+\]\(https?://[^)]+\)", l):
+                fail(f"{bundle}/llms.txt has a malformed link: {l!r}")
         # The Tadi source for the home page is `site.typ` (`source-path-for("index.html")`),
         # not `index.typ`. Assert the documented mapping rather than a literal name.
         if not (bundle / "site.typ").is_file():

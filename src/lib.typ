@@ -26,8 +26,8 @@
 )
 
 #import "seo.typ": (
-  atom-xml, content-to-feed-html, render-seo-meta, robots-txt, rss-xml,
-  sitemap-xml,
+  atom-xml, content-to-feed-html, llms-txt, render-seo-meta, robots-txt,
+  rss-xml, sitemap-xml,
 )
 
 #import "text.typ": (
