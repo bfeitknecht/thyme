@@ -115,6 +115,17 @@ jobs:
         with:
           ref: ${{ inputs.tag || github.ref }}
 
+      # `_stage` is a justfile recipe, so `just` has to be on PATH before the staging
+      # step runs. The full setup action would also install the compiler and the fonts,
+      # which nothing here compiles with; the installer writes to `$HOME/.local/bin` and
+      # appends it to `GITHUB_PATH`, which is all this job needs.
+      - name: Install just
+        run: |
+          set -eu
+          mkdir -p "$HOME/.local/bin"
+          curl -fsSL "https://just.systems/install.sh" | bash -s -- --to "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
       - name: Require UNIVERSE_TOKEN
         env:
           GH_TOKEN: ${{ secrets.UNIVERSE_TOKEN }}
