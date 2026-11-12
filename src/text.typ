@@ -38,7 +38,7 @@
 }
 
 /// Convert arbitrary Typst content (including `raw`, `math.equation`, and `#tr(...)`
-/// bilingual nodes) or primitive values into a plain `str`.
+/// translated nodes) or primitive values into a plain `str`.
 ///
 /// When `#tr(en: [...], de: [...])` nodes are encountered, only the requested `lang`
 /// (or first declared language when `lang` is `none`) is extracted so `<title>`,
@@ -161,7 +161,7 @@
 
 /// Count prose words in arbitrary Typst content (Unicode-letter aware for English,
 /// German umlauts / `ß`, and accented Latin scripts; counts only the primary branch
-/// of `#tr(...)` bilingual blocks and excludes multi-line fenced code blocks).
+/// of `#tr(...)` translated blocks and excludes multi-line fenced code blocks).
 /// -> int
 #let count-words(
   /// Content block to count words in.
@@ -174,7 +174,7 @@
 }
 
 /// Emit a zero-footprint `<thyme-word-hint>` marker from inside `context`-wrapped
-/// components (`sbox`, `proof`, `sidenote`, `callout`, `epigraph`, `htm`, `h`, etc.)
+/// components (`sbox`, `proof`, `sidenote`, `callout`, `epigraph`, etc.)
 /// so pages and posts compute full-document prose word counts without double-counting
 /// nested components or secondary `#tr(...)` branches.
 /// -> content

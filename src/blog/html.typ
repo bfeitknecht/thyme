@@ -6,7 +6,7 @@
 #import "../core.typ": render-core-shell
 #import "../paths.typ": with-smart-refs
 #import "../text.typ": to-plain-text
-#import "theme.typ": css-hex, default-theme, stylesheet-css, stylesheet-href
+#import "theme.typ": css-hex, stylesheet-css, stylesheet-href, theme-default
 
 /// Minimal event-delegated copy-button handler for `zebraw` code listings.
 #let clipboard-script = "document.addEventListener('click', (ev) => {
@@ -52,7 +52,7 @@
   source-label: ".typ",
   back-content: none,
   render-topbar: false,
-  theme-config: default-theme,
+  theme-config: theme-default,
   copy-button: auto,
   include-feeds: false,
   rss-path: "rss.xml",
@@ -145,7 +145,7 @@
   home-text: "/..",
   lang: "en",
   stylesheet-paths: auto,
-  theme-config: default-theme,
+  theme-config: theme-default,
 ) = {
   let sheets = if stylesheet-paths == auto {
     (stylesheet-href(theme: theme-config),)

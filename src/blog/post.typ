@@ -9,7 +9,7 @@
   normalize-assets, page-asset, query-doc-tr-codes, query-pages, render-top-bar,
   site-config,
 )
-#import "../i18n.typ": resolve-page-langs
+#import "../i18n.typ": assert-complete-translations, resolve-page-langs
 #import "../paths.typ": (
   date-sort-key, find-doc-containing, format-date, join-path, rel-href,
   slug-from-path, slugify, with-html-headings, with-smart-refs,
@@ -20,7 +20,7 @@
   is-sidenote-link, reset-sidenotes, sidenote, sidenote-bottom-guard,
 )
 #import "theme.typ": (
-  active-theme, default-theme, resolve-theme, theme-override-css,
+  active-theme, resolve-theme, theme-default, theme-override-css,
 )
 
 #let _paged-sec-counter = counter("blog/paged-sec")
@@ -244,7 +244,8 @@
   /// Alias for `modified`.
   /// -> datetime | str | none
   updated: none,
-  /// Post language (`auto` inherits from `site` and auto-detects `#tr(...)` bilingual blocks; `"en"`, `"de"`, or `("en", "de")`).
+  /// Post language (`auto` inherits from `site` and auto-detects the languages in its
+  /// `#tr(...)` blocks; a code such as `"en"`, or an array such as `("en", "de", "fr")`).
   /// -> auto | str | array
   lang: auto,
   /// Optional `hreflang` alternate URLs (`(de: "de/posts/foo/index.html")`).
@@ -421,7 +422,7 @@
     // Merged preset + core site metadata (preset keys win).
     let site-config = site-config()
     let base-theme = if site-config != none { site-config.theme } else {
-      default-theme
+      theme-default
     }
     let has-post-theme = theme != none and theme != (:)
     let merged-theme = resolve-theme(
@@ -436,6 +437,7 @@
       scan-nodes: (title, subtitle, summary, body),
       queried-codes: query-doc-tr-codes(enc-doc),
     )
+    assert-complete-translations((title, subtitle, summary, body), eff-langs)
     let primary-lang = eff-langs.first()
     let eff-author = if author != none {
       author

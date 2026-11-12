@@ -152,7 +152,7 @@ section is the contract to hand to anyone downstream.
 - **Template fonts.** The template references STIX Two / Commit Mono via CDN `@font-face`
   for HTML, but the paged Universe preview may fall back if those fonts are absent from
   their renderer. Cosmetic only — check it in step 6.
-- **`[Unreleased]` is already folded into `[0.1.0]`** (done, dated 2026-11-09). This
+- **`[Unreleased]` is folded into `[0.1.0]`** (done, dated 2026-11-09). This
   mattered because the release notes are the `## [0.1.0]` section of `CHANGELOG.md`:
   before folding, a `v0.1.0` tag would have published the original `[0.1.0]` body and
   silently omitted the `theme-color`, `robots.txt`, `shell-theme` and CI fixes — i.e. a

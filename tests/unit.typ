@@ -1,9 +1,22 @@
 // Unit & regression tests for `@preview/thyme` and `@preview/syndicate`.
 #import "@preview/thyme:0.1.0": *
+#import "@preview/thyme:0.1.0" as thyme
 #import blog: *
-#import "../src/paths.typ": heading-anchor-id
-#import "../src/htm.typ": _tokenize-htm
-#import "../src/text.typ": query-body-words
+// The internal helpers below are not part of the public surface, so the tests import
+// them from their modules. That also means a test cannot pass just because a name
+// happens to be re-exported.
+#import "../src/paths.typ": (
+  canonical-page-url, heading-anchor-id, slugify, source-path-for,
+)
+#import "../src/i18n.typ": (
+  assert-complete-translations, missing-translations, normalize-alternates,
+)
+#import "../src/seo.typ": content-to-feed-html
+#import "../src/text.typ": (
+  count-words, query-body-words, short-hash, to-plain-text, word-hint,
+)
+#import "../src/tree.typ": any-content, map-containers
+#import "../src/core.typ": with-html-math
 #import "../src/blog/theme.typ": (
   css-hex, default-woff2-files, stylesheet-css, stylesheet-href,
   theme-override-css,
@@ -73,21 +86,21 @@
 // `css-hex` must emit a well-formed lowercase #rrggbb for any theme colour.
 #assert.eq(css-hex(rgb("#f2f2f2")), "#f2f2f2")
 #assert.eq(css-hex(rgb("#000000")), "#000000")
-#assert.eq(css-hex(default-theme.paper-light), css-hex(
-  default-theme.paper-light,
+#assert.eq(css-hex(theme-default.paper-light), css-hex(
+  theme-default.paper-light,
 ))
-#assert.eq(css-hex(default-theme.text-light).len(), 7)
+#assert.eq(css-hex(theme-default.text-light).len(), 7)
 
 // `theme-color` must follow the *active* theme, not a pinned hex. A preset that resolves
 // its own theme and then drops it on the way to the shell would emit the default here.
 #let _probe-theme = (
-  default-theme
+  theme-default
     + (paper-light: oklch(50%, 0, 0deg), paper-dark: oklch(30%, 0, 0deg))
 )
 #assert.eq(css-hex(_probe-theme.paper-light), "#636363")
 #assert.eq(css-hex(_probe-theme.paper-dark), "#2e2e2e")
 #assert.ne(css-hex(_probe-theme.paper-light), css-hex(
-  default-theme.paper-light,
+  theme-default.paper-light,
 ))
 
 // `robots.txt` is a documented, exported feature; make sure it is actually emitted and
@@ -202,7 +215,7 @@
 #assert(override-css.contains(":root {") and override-css.contains("oklch(97%"))
 
 // 7. Paged PDF `#tr(...)` honors `set text(lang: "de")`, secondary `#tr` skips `word-hint`,
-//    and `htm` / `h` handle empty elements, `<pre>` whitespace, entities, & optional closes
+//    and native `html.*` constructors are left alone by the engine
 #{
   set text(lang: "de")
   context {
@@ -218,25 +231,47 @@
   [#tr(en: [ENGLISH_BRANCH], de: [GERMAN_BRANCH_ACTIVE])]
 }
 
+// Component word hints. `word-hint` exists for markup rendered inside a `context`
+// closure, where `count-words` cannot see the text. Native `html.*` content is not in
+// that position, so it carries no hint and must not inflate the count either.
+// An empty native element must keep its explicit open/close pair: `typst` renders
+// `html.elem("div", attrs: ())` with no content as `<div class="..."></div>`, and the
+// engine must not collapse it or drop it.
+// `html.*` exists only in the HTML target, so the body is built inside a `context` that
+// checks `target()`. The PDF compile of this file must not reference it.
 #[#metadata(none)<thyme-body-start>]
-#h("div.empty-box")
-#h("p.prose-h")[Three hyperscript words]
-#htm("<div class=\"empty-htm\"></div>")
-#htm("<pre>line 1\n  indented line 2</pre>")
-#htm("<ul><li>first<li>second &#8212; &#x2026; &hellip;</ul>")
-#htm("<time datetime=\"2026-10-30\">Oct</time>")
-#htm("<button disabled=\"false\" data-ok=\"true\">btn</button>")
+#context {
+  if target() == "html" {
+    // An empty native element keeps its explicit open/close pair. `typst` renders
+    // `html.elem("div", attrs: ())` with no content as `<div class="..."></div>`, and the
+    // engine must not collapse it or drop it.
+    html.elem("div", attrs: (class: "empty-box"))
+    html.elem("p", attrs: (class: "prose-h"), [Three native words])
+    // A `<pre>` keeps its whitespace when its body is a `raw` value. Markup would
+    // collapse the line break, which is the exporter's behaviour and not ours.
+    html.elem("pre", raw("line 1\n  indented line 2"))
+    html.elem("ul", {
+      html.elem("li", [first])
+      html.elem("li")[second \u{2014} \u{2026} \u{2026}]
+    })
+    html.elem("time", attrs: (datetime: "2026-10-30"), [Oct])
+    html.elem("button", attrs: (disabled: "false", "data-ok": "true"), [btn])
+  }
+}
+#sidenote[Word-hinted sidenote text]
 #tr(
   en: [Primary branch],
-  de: [Sekundärzweig #sidenote[Extra German sidenote words that must not inflate English count]],
+  de: [Sekundärzweig #sidenote[Extra German sidenote words that must not inflate
+      English count]],
 )
 #[#metadata(none)<thyme-body-end>]
 #context {
   let hinted = query-body-words(0)
-  // `h("p.prose-h")` (3) + `htm("<ul>...")` ("first"=1 + "second"=1) + `htm("<time>...")` ("Oct"=1) + `htm("<button>...")` ("btn"=1) = 7;
-  // `<pre>` and secondary `de` `#sidenote[...]` contribute 0!
+  // Only the English `#sidenote` emits a hint: "Word-hinted" + "sidenote" + "text" = 3.
+  // The `de` branch is secondary, so it contributes 0, and native `html.*` content is
+  // outside a `context` closure, so it contributes 0 as well.
   if target() == "html" {
-    assert.eq(hinted, 7)
+    assert.eq(hinted, 3)
   }
 }
 
@@ -262,7 +297,8 @@
 )
 
 #with-html-math[
-  keeping $F(e)$ and $F(d^*)$ crisp · $ℝ^+$, $F(a / b)$, $F(union.sq.big_(n >= 0) d_n)$, $lr((e))$
+  keeping $F(e)$ and $F(d^*)$ crisp · $ℝ^+$, $F(a / b)$,
+  $F(union.sq.big_(n >= 0) d_n)$, $lr((e))$
 ]
 #smallcaps[Ada Lovelace] · #smallcaps(all: true)[Theorem 1]
 
@@ -270,19 +306,19 @@
 #assert(is-sidenote-link([#metadata("thyme-sn-link")1]))
 #assert(not is-sidenote-link([ordinary link text]))
 
-// 10. Multi-line `htm(...)` preserves inter-word spaces across line breaks adjacent to inline tags
-#let parsed-inline = _tokenize-htm(
-  "<p>\n  <a href=\"#a\">alpha</a>\n  or\n  <a href=\"#b\">beta</a>\n</p>",
-  (:),
-  (),
-)
-#assert.eq(
-  parsed-inline.prose-pieces.map(to-plain-text).join(),
-  "alpha or beta",
-)
-#htm(
-  "<p class=\"multiline-inline\">\n  <a href=\"#a\">alpha</a>\n  or\n  <a href=\"#b\">beta</a>\n</p>",
-)
+// 10. Multi-line plain Typst content in a native element keeps its inter-word spaces
+// across line breaks adjacent to inline tags. This is Typst's behaviour, and the point of
+// the assertion is that `thyme` adds nothing that could disturb it.
+#context {
+  if target() == "html" {
+    html.elem("p", attrs: (class: "multiline-inline"), [
+      #link("https://example.org/alpha")[alpha]
+      or
+      #link("https://example.org/beta")[beta]
+    ])
+  }
+}
+#assert.eq(to-plain-text([alpha or beta]), "alpha or beta")
 
 // 11. `robots` and `llms` are pass-through files. Nothing is generated, so the only
 // contract is that a `path(...)` is copied byte for byte. `robots-txt` stays exported as a
@@ -306,3 +342,68 @@
     "Sitemap:",
   ),
 )
+
+// 12. `#tr(...)` completeness. A page that declares several languages must translate every
+// block, or the language switcher offers a language that renders as a gap. Two languages make
+// a missing branch obvious; six make four empty strings in a long post easy to ship.
+#let complete-body = [
+  #tr(en: [All], de: [Alle], fr: [Tous])
+]
+// Nested inside a block so the test also proves the scan descends into containers.
+#let partial-body = [
+  #block[#tr(en: [Partial], de: [Teilweise])]
+]
+// A fully translated page reports no gaps.
+#assert.eq(missing-translations(complete-body, ("en", "de", "fr")).len(), 0)
+// A block missing `fr` is reported once, with the missing code named.
+#assert.eq(missing-translations(partial-body, ("en", "de", "fr")).len(), 1)
+#assert(
+  missing-translations(partial-body, ("en", "de", "fr"))
+    .first()
+    .contains("`fr`"),
+)
+// A single-language page is never a gap, whatever the block covers.
+#assert.eq(missing-translations(partial-body, ("en",)).len(), 0)
+#assert.eq(missing-translations(partial-body, ()).len(), 0)
+// The guard passes a complete page and panics on an incomplete one.
+#assert-complete-translations(complete-body, ("en", "de", "fr"))
+
+// 13. The public surface is a chosen list, so its size is pinned. A new export is a
+// deliberate edit to this assertion and to `docs/api.md`, not a side effect of adding a
+// helper that `site` happens to call.
+// 8 keys: the 7 public names plus `blog`, which is the preset namespace itself.
+#assert.eq(dictionary(thyme).len(), 8)
+#assert.eq(dictionary(thyme.blog).len(), 39)
+// Names that used to be exported and are now internal. If one reappears, the surface has
+// grown by accident.
+#for name in (
+  "slugify",
+  "to-plain-text",
+  "canonical-page-url",
+  "sitemap-xml",
+  "resolve-page-langs",
+  "i18n-css",
+  "count-words",
+  "map-containers",
+  "assert-complete-translations",
+  "missing-translations",
+  // Applied by the page shell rather than by the author.
+  "with-html-math",
+  // Removed outright: Typst's own `html.elem` covers them.
+  "htm",
+  "h",
+  "enable-htm",
+  // Replaced by a parameter on `webpage` / `post`.
+  "page-asset",
+  "post-asset",
+  // Called by `blog.site` itself.
+  "query-pages",
+  "post-nav",
+  "tag-cloud",
+) {
+  assert(
+    name not in dictionary(thyme),
+    message: name
+      + " is exported again; it belongs to a module, not the public surface",
+  )
+}

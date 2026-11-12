@@ -14,16 +14,18 @@
 
 The core is zero-CSS and unopinionated. Import it (`#import "@preview/thyme:0.1.0": *`) to build a site with your own stylesheet. The `blog` preset adds a monochrome scholarly theme: native MathML, right-margin sidenotes and citations, static `/tags/` archives, backlinks, Obsidian frontmatter, theorem and proof environments, and two-column print output.
 
+The public surface is nine names in core and forty-one in `blog`. Everything else in `src/` is a module-level function that `site` and the presets call; the module paths are stable, the names inside them are not. See [`docs/api.md`](docs/api.md).
+
 ---
 
 ## Highlights
 
 - **Pure `typst` CLI workflow**: `typst watch --features html,bundle -f bundle site.typ dist` runs Typst's built-in live-reloading dev server; `typst compile` emits the complete production web root in one pass.
-- **Typed Hypertagged HTML (`htm` & `h`)**: Author raw HTML fragments (`developit/htm`-style) with `{slot}` Typst `content` interpolation (`math`, `@label` links, components), full named/decimal/hex HTML entity decoding, and HTML5 tag-balance validation, or CSS-selector hyperscript (`#h("section#work.grid", ...)`), backed directly by Typst `0.15.1`'s built-in [typed `html.*` constructors](https://typst.app/docs/reference/html/typed/) (`#h(1fr)` still forwards transparently to `std.h`).
+- **No HTML builder of its own.** Markup that plain Typst content cannot express goes through Typst's built-in [typed `html.*` constructors](https://typst.app/docs/reference/html/typed/) — `html.elem("div", attrs: (class: "note"), body)`. Nothing to learn, nothing to keep correct, and `math`, `@label` links and components interpolate as usual.
 - **Tadi Web `.typ` Source Transparency**: Mounting pages via capability `path(...)` (`src: path("site.typ")`, `#mount(path("contact.typ"))`, `#post(path("posts/foo.typ"))`) co-emits verbatim `.typ` source files (`/site.typ`, `/contact.typ`, `/posts/foo.typ`) and adds a monospace `.typ` link in the top bar.
-- **Single-URL Zero-JS CSS i18n & `hreflang` Alternates**: Write `#tr(en: [...], de: [...])` inline or look up keys from a `@preview/linguify`-compatible `lang.toml` dictionary (`#tr("key", from: toml("lang.toml"))`); `thyme` emits a CSS `:root:has(#thyme-lang-de:checked)` switcher (`en · de`) in the top bar **only on bilingual pages**, honors `set text(lang: ...)` in paged PDFs, and supports multi-URL `alternates` across `<head>` and `sitemap.xml`.
+- **Single-URL Zero-JS CSS i18n & `hreflang` Alternates**: Write `#tr(en: [...], de: [...])` inline or look up keys from a `@preview/linguify`-compatible `lang.toml` dictionary (`#tr("key", from: toml("lang.toml"))`); `thyme` emits a CSS `:root:has(#thyme-lang-de:checked)` switcher (`en · de`) in the top bar **only on pages with two or more languages**, honors `set text(lang: ...)` in paged PDFs, and supports multi-URL `alternates` across `<head>` and `sitemap.xml`.
 - **SEO, Full-HTML Syndication & Academic Metadata**: Emits valid `sitemap.xml`, `404.html`, and summary or **full semantic HTML** RSS 2.0 (`rss.xml`) & Atom 1.0 (`atom.xml`) feeds (`feed-content: "summary" | "full"`) via `@preview/syndicate`, plus opt-in OpenGraph (`og:*`) and Google Scholar Highwire (`citation_*`) `<meta>` tags.
-- **Scholarly `blog` Preset**: Perceptual `oklch` / `light-dark()` monochrome palette, unified _STIX Two Text_ (`smcp` / `c2sc` small caps) + _STIX Two Math_ + _Helvetica Neue_ + _Commit Mono_ stacks (`font-faces: auto | none | str`, deterministic zero-`local()` `@font-face` rules, and one-line self-hosting via `font-base: "/fonts/"` + `font-version`), AST-normalized native MathML (`with-html-math` — crisp inline `$F(e)$` & `$F(d^*)` without `measure()` or SVG hacks), content-hashed `css/style.css?v=<hash>`, conditional copy-button JS (`copy-button: auto` — zero `<script>` on codeless pages), `@preview/marge` sidenotes + `#mcite` margin bibliography citations, static `/tags/<tag>/` archive pages, `#toc()`, compile-time `#backlinks()`, `#post-nav()`, `spicky`-style math/proof environments, `zebraw`, `tablem`, and `cheq`.
+- **Scholarly `blog` Preset**: Perceptual `oklch` / `light-dark()` monochrome palette, unified _STIX Two Text_ (`smcp` / `c2sc` small caps) + _STIX Two Math_ + _Helvetica Neue_ + _Commit Mono_ stacks (`font-faces: auto | none | str`, deterministic zero-`local()` `@font-face` rules, and one-line self-hosting via `font-base: "/fonts/"` + `font-version`), AST-normalized native MathML (applied automatically — crisp inline `$F(e)$` & `$F(d^*)` without `measure()` or SVG hacks), content-hashed `css/style.css?v=<hash>`, conditional copy-button JS (`copy-button: auto` — zero `<script>` on codeless pages), `@preview/marge` sidenotes + `#mcite` margin bibliography citations, static `/tags/<tag>/` archive pages, `#toc()`, compile-time `#backlinks()`, post navigation, `spicky`-style math/proof environments, `zebraw`, `tablem`, and `cheq`.
 
 ---
 
@@ -88,18 +90,12 @@ Bring your own `styles.css` with zero preset styles injected (see [`examples/por
 #file("pgp.txt", path("pgp.txt"))
 #mount(path("contact.typ")) <contact>
 
-#htm(
-  ```html
-  <header class="hero">
-    <p class="eyebrow">{role}</p>
-    <h1>Ada Lovelace</h1>
-    <p>{intro} — {contact}</p>
-  </header>
-  ```,
-  role: tr(en: [Symbolic Computation], de: [Symbolische Berechnung]),
-  intro: [Bernoulli schedules in $O(n^2)$ operations],
-  contact: link(<contact>)[contact],
-)
+#html.elem("header", attrs: (class: "hero"), {
+  html.elem("p", attrs: (class: "eyebrow"),
+    tr(en: [Symbolic Computation], de: [Symbolische Berechnung]))
+  html.h1("Ada Lovelace")
+  html.p[Bernoulli schedules in $O(n^2)$ operations · #link(<contact>)[contact]]
+})
 ```
 
 ---
@@ -151,7 +147,8 @@ What the version number promises:
 | :--- | :--- |
 | Names re-exported by `#import "@preview/thyme:0.1.0": *` | **Stable** across `0.x` patch releases; renamed only in a minor release, with the old name gone (no deprecation aliases; see below). |
 | Names re-exported by `#import blog: *` | Same as above. |
-| Named arguments of `site`, `blog.site`, `webpage`, `post`, `mount`, `file`, `page-asset` | **Stable** across patch releases. Additive parameters are non-breaking. |
+| Everything else in `src/` (module-level functions) | **Not public.** Importable, and the module paths are stable, but the names change whenever the engine or a preset needs them to. |
+| Named arguments of `site`, `blog.site`, `webpage`, `post`, `mount`, `file` | **Stable** across patch releases. Additive parameters are non-breaking. |
 | Emitted file layout (`index.html`, `404.html`, `.typ` siblings, `sitemap.xml`, `rss.xml`, `atom.xml`, `tags/`, plus `robots.txt` / `llms.txt` when you pass `path(...)`) | **Stable**; new optional outputs only behind opt-in options. |
 | CSS class names (`blog-*`, `thyme-*`) | Treat as **semi-public**. They are used for theming and styling, so a change ships with a CHANGELOG note. |
 | Anything prefixed `_` in `src/` | **Private**. No guarantee; may change in any release. |
@@ -220,7 +217,7 @@ just release --notes           # the CHANGELOG section, as CI publishes it
 - **[API Surface (`docs/api.md`)](docs/api.md)**: the exported surface of the core and the `blog` preset, grouped by purpose.
 - **[Package Reference Manual (`docs/manual.pdf`)](docs/manual.pdf)**: API documentation generated from source doc-comments with `@preview/tidy:0.4.3`.
 - **[`template/`](template)**: starter monochrome blog (`typst init @preview/thyme:0.1.0`).
-- **[`examples/portfolio/`](examples/portfolio)**: zero-CSS core `thyme` site using a custom `styles.css`, plus `htm`, `h`, `#tr(en: ..., de: ...)`, `file` and `webpage`.
+- **[`examples/portfolio/`](examples/portfolio)**: zero-CSS core `thyme` site using a custom `styles.css`, plus native `html.elem`, `#tr(en: ..., de: ...)`, `file` and `webpage`.
 - **[`examples/blog/`](examples/blog)**: a `blog.site` showcase with bilingual `en`/`de` switching (`#tr(...)` and `lang.toml`), co-located folder assets (`posts/state-machine/{site.typ,dfa.svg}`), mounted `webpage` subpages (`about.typ`), full-HTML Atom and RSS feeds, static `/tags/` archives, `#toc()`, `#mcite(...)` margin citations, compile-time backlinks, post navigation, and OpenGraph and Google Scholar `<meta>` tags.
 
 ---
