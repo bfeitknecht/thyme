@@ -107,10 +107,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   separate `stage-universe` recipe and no `--allow-vendored` flag, since this project will not
   vendor again. `typst-package-check` decides whether the archive is submittable.
 - **`just install-packages` was removed.** It linked this checkout into the OS `@preview` cache
-  for editor LSPs. That assumed the dependency was absent from Typst Universe, and this release
-  ends that condition. Once syndicate is live, `vendor/` goes and plain `typst watch` resolves
-  everything. For the same reason no code branches on `vendor/` now. The directory is temporary,
-  and a check for its absence would outlive its purpose.
+  for editor LSPs. That assumed the dependency was absent from Typst Universe, and it is not:
+  `@preview/syndicate:0.1.0` is published, so plain `typst watch` resolves everything.
 - **Documentation.** Added `docs/api.md`, which lists the 88 exported names for the core and the
   preset. Two thirds of those names appeared in neither the manual nor the README. Added a README
   *Stability & Versioning* section that states what the version number guarantees and records that
@@ -128,6 +126,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   to push. The job now runs `gh repo sync` before it branches, and creates the fork if it is
   missing. The workflow header records what each repository setting is for, and the checkout and
   cache actions are on their current major versions.
+- **The temporary copy of `syndicate` is gone.** `vendor/syndicate` existed because the
+  dependency was unpublished. `@preview/syndicate:0.1.0` is on Typst Universe, so the directory
+  and every reference to it are removed: the `vendor/*` glob in `_link-pkg`, the `"/vendor/"` entry
+  in `typst.toml`, and the TODO at the top of `src/seo.typ`. Nothing resolves from the worktree
+  now, so a broken dependency fails the build instead of being hidden by a local copy.
 - **A refused submission PR no longer fails the release.** The `typst` org does not let a
   fine-grained token open a pull request, so `gh pr create` returns `Resource not accessible by
   personal access token` even when the fork sync and the branch push succeed. The job now treats
@@ -146,8 +149,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `bfeitknecht/syndicate`, which thyme owns. `src/seo.typ` imports `atom`, `rss` and `sitemap` from
   it. The generated XML keeps the same shape: Atom 1.0, RSS 2.0 with `<content:encoded>`, and a
   sitemap `urlset`. `sitemap.urlset` and `atom.feed` take the entries as arguments instead of a
-  `urls:`/`posts:` list, and `rss.item` names its summary `description`. A temporary copy sits in
-  `vendor/syndicate` until the package reaches Typst Universe.
+  `urls:`/`posts:` list, and `rss.item` names its summary `description`.
 - `.pre-commit-config.yaml` and `docs/autoformat.md`. The hooks duplicated `just fmt` / `just lint`
   and needed `typstyle` on the host anyway, so CI is the only place the checks are enforced. The
   removed doc also claimed `typst fmt` existed and that `just lint` scanned the justfile; it did
