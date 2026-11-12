@@ -12,6 +12,8 @@
   post-nav: true,
   open-graph: true,
   scholar-meta: true,
+  robots: path("robots.txt"),
+  llms: path("llms.txt"),
 )
 
 #blog.mount(path("about.typ")) <about>
