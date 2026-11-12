@@ -1,6 +1,6 @@
 # `thyme`
 
-**Static site generator with typed hypertagged HTML, `.typ` source transparency, zero-JS CSS i18n, XML sitemaps & feeds, and a monochrome scholarly `blog` preset.**
+**Build static sites and blogs from Typst documents: typed HTML, `.typ` source transparency, zero-JS CSS i18n, XML sitemaps & feeds, and a monochrome scholarly `blog` preset.**
 
 [![Manual PDF](https://img.shields.io/badge/docs-manual.pdf-black)](docs/manual.pdf)
 [![Typst >= 0.15.0](https://img.shields.io/badge/typst-%3E%3D%200.15.0-239dad)](https://typst.app)

@@ -3,7 +3,7 @@
 
 #show: post.with(
   title: [Static Sites & Tadi Source Transparency in Pure Typst],
-  subtitle: [Zero-CLI bundles, hypertagged HTML, sitemaps, and inspectable .typ sources],
+  subtitle: [Zero-CLI bundles, typed HTML, sitemaps, and inspectable .typ sources],
   author: "Ada Lovelace",
   monograph: "EWD-01",
   created: datetime(year: 2026, month: 10, day: 18),

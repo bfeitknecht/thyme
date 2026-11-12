@@ -469,7 +469,7 @@
   )[v0.1.0 · Typst >= 0.15.0]
   v(0.35em)
   text(size: 1.14em, fill: t.muted-light, emph[
-    Pure-Typst static site generator with typed hypertagged HTML, Tadi Web .typ source transparency, zero-JS CSS i18n, XML sitemaps & feeds, and a monochrome blog preset.
+    Build static sites and blogs from Typst documents, with typed HTML, Tadi Web .typ source transparency, zero-JS CSS i18n, XML sitemaps & feeds, and a monochrome blog preset.
   ])
   v(0.75em)
   block(

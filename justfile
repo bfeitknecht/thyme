@@ -590,4 +590,8 @@ release *args:
     # One push, so a failed tag push cannot leave the release commit on the remote
     # without the tag that triggers its workflow.
     subprocess.run(["git", "push", "--atomic", "origin", "HEAD", tag], check=True)
-    print(f"released {tag}; CI is cutting the GitHub release and the Typst Universe PR")
+    print(f"released {tag}; CI is cutting the GitHub release and pushing the Universe branch")
+    # The pull request into typst/packages cannot be opened by the token, because the
+    # organisation restricts who may open one. Point at the recipe instead of leaving the
+    # maintainer to remember it.
+    print("then run `just submission` for the compare link and the PR text")
