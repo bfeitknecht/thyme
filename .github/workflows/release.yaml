@@ -1,4 +1,4 @@
-# Publishes a release when `just release` pushes a tag `v<version>`.
+# Publishes a release when `just release <version>` pushes a tag `v<version>`.
 #
 # Necessary configuration in the repository settings:
 # - Secret UNIVERSE_TOKEN: a personal access token with `Contents: read and write`
@@ -53,7 +53,9 @@ jobs:
         env:
           TAG: ${{ inputs.tag || github.ref_name }}
         run: |
-          just release "$TAG" --check
+          # The recipe takes the version, not the tag: the ref and the dispatch input both
+          # arrive as `v<version>`, so drop one `v` here and nowhere else.
+          just release "${TAG#v}" --check
           {
             echo "pkg_name=$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml","rb"))["package"]["name"])')"
             echo "pkg_version=$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml","rb"))["package"]["version"])')"
