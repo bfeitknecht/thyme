@@ -36,6 +36,43 @@ jobs:
 
       - run: just lint
 
+  # The gate above never sees what Typst Universe sees. `typst-package-check` embeds
+  # Typst's standard library with no in-development features, so `html` does not exist in
+  # its world; a package that renders an HTML shell while compiling paged fails there with
+  # `unknown variable: html`, and no local target reproduces that. Running the same tool
+  # on every push is the only thing that catches it before a tag does.
+  universe:
+    name: Universe package check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+
+      - name: Cache typst-package-check
+        uses: actions/cache@v6
+        with:
+          path: ~/.cargo/bin/typst-package-check
+          key: typst-package-check-${{ runner.os }}-v0.7.0
+
+      - name: Install typst-package-check
+        run: |
+          set -eu
+          # Pinned to a tag: `--git` without a rev installs whatever master happens to be,
+          # so this job could start failing for reasons absent from this repository.
+          if [ ! -x "$HOME/.cargo/bin/typst-package-check" ]; then
+            cargo install --locked --git https://github.com/typst/package-check.git \
+              --tag v0.7.0 typst-package-check
+          fi
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+
+      # `_stage` builds the payload exactly as it would be submitted, so the checker sees
+      # the same tree the release workflow hands to Typst Universe.
+      - name: Stage the payload
+        run: just _stage universe-stage thyme "$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml","rb"))["package"]["version"])')"
+
+      - name: Run typst-package-check
+        run: typst-package-check check "universe-stage/packages/preview/thyme/$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml","rb"))["package"]["version"])')"
+
   check:
     name: Build & verify
     runs-on: ubuntu-latest
