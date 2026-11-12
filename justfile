@@ -114,21 +114,21 @@ check:
         # `robots` and `llms` are pass-through files: the bundle carries exactly the bytes
         # the author pointed at, or no file at all. Assert that, because it is the contract
         # that replaced generating them.
-        # Only the blog example opts in, by pointing at `examples/blog/*.txt`. Compare the
-        # bundle against the repository file, not against the bundle itself, or the check
-        # passes no matter what the recipe does.
-        if bundle.name == "blog":
-            for name in ("robots.txt", "llms.txt"):
+        # Only the blog example opts in, by pointing at `examples/blog/*.txt`. The bundle
+        # directory is named after the site path with `/` replaced, so match that rather
+        # than the bare name. Compare against the repository file, not against the bundle
+        # itself, or the check passes no matter what the recipe does.
+        opts_in = bundle.name == "examples_blog"
+        for name in ("robots.txt", "llms.txt"):
+            got = bundle / name
+            if opts_in:
                 source = pathlib.Path.cwd() / "examples" / "blog" / name
-                got = bundle / name
                 if not got.is_file():
                     fail(f"missing {bundle}/{name}")
                 if got.read_bytes() != source.read_bytes():
                     fail(f"{bundle}/{name} is not a byte-for-byte copy of {source}")
-        else:
-            for name in ("robots.txt", "llms.txt"):
-                if (bundle / name).exists():
-                    fail(f"{bundle}/{name} exists but the site did not pass `path(...)`")
+            elif got.exists():
+                fail(f"{bundle}/{name} exists but the site did not pass `path(...)`")
         # The Tadi source for the home page is `site.typ` (`source-path-for("index.html")`),
         # not `index.typ`. Assert the documented mapping rather than a literal name.
         if not (bundle / "site.typ").is_file():
