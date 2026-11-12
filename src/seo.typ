@@ -2,7 +2,6 @@
 // builders (summary or full semantic HTML), plus opt-in OpenGraph & Google Scholar
 // Highwire `<meta>` helpers, backed by `@preview/syndicate`.
 
-// TODO: Remove `vendor/syndicate` once `@preview/syndicate:0.1.0` is on Typst Universe.
 #import "@preview/syndicate:0.1.0": atom, rss, sitemap
 #import "i18n.typ": normalize-alternates
 #import "paths.typ": (

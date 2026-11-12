@@ -7,9 +7,9 @@
 
 ## 1. End-to-End Rollout Checklist (`syndicate` → `thyme` → `glob` → `apex`)
 
-### Step 1 — Publish `@preview/syndicate:0.1.0` on Typst Universe
-- [ ] Cut `syndicate` `v0.1.0` in [`bfeitknecht/syndicate`](https://github.com/bfeitknecht/syndicate) and open its `typst/packages` PR.
-- [ ] Wait until `syndicate:0.1.0` is merged into [`typst/packages`](https://github.com/typst/packages) and live at `https://typst.app/universe/package/syndicate`.
+### Step 1 — Publish `@preview/syndicate:0.1.0` on Typst Universe — **done**
+- [x] Cut `syndicate` `v0.1.0` in [`bfeitknecht/syndicate`](https://github.com/bfeitknecht/syndicate) and open its `typst/packages` PR.
+- [x] `syndicate:0.1.0` is merged into [`typst/packages`](https://github.com/typst/packages).
 
 `syndicate` exists because the upstream `wensimehrp/exemel` maintainer declined the RSS 2.0 and
 sitemap additions. Thyme no longer depends on `exemel`.
@@ -21,25 +21,22 @@ sitemap additions. Thyme no longer depends on `exemel`.
 > the full check suite), then `github-release` (GitHub Release with `docs/manual.pdf` attached),
 > then `universe-pr` (stage, `typst-package-check`, push to the fork, open the Draft PR).
 >
-> `universe-pr` is **skipped unless the repository variable `UNIVERSE_SUBMIT` is `true`**, so a
-> tag pushed while `vendor/syndicate` still exists does not fail the run. Set the variable only after
-> Step 1 is done and `vendor/` is gone. It must be a *variable* (`vars.UNIVERSE_SUBMIT`), because
-> a secret cannot gate a job-level `if`.
+> `universe-pr` is **skipped unless the repository variable `UNIVERSE_SUBMIT` is `true`**. Set it
+> when you are ready to publish. It must be a *variable* (`vars.UNIVERSE_SUBMIT`), because a secret
+> cannot gate a job-level `if`.
+>
+> The PR into `typst/packages` cannot be opened by a fine-grained token, because the org restricts
+> them. The job tries, and when it is refused it writes the compare link to its summary and exits
+> 0. Opening that link is the last step of the submission.
 
 - [ ] **Configure GitHub repo & Universe fork**
   - Create `bfeitknecht/thyme` on GitHub.
   - Fork `https://github.com/typst/packages` to `https://github.com/bfeitknecht/packages` (or set repo variable `UNIVERSE_REPO` if using another owner, host or fork).
-  - Add repository secret `UNIVERSE_TOKEN` on `bfeitknecht/thyme` (fine-grained PAT with `Contents: Read and write` on `bfeitknecht/packages` and `Pull requests: Read and write` on `typst/packages`).
-  - Leave repository variable `UNIVERSE_SUBMIT` unset (or `false`) until Step 1 completes.
-- [ ] **Remove temporary `syndicate` vendoring once `syndicate:0.1.0` is live**
-  ```sh
-  rm -rf vendor
-  ```
-  - Remove the `// TODO` comment at the top of `src/seo.typ`.
-  - Drop the `vendor/*` glob from `_link-pkg` in the `justfile`. That glob is the only place
-    left that knows vendoring exists; every other branch on `vendor/` was deleted, so this is
-    the last commit needed to make the directory unrepresentable.
-  - Update the release date on `## [0.1.0] - YYYY-MM-DD` in `CHANGELOG.md` if needed.
+  - Add repository secret `UNIVERSE_TOKEN` on `bfeitknecht/thyme` (fine-grained PAT with `Contents: Read and write` on `bfeitknecht/packages`). Do not add `typst/packages`; the org refuses it.
+  - Set repository variable `UNIVERSE_SUBMIT` to `true` when you are ready to publish.
+- [x] **Remove temporary `syndicate` vendoring once `syndicate:0.1.0` is live**
+  - `vendor/` is deleted, the `// TODO` in `src/seo.typ` is gone, the `vendor/*` glob is out of
+    `_link-pkg`, and `"/vendor/"` is out of `typst.toml`.
 - [ ] **Verify & stage locally against live Typst Universe**
   ```sh
   just check
