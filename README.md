@@ -176,10 +176,10 @@ Universe PR. The `typst` org does not let a fine-grained token do that, so when 
 job writes the compare link to its summary and one click finishes the submission.
 
 A fine-grained token cannot open a pull request into `typst/packages` at all, because the
-organisation restricts who may. When the workflow is refused it prints the compare link,
-and the submission text is the same text `just submission` prints locally: it fills in
-`.github/universe-pr.md` from `typst.toml`. Open the link, paste the body, and the PR is
-done.
+organisation restricts who may. `just release` therefore prints the compare link and the
+filled-in PR text once it has pushed, and the workflow prints the same text when it is
+refused. Both fill in `.github/universe-pr.md` from `typst.toml`. Open the link, paste the
+body, and the PR is done. `just release --pr` reprints it later without releasing anything.
 
 ### Freezing a downstream
 
