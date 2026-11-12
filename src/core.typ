@@ -15,9 +15,7 @@
   slug-from-typ-path, slugify, source-path-for, unwrap-typ-path,
   with-html-headings, with-smart-refs,
 )
-#import "seo.typ": (
-  atom-xml, llms-txt, render-seo-meta, robots-txt, rss-xml, sitemap-xml,
-)
+#import "seo.typ": atom-xml, render-seo-meta, robots-txt, rss-xml, sitemap-xml
 #import "blog/theme.typ": css-hex, default-theme
 #import "text.typ": count-words, estimate-reading-minutes, to-plain-text
 #import "tree.typ": collect-content, find-content, map-containers
@@ -1196,17 +1194,13 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
   /// Output path for the XML sitemap (`"sitemap.xml"`), or `none` to disable sitemap generation.
   /// -> str | none
   sitemap-path: "sitemap.xml",
-  /// `robots.txt`. `auto` generates one pointing at `sitemap-path` whenever that is set;
-  /// `true` generates one with no `Sitemap:` line; `false` omits the file; `path(...)`
-  /// copies your own file instead.
-  /// -> auto | bool | path
-  robots: auto,
-  /// `llms.txt`, a curated Markdown index for language models
-  /// (`https://llmstxt.org`). `auto` generates one from the public pages whenever
-  /// `sitemap-path` is set; `true` generates one regardless; `false` omits the file;
-  /// `path(...)` copies your own file instead.
-  /// -> auto | bool | path
-  llms: auto,
+  /// `robots.txt`. `path(...)` copies your file into the bundle root; `none` emits no file.
+  /// -> path | none
+  robots: none,
+  /// `llms.txt`, a curated Markdown index for language models (`https://llmstxt.org`).
+  /// `path(...)` copies your file into the bundle root; `none` emits no file.
+  /// -> path | none
+  llms: none,
   /// Output path for the RSS 2.0 feed (e.g. `"rss.xml"`), or `none` to omit RSS on non-blog sites.
   /// -> str | none
   rss-path: none,
@@ -1736,33 +1730,13 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
         )
         [#asset(sitemap-path, bytes(sm-xml))<sitemap>]
       }
-      // `robots: auto` means "on whenever a sitemap is emitted". This was documented and
-      // `robots-txt` was exported, but nothing ever called it, so no bundle contained a
-      // robots.txt at all.
-      // Both files follow the same rule: `auto` derives one, `true` forces one, `false`
-      // omits it, and a `path` copies a file the author wrote. Nothing is parsed, so a
-      // hand-written file is never at the mercy of this package's idea of its format.
-      let derive-robots = robots == auto or robots == true
-      if robots == auto and sitemap-path == none { derive-robots = false }
-      if derive-robots {
-        [#asset("robots.txt", bytes(robots-txt(
-          site-url: url,
-          sitemap-path: sitemap-path,
-        )))<robots>]
-      } else if type(robots) == path {
+      // Both files are the author's. They have formats this package would only guess at,
+      // so nothing is generated: a `path` is copied, byte for byte, and `none` emits
+      // nothing. `robots-txt(...)` is exported for an author who wants a starting point.
+      if type(robots) == path {
         [#asset("robots.txt", read(robots, encoding: none))<robots>]
       }
-      let derive-llms = llms == auto or llms == true
-      if llms == auto and sitemap-path == none { derive-llms = false }
-      if derive-llms {
-        let body = llms-txt(
-          site-title: resolved-title,
-          summary: description,
-          site-url: url,
-          pages: public-pages,
-        )
-        [#asset("llms.txt", bytes(body))<llms>]
-      } else if type(llms) == path {
+      if type(llms) == path {
         [#asset("llms.txt", read(llms, encoding: none))<llms>]
       }
       if rss-path != none {

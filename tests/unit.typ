@@ -284,87 +284,25 @@
   "<p class=\"multiline-inline\">\n  <a href=\"#a\">alpha</a>\n  or\n  <a href=\"#b\">beta</a>\n</p>",
 )
 
-// 11. `llms.txt` follows the proposal at llmstxt.org: one `#` title, one `>` summary, and
-// `##` sections of `- [title](url): description` lines. `robots` and `llms` both take
-// `auto | bool | path`, so a hand-written file is copied rather than reimplemented.
-#let llms-pages = (
-  (
-    html-path: "index.html",
-    title: [Home],
-    summary: [Start here.],
-    collection: "pages",
-    unlisted: false,
-  ),
-  (
-    html-path: "about.html",
-    title: [About],
-    description: [Who writes this.],
-    collection: "pages",
-    unlisted: false,
-  ),
-  (
-    html-path: "secret.html",
-    title: [Secret],
-    summary: [Unlisted.],
-    collection: "pages",
-    unlisted: true,
-  ),
-  (
-    html-path: "posts/one/index.html",
-    title: [On Machines],
-    summary: [First post.],
-    collection: "posts",
-    unlisted: false,
-  ),
-)
-#let llms = llms-txt(
-  site-title: "Example",
-  summary: "A monochrome site.",
+// 11. `robots` and `llms` are pass-through files. Nothing is generated, so the only
+// contract is that a `path(...)` is copied byte for byte. `robots-txt` stays exported as a
+// starting point for an author who wants one, and it must remain valid on its own terms.
+#let robots = robots-txt(
   site-url: "https://e.org",
-  pages: llms-pages,
+  sitemap-path: "sitemap.xml",
 )
-#assert(llms.starts-with("# Example\n"), message: llms)
-#assert(llms.contains("\n> A monochrome site.\n"), message: llms)
-#assert(llms.contains("## Pages\n"), message: llms)
-#assert(llms.contains("## Posts\n"), message: llms)
-// `index.html` becomes the bare origin, and a nested page keeps its trailing slash.
-#assert(llms.contains("- [Home](https://e.org/): Start here."), message: llms)
+#assert(robots.starts-with("User-agent: *"), message: robots)
+#assert(robots.contains("Sitemap: https://e.org/sitemap.xml"), message: robots)
+// A trailing slash on the site URL must not produce a doubled slash in the sitemap line.
 #assert(
-  llms.contains("- [On Machines](https://e.org/posts/one/): First post."),
-  message: llms,
+  not robots-txt(
+    site-url: "https://e.org/",
+    sitemap-path: "/sitemap.xml",
+  ).contains("//sitemap.xml"),
 )
-// `summary` wins over `description`, and a missing one leaves the line bare.
+// With no sitemap there is no `Sitemap:` line, rather than an empty one.
 #assert(
-  llms.contains("- [About](https://e.org/about.html): Who writes this."),
-  message: llms,
-)
-// Sections keep the declared order regardless of page order.
-#assert(llms.find("## Pages") < llms.find("## Posts"), message: llms)
-// Every bullet is a Markdown link, so any Markdown parser reads the file.
-#assert.eq(
-  llms
-    .split("\n")
-    .filter(l => l.starts-with("- "))
-    .all(l => l.starts-with("- [")),
-  true,
-)
-// `include-unlisted: false` removes the page from the index entirely.
-#assert(
-  not llms-txt(
-    site-title: "Example",
-    summary: "S.",
-    site-url: "https://e.org",
-    pages: llms-pages,
-    include-unlisted: false,
-  ).contains("secret.html"),
-)
-// The file ends with exactly one newline, so it is a well-formed text file.
-#assert(
-  llms.ends-with("\n") and not llms.ends-with("\n\n"),
-  message: repr(llms),
-)
-// A title and nothing else is still valid: an H1 with no sections.
-#assert.eq(
-  llms-txt(site-title: "T", site-url: "https://e.org", pages: ()),
-  "# T\n",
+  not robots-txt(site-url: "https://e.org", sitemap-path: none).contains(
+    "Sitemap:",
+  ),
 )

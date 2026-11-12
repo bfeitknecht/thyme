@@ -111,30 +111,24 @@ check:
             ET.fromstring((bundle / "sitemap.xml").read_text())
         except Exception as e:
             fail(f"invalid {bundle}/sitemap.xml: {e}")
-        if "Sitemap:" not in (bundle / "robots.txt").read_text():
-            fail(f"missing Sitemap in {bundle}/robots.txt")
-        # `llms.txt` follows the proposal at llmstxt.org: one `#` title, one `>` summary,
-        # and only Markdown link bullets inside `##` sections. Assert the shape rather than
-        # the exact text, so editing a page description does not break the build.
-        llms = bundle / "llms.txt"
-        if not llms.is_file():
-            fail(f"missing {bundle}/llms.txt")
-        llms_txt = llms.read_text()
-        lines = llms_txt.splitlines()
-        if not lines or not lines[0].startswith("# "):
-            fail(f"{bundle}/llms.txt must start with an H1 title")
-        if sum(1 for l in lines if l.startswith("# ")) != 1:
-            fail(f"{bundle}/llms.txt must have exactly one H1")
-        if not any(l.startswith("> ") for l in lines):
-            fail(f"{bundle}/llms.txt must have a blockquote summary")
-        bullets = [l for l in lines if l.startswith("- ")]
-        if not bullets:
-            fail(f"{bundle}/llms.txt lists no links")
-        if any(not l.startswith("- [") for l in bullets):
-            fail(f"{bundle}/llms.txt has a bullet that is not a Markdown link")
-        for l in bullets:
-            if not re.search(r"^- \[[^\]]+\]\(https?://[^)]+\)", l):
-                fail(f"{bundle}/llms.txt has a malformed link: {l!r}")
+        # `robots` and `llms` are pass-through files: the bundle carries exactly the bytes
+        # the author pointed at, or no file at all. Assert that, because it is the contract
+        # that replaced generating them.
+        # Only the blog example opts in, by pointing at `examples/blog/*.txt`. Compare the
+        # bundle against the repository file, not against the bundle itself, or the check
+        # passes no matter what the recipe does.
+        if bundle.name == "blog":
+            for name in ("robots.txt", "llms.txt"):
+                source = pathlib.Path.cwd() / "examples" / "blog" / name
+                got = bundle / name
+                if not got.is_file():
+                    fail(f"missing {bundle}/{name}")
+                if got.read_bytes() != source.read_bytes():
+                    fail(f"{bundle}/{name} is not a byte-for-byte copy of {source}")
+        else:
+            for name in ("robots.txt", "llms.txt"):
+                if (bundle / name).exists():
+                    fail(f"{bundle}/{name} exists but the site did not pass `path(...)`")
         # The Tadi source for the home page is `site.typ` (`source-path-for("index.html")`),
         # not `index.typ`. Assert the documented mapping rather than a literal name.
         if not (bundle / "site.typ").is_file():
@@ -446,15 +440,12 @@ release *args:
         if subprocess.run(["git", "remote", "get-url", "origin"], capture_output=True).returncode:
             problems.append("no 'origin' remote configured")
 
-        # A tag on a commit that CI never saw, or that origin does not have, produces a
-        # release whose workflow either never runs or runs against a different tree.
+        # A tag on a commit that origin does not have produces a release whose workflow
+        # either never runs or runs against a different tree. The branch itself does not
+        # matter: tagging the default branch is normal for a single-maintainer project.
         branch = subprocess.run(
             ["git", "rev-parse", "--abbrev-ref", "HEAD"], capture_output=True, text=True,
         ).stdout.strip()
-        if branch in ("main", "master", "HEAD"):
-            problems.append(
-                f"current branch is {branch!r}; release from a topic branch so the tag is not on the default branch"
-            )
         subprocess.run(["git", "fetch", "--quiet", "--tags", "origin"], check=False)
         head = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
         remote = subprocess.run(

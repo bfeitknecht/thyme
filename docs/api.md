@@ -56,7 +56,6 @@ If a name is listed here but missing from the manual, treat this file as authori
 | Name | Purpose |
 | :--- | :--- |
 | `sitemap-xml` | Render `sitemap.xml`. |
-| `llms-txt` | Render `llms.txt`, a curated Markdown index for language models (`llmstxt.org`). |
 | `robots-txt` | Render `robots.txt` pointing at the sitemap. |
 | `rss-xml` | Render RSS 2.0. |
 | `atom-xml` | Render Atom 1.0. |
