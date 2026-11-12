@@ -22,7 +22,7 @@ The core is zero-CSS and unopinionated. Import it (`#import "@preview/thyme:0.1.
 - **Typed Hypertagged HTML (`htm` & `h`)**: Author raw HTML fragments (`developit/htm`-style) with `{slot}` Typst `content` interpolation (`math`, `@label` links, components), full named/decimal/hex HTML entity decoding, and HTML5 tag-balance validation, or CSS-selector hyperscript (`#h("section#work.grid", ...)`), backed directly by Typst `0.15.1`'s built-in [typed `html.*` constructors](https://typst.app/docs/reference/html/typed/) (`#h(1fr)` still forwards transparently to `std.h`).
 - **Tadi Web `.typ` Source Transparency**: Mounting pages via capability `path(...)` (`src: path("site.typ")`, `#mount(path("contact.typ"))`, `#post(path("posts/foo.typ"))`) co-emits verbatim `.typ` source files (`/site.typ`, `/contact.typ`, `/posts/foo.typ`) and adds a monospace `.typ` link in the top bar.
 - **Single-URL Zero-JS CSS i18n & `hreflang` Alternates**: Write `#tr(en: [...], de: [...])` inline or look up keys from a `@preview/linguify`-compatible `lang.toml` dictionary (`#tr("key", from: toml("lang.toml"))`); `thyme` emits a CSS `:root:has(#thyme-lang-de:checked)` switcher (`en · de`) in the top bar **only on bilingual pages**, honors `set text(lang: ...)` in paged PDFs, and supports multi-URL `alternates` across `<head>` and `sitemap.xml`.
-- **SEO, Full-HTML Syndication & Academic Metadata**: Emits valid `sitemap.xml`, `robots.txt`, `llms.txt`, `404.html`, and summary or **full semantic HTML** RSS 2.0 (`rss.xml`) & Atom 1.0 (`atom.xml`) feeds (`feed-content: "summary" | "full"`) via `@preview/syndicate`, plus opt-in OpenGraph (`og:*`) and Google Scholar Highwire (`citation_*`) `<meta>` tags.
+- **SEO, Full-HTML Syndication & Academic Metadata**: Emits valid `sitemap.xml`, `404.html`, and summary or **full semantic HTML** RSS 2.0 (`rss.xml`) & Atom 1.0 (`atom.xml`) feeds (`feed-content: "summary" | "full"`) via `@preview/syndicate`, plus opt-in OpenGraph (`og:*`) and Google Scholar Highwire (`citation_*`) `<meta>` tags.
 - **Scholarly `blog` Preset**: Perceptual `oklch` / `light-dark()` monochrome palette, unified _STIX Two Text_ (`smcp` / `c2sc` small caps) + _STIX Two Math_ + _Helvetica Neue_ + _Commit Mono_ stacks (`font-faces: auto | none | str`, deterministic zero-`local()` `@font-face` rules, and one-line self-hosting via `font-base: "/fonts/"` + `font-version`), AST-normalized native MathML (`with-html-math` — crisp inline `$F(e)$` & `$F(d^*)` without `measure()` or SVG hacks), content-hashed `css/style.css?v=<hash>`, conditional copy-button JS (`copy-button: auto` — zero `<script>` on codeless pages), `@preview/marge` sidenotes + `#mcite` margin bibliography citations, static `/tags/<tag>/` archive pages, `#toc()`, compile-time `#backlinks()`, `#post-nav()`, `spicky`-style math/proof environments, `zebraw`, `tablem`, and `cheq`.
 
 ---
@@ -104,35 +104,25 @@ Bring your own `styles.css` with zero preset styles injected (see [`examples/por
 
 ---
 
-## `llms.txt` and `robots.txt` for Machines
+## `robots.txt` and `llms.txt`
 
-Every bundle emits `llms.txt`, a Markdown index that follows the proposal at
-[llmstxt.org](https://llmstxt.org): one `#` title, one `>` summary, then `##` sections of
-`- [title](url): description` lines. It is generated from the public pages, grouped by
-collection, so a blog lists its posts apart from its other pages.
-
-`robots` and `llms` take the same three values, so neither ties you to this package's idea of
-the format:
-
-| Value | Effect |
-| :--- | :--- |
-| `auto` (default) | Generate it. `llms.txt` and `robots.txt` both appear whenever `sitemap-path` is set. |
-| `true` / `false` | Generate it regardless of the sitemap, or omit the file entirely. |
-| `path(...)` | **Copy your own file verbatim.** Nothing is parsed, generated or reformatted. |
+Both files have formats this package would only guess at, so it does not write them. You
+provide the file and point at it; the bytes are copied into the bundle root unchanged.
 
 ```typ
 #show: site.with(
   url: "https://example.org",
-  robots: path("my-robots.txt"),
-  llms: path("my-llms.txt"),
+  robots: path("robots.txt"),
+  llms: path("llms.txt"),
 )
 ```
 
-Write the file however you like and point at it. That is the whole contract: the contents are
-yours, and a change to this package cannot alter them. Both are plain text, so the file is
-emitted unchanged.
+Leave either unset and no file is emitted. There is no third state: a site either carries the
+file you wrote or it carries nothing.
 
-Use `llms-txt(...)` directly when you want the generated string outside a bundle.
+`robots-txt(...)` is exported if you want a starting point for a `robots.txt`. Run it, look at
+the output, then keep the file it produces. [`llms.txt`](https://llmstxt.org) is a short
+Markdown file, so it is easier to write directly than to generate.
 
 ---
 
@@ -162,7 +152,7 @@ What the version number promises:
 | Names re-exported by `#import "@preview/thyme:0.1.0": *` | **Stable** across `0.x` patch releases; renamed only in a minor release, with the old name gone (no deprecation aliases; see below). |
 | Names re-exported by `#import blog: *` | Same as above. |
 | Named arguments of `site`, `blog.site`, `webpage`, `post`, `mount`, `file`, `page-asset` | **Stable** across patch releases. Additive parameters are non-breaking. |
-| Emitted file layout (`index.html`, `404.html`, `.typ` siblings, `sitemap.xml`, `robots.txt`, `llms.txt`, `rss.xml`, `atom.xml`, `tags/`) | **Stable**; new optional outputs only behind opt-in options. |
+| Emitted file layout (`index.html`, `404.html`, `.typ` siblings, `sitemap.xml`, `rss.xml`, `atom.xml`, `tags/`, plus `robots.txt` / `llms.txt` when you pass `path(...)`) | **Stable**; new optional outputs only behind opt-in options. |
 | CSS class names (`blog-*`, `thyme-*`) | Treat as **semi-public**. They are used for theming and styling, so a change ships with a CHANGELOG note. |
 | Anything prefixed `_` in `src/` | **Private**. No guarantee; may change in any release. |
 
