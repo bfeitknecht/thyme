@@ -358,6 +358,9 @@ _stage out name version:
         shutil.copy2(item, dest)
     for item in ("src", "template", "examples"):
         shutil.copytree(item, dest / item)
+    # The README links this file, and the Universe checker resolves a relative link
+    # against the submitted payload, so it has to be in it.
+    shutil.copy2("docs/api.md", dest / "docs" / "api.md")
     shutil.copy2("docs/manual.pdf", dest / "docs" / "manual.pdf")
     for item in ("preview-light.png", "preview-dark.png"):
         shutil.copy2(pathlib.Path("assets") / item, dest / "assets" / item)

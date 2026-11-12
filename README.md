@@ -1,9 +1,9 @@
 # `thyme`
 
-**Pure-Typst static site generator with typed hypertagged HTML, Tadi Web `.typ` source transparency, zero-JS CSS i18n, XML sitemaps & feeds, and a monochrome scholarly `blog` preset.**
+**Static site generator with typed hypertagged HTML, `.typ` source transparency, zero-JS CSS i18n, XML sitemaps & feeds, and a monochrome scholarly `blog` preset.**
 
 [![Manual PDF](https://img.shields.io/badge/docs-manual.pdf-black)](docs/manual.pdf)
-[![Typst >= 0.15.1](https://img.shields.io/badge/typst-%3E%3D%200.15.1-239dad)](https://typst.app)
+[![Typst >= 0.15.0](https://img.shields.io/badge/typst-%3E%3D%200.15.0-239dad)](https://typst.app)
 [![License: MIT AND MIT-0](https://img.shields.io/badge/license-MIT%20AND%20MIT--0-444444)](LICENSE)
 
 | Light (`oklch` monochrome) | Dark (`light-dark()`) |
@@ -14,7 +14,7 @@
 
 The core is zero-CSS and unopinionated. Import it (`#import "@preview/thyme:0.1.0": *`) to build a site with your own stylesheet. The `blog` preset adds a monochrome scholarly theme: native MathML, right-margin sidenotes and citations, static `/tags/` archives, backlinks, Obsidian frontmatter, theorem and proof environments, and two-column print output.
 
-The public surface is nine names in core and forty-one in `blog`. Everything else in `src/` is a module-level function that `site` and the presets call; the module paths are stable, the names inside them are not. See [`docs/api.md`](docs/api.md).
+The public surface is eight names in core and thirty-nine in `blog`. Everything else in `src/` is a module-level function that `site` and the presets call; the module paths are stable, the names inside them are not. See [`docs/api.md`](docs/api.md).
 
 ---
 
