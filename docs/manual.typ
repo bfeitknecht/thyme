@@ -466,7 +466,7 @@
     font: t.mono-fonts,
     size: 0.9em,
     fill: t.muted-light,
-  )[v0.1.0 · Typst >= 0.15.1]
+  )[v0.1.0 · Typst >= 0.15.0]
   v(0.35em)
   text(size: 1.14em, fill: t.muted-light, emph[
     Pure-Typst static site generator with typed hypertagged HTML, Tadi Web .typ source transparency, zero-JS CSS i18n, XML sitemaps & feeds, and a monochrome blog preset.
@@ -505,7 +505,7 @@
 
 = Two-Layer Architecture & Pure-Typst Workflow
 
-`thyme` separates static-site orchestration from visual theming across two composable layers, driven exclusively by the standard `typst` CLI (`typst compile` and `typst watch`) without external wrapper CLIs or client-side JavaScript runtimes#sidenote[Typst `0.15.1`'s `typst watch -f bundle` includes a built-in live-reloading HTTP server (`--port`, `--no-reload`, `--no-serve`).]:
+`thyme` separates static-site orchestration from visual theming across two composable layers, driven exclusively by the standard `typst` CLI (`typst compile` and `typst watch`) without external wrapper CLIs or client-side JavaScript runtimes#sidenote[Typst `0.15`'s `typst watch -f bundle` includes a built-in live-reloading HTTP server (`--port`, `--no-reload`, `--no-serve`).]:
 
 #v(1.4em)
 #wide[

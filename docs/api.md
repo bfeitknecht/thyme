@@ -1,6 +1,6 @@
 # API surface
 
-The public surface of `@preview/thyme` is **nine names in core and forty-one in
+The public surface of `@preview/thyme` is **eight names in core and thirty-nine in
 `blog`**. It holds only what a site author writes by hand; everything that `site`, the
 page shell or the presets apply for you is not in it.
 
