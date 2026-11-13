@@ -168,9 +168,7 @@
   /// -> content | str | none
   body,
 ) = {
-  _to-word-text(body)
-    .matches(regex("[\\p{L}\\p{N}]+(?:[-'\\u{2019}][\\p{L}\\p{N}]+)*"))
-    .len()
+  _to-word-text(body).matches(regex("[\\p{L}\\p{N}]+(?:[-'\\u{2019}][\\p{L}\\p{N}]+)*")).len()
 }
 
 /// Emit a zero-footprint `<thyme-word-hint>` marker from inside `context`-wrapped
@@ -220,9 +218,7 @@
     let ends = query(<thyme-body-end>)
     if starts.len() > 0 and ends.len() > 0 {
       query(
-        selector(<thyme-word-hint>)
-          .after(starts.last().location())
-          .before(ends.last().location()),
+        selector(<thyme-word-hint>).after(starts.last().location()).before(ends.last().location()),
       )
     } else {
       query(<thyme-word-hint>)

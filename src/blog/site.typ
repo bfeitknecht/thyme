@@ -7,22 +7,17 @@
 // `rss.xml`, and `atom.xml`.
 
 #import "../core.typ": (
-  backlinks as render-backlinks, extract-first-h1, query-pages, render-top-bar,
-  resolve-core-mount, site as core-site,
+  backlinks as render-backlinks, extract-first-h1, query-pages, render-top-bar, resolve-core-mount, site as core-site,
 )
 #import "../i18n.typ": resolve-page-langs
 #import "../paths.typ": (
-  date-sort-key, emit-doc-marker, format-date, join-path, post-html-path,
-  rel-href, resolve-bundle-label, route-html-path, slugify, unwrap-typ-path,
-  with-html-headings,
+  date-sort-key, emit-doc-marker, format-date, join-path, post-html-path, rel-href, resolve-bundle-label,
+  route-html-path, slugify, unwrap-typ-path, with-html-headings,
 )
 #import "../text.typ": count-words
 #import "html.typ": render-html-shell, render-not-found-page
 #import "post.typ": post
-#import "theme.typ": (
-  active-theme, resolve-theme, stylesheet-asset-path, stylesheet-css,
-  stylesheet-href,
-)
+#import "theme.typ": active-theme, resolve-theme, stylesheet-asset-path, stylesheet-css, stylesheet-href
 
 // Shared entry card renderer for both inline `#post(...)` mounts and `#posts()`.
 #let _render-entry-card(
@@ -171,9 +166,7 @@
   let pm = m.meta
   let is-post = pm.at("collection", default: "posts") == "posts"
   if (
-    not is-post
-      or pm.at("draft", default: false)
-      or pm.at("unlisted", default: false)
+    not is-post or pm.at("draft", default: false) or pm.at("unlisted", default: false)
   ) {
     return []
   }

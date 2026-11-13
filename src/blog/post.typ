@@ -5,23 +5,18 @@
 #import "@preview/cheq:0.4.0": checklist
 #import "@preview/zebraw:0.6.3": zebraw-init
 #import "../core.typ": (
-  backlinks, extract-page-assets, extract-page-meta, lookup-source-href, mount,
-  normalize-assets, page-asset, query-doc-tr-codes, query-pages, render-top-bar,
-  site-config,
+  backlinks, extract-page-assets, extract-page-meta, lookup-source-href, mount, normalize-assets, page-asset,
+  query-doc-tr-codes, query-pages, render-top-bar, site-config,
 )
 #import "../i18n.typ": assert-complete-translations, resolve-page-langs
 #import "../paths.typ": (
-  date-sort-key, find-doc-containing, format-date, join-path, rel-href,
-  slug-from-path, slugify, with-html-headings, with-smart-refs,
+  date-sort-key, find-doc-containing, format-date, join-path, rel-href, slug-from-path, slugify, with-html-headings,
+  with-smart-refs,
 )
 #import "../text.typ": count-words, estimate-reading-minutes, query-body-words
 #import "html.typ": render-html-shell
-#import "notes.typ": (
-  is-sidenote-link, reset-sidenotes, sidenote, sidenote-bottom-guard,
-)
-#import "theme.typ": (
-  active-theme, resolve-theme, theme-default, theme-override-css,
-)
+#import "notes.typ": is-sidenote-link, reset-sidenotes, sidenote, sidenote-bottom-guard
+#import "theme.typ": active-theme, resolve-theme, theme-default, theme-override-css
 
 #let _paged-sec-counter = counter("blog/paged-sec")
 
@@ -489,9 +484,7 @@
       false
     }
     let link-tags = (
-      site-config != none
-        and site-config.at("tag-pages", default: false)
-        and doc-path != none
+      site-config != none and site-config.at("tag-pages", default: false) and doc-path != none
     )
     let tags-dir = if site-config != none {
       site-config.at("tags-dir", default: "tags")

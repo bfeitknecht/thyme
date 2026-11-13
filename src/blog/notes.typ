@@ -1,9 +1,7 @@
 // Dual-target perceptual `oklch` monochrome margin sidenotes, margin notes,
 // and margin-routed bibliography citations (`mcite`).
 
-#import "@preview/marge:0.1.0": (
-  container as marge-container, sidenote as marge-sidenote,
-)
+#import "@preview/marge:0.1.0": container as marge-container, sidenote as marge-sidenote
 #import "../text.typ": word-hint
 #import "theme.typ": active-theme
 

@@ -6,8 +6,8 @@
 [![Typst >= 0.15.0](https://img.shields.io/badge/typst-%3E%3D%200.15.0-239dad)](https://typst.app)
 [![License: MIT AND MIT-0](https://img.shields.io/badge/license-MIT%20AND%20MIT--0-444444)](LICENSE)
 
-| Light (`oklch` monochrome) | Dark (`light-dark()`) |
-| :---: | :---: |
+|         Light (`oklch` monochrome)         |          Dark (`light-dark()`)           |
+| :----------------------------------------: | :--------------------------------------: |
 | ![Light preview](assets/preview-light.png) | ![Dark preview](assets/preview-dark.png) |
 
 `thyme` builds static sites from Typst's native `bundle` and typed `html` targets. The standard `typst` CLI does the work: `typst compile` and `typst watch` need no wrapper CLI and no client-side JavaScript.
@@ -143,15 +143,15 @@ name.
 
 What the version number promises:
 
-| Surface | Guarantee |
-| :--- | :--- |
-| Names re-exported by `#import "@preview/thyme:0.1.0": *` | **Stable** across `0.x` patch releases; renamed only in a minor release, with the old name gone (no deprecation aliases; see below). |
-| Names re-exported by `#import blog: *` | Same as above. |
-| Everything else in `src/` (module-level functions) | **Not public.** Importable, and the module paths are stable, but the names change whenever the engine or a preset needs them to. |
-| Named arguments of `site`, `blog.site`, `webpage`, `post`, `mount`, `file` | **Stable** across patch releases. Additive parameters are non-breaking. |
-| Emitted file layout (`index.html`, `404.html`, `.typ` siblings, `sitemap.xml`, `rss.xml`, `atom.xml`, `tags/`, plus `robots.txt` / `llms.txt` when you pass `path(...)`) | **Stable**; new optional outputs only behind opt-in options. |
-| CSS class names (`blog-*`, `thyme-*`) | Treat as **semi-public**. They are used for theming and styling, so a change ships with a CHANGELOG note. |
-| Anything prefixed `_` in `src/` | **Private**. No guarantee; may change in any release. |
+| Surface                                                                                                                                                                  | Guarantee                                                                                                                            |
+| :----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------- |
+| Names re-exported by `#import "@preview/thyme:0.1.0": *`                                                                                                                 | **Stable** across `0.x` patch releases; renamed only in a minor release, with the old name gone (no deprecation aliases; see below). |
+| Names re-exported by `#import blog: *`                                                                                                                                   | Same as above.                                                                                                                       |
+| Everything else in `src/` (module-level functions)                                                                                                                       | **Not public.** Importable, and the module paths are stable, but the names change whenever the engine or a preset needs them to.     |
+| Named arguments of `site`, `blog.site`, `webpage`, `post`, `mount`, `file`                                                                                               | **Stable** across patch releases. Additive parameters are non-breaking.                                                              |
+| Emitted file layout (`index.html`, `404.html`, `.typ` siblings, `sitemap.xml`, `rss.xml`, `atom.xml`, `tags/`, plus `robots.txt` / `llms.txt` when you pass `path(...)`) | **Stable**; new optional outputs only behind opt-in options.                                                                         |
+| CSS class names (`blog-*`, `thyme-*`)                                                                                                                                    | Treat as **semi-public**. They are used for theming and styling, so a change ships with a CHANGELOG note.                            |
+| Anything prefixed `_` in `src/`                                                                                                                                          | **Private**. No guarantee; may change in any release.                                                                                |
 
 ### Deliberately no deprecation aliases
 
@@ -160,6 +160,46 @@ new one. Accumulating aliases would make the public surface grow without bound a
 impossible to tell which spelling is canonical. The CHANGELOG records every rename, and a frozen
 downstream can simply stay pinned to its existing version — the compile-time package model makes a
 rename a non-event for anyone who is not actively upgrading.
+
+---
+
+## Documentation & Examples
+
+- **[API Surface (`docs/api.md`)](docs/api.md)**: the exported surface of the core and the `blog` preset, grouped by purpose.
+- **[Package Reference Manual (`docs/manual.pdf`)](docs/manual.pdf)**: API documentation generated from source doc-comments with `@preview/tidy:0.4.3`.
+- **[`template/`](template)**: starter monochrome blog (`typst init @preview/thyme:0.1.0`).
+- **[`examples/portfolio/`](examples/portfolio)**: zero-CSS core `thyme` site using a custom `styles.css`, plus native `html.elem`, `#tr(en: ..., de: ...)`, `file` and `webpage`.
+- **[`examples/blog/`](examples/blog)**: a `blog.site` showcase with bilingual `en`/`de` switching (`#tr(...)` and `lang.toml`), co-located folder assets (`posts/state-machine/{site.typ,dfa.svg}`), mounted `webpage` subpages (`about.typ`), full-HTML Atom and RSS feeds, static `/tags/` archives, `#toc()`, `#mcite(...)` margin citations, compile-time backlinks, post navigation, and OpenGraph and Google Scholar `<meta>` tags.
+
+---
+
+## License
+
+Dual-licensed under **`MIT AND MIT-0`** ([`LICENSE`](LICENSE)):
+
+- Library source (`src/`): **MIT**
+- Starter template & examples (`template/`, `examples/`): **MIT-0** (No Attribution)
+
+---
+
+## Contributing
+
+### Hacking on thyme
+
+`just check` verifies the whole repository: the three example sites, the unit tests and the
+manual. It uses the compiler version pinned in `typst.toml` and does not write to the worktree.
+
+```sh
+just fmt           # format every .typ file
+just fmt --check   # verify formatting without writing
+just lint          # ruff over the Python, typstyle over the Typst
+just check         # the full gate; read-only, writes nothing
+just preview       # template/ + examples/ into a browsable preview/
+```
+
+`typstyle` is not part of the Typst CLI. Install it with
+`cargo install typstyle --version 0.15.2 --locked`.
+The CI setup action pins the same version, so local and CI formatting cannot drift.
 
 ### Releasing
 
@@ -181,33 +221,6 @@ filled-in PR text once it has pushed, and the workflow prints the same text when
 refused. Both fill in `.github/universe-pr.md` from `typst.toml`. Open the link, paste the
 body, and the PR is done. `just release --pr` reprints it later without releasing anything.
 
-### Freezing a downstream
-
-To stabilise a site against upstream churn, pin the exact patch version and let CI hold it:
-
-```typ
-// site.typ: pinned; bump it explicitly
-#import "@preview/thyme:0.1.0": *
-```
-
-`just check` verifies the whole repository: the three example sites, the unit tests and the
-manual. It uses the compiler version pinned in `typst.toml`. A dependency bump is therefore one
-PR that passes or does not merge. The recipe does not write to the worktree.
-
-### Hacking on thyme
-
-```sh
-just fmt           # format every .typ file
-just fmt --check   # verify formatting without writing
-just lint          # ruff over the Python, typstyle over the Typst
-just check         # the full gate; read-only, writes nothing
-just preview       # template/ + examples/ into a browsable preview/
-```
-
-`typstyle` is not part of the Typst CLI. Install it with
-`cargo install typstyle --version 0.15.1 --locked`.
-The CI setup action pins the same version, so local and CI formatting cannot drift.
-
 Releasing is one command, with a read-only mode so you can validate before you tag:
 
 ```sh
@@ -215,21 +228,3 @@ just release 0.1.0 --check     # version vs typst.toml vs CHANGELOG.md, nothing 
 just release 0.1.0             # the gate, then commit, tag v0.1.0, and push
 just release --notes           # the CHANGELOG section, as CI publishes it
 ```
-
----
-
-## Documentation & Examples
-
-- **[API Surface (`docs/api.md`)](docs/api.md)**: the exported surface of the core and the `blog` preset, grouped by purpose.
-- **[Package Reference Manual (`docs/manual.pdf`)](docs/manual.pdf)**: API documentation generated from source doc-comments with `@preview/tidy:0.4.3`.
-- **[`template/`](template)**: starter monochrome blog (`typst init @preview/thyme:0.1.0`).
-- **[`examples/portfolio/`](examples/portfolio)**: zero-CSS core `thyme` site using a custom `styles.css`, plus native `html.elem`, `#tr(en: ..., de: ...)`, `file` and `webpage`.
-- **[`examples/blog/`](examples/blog)**: a `blog.site` showcase with bilingual `en`/`de` switching (`#tr(...)` and `lang.toml`), co-located folder assets (`posts/state-machine/{site.typ,dfa.svg}`), mounted `webpage` subpages (`about.typ`), full-HTML Atom and RSS feeds, static `/tags/` archives, `#toc()`, `#mcite(...)` margin citations, compile-time backlinks, post navigation, and OpenGraph and Google Scholar `<meta>` tags.
-
----
-
-## License
-
-Dual-licensed under **`MIT AND MIT-0`** ([`LICENSE`](LICENSE)):
-- Library source (`src/`): **MIT**
-- Starter template & examples (`template/`, `examples/`): **MIT-0** (No Attribution)

@@ -167,8 +167,7 @@
           style-args.label-prefix + fn.name + "." + name.trim("."),
         )
         let linked-name = if (
-          style-args.enable-cross-references
-            and info.at("description", default: "") != ""
+          style-args.enable-cross-references and info.at("description", default: "") != ""
         ) {
           link(target-lbl, name)
         } else {
@@ -482,20 +481,15 @@
         columns: (6.8em, 1fr),
         row-gutter: 0.34em,
         column-gutter: 0.9em,
-        text(fill: t.muted-light)[core ssg],
-        [`#import "@preview/thyme:0.1.0": *`],
+        text(fill: t.muted-light)[core ssg], [`#import "@preview/thyme:0.1.0": *`],
 
-        text(fill: t.muted-light)[blog preset],
-        [`#import blog: *` or `blog.site.with(...)`],
+        text(fill: t.muted-light)[blog preset], [`#import blog: *` or `blog.site.with(...)`],
 
-        text(fill: t.muted-light)[scaffold],
-        [`typst init @preview/thyme:0.1.0 my-site`],
+        text(fill: t.muted-light)[scaffold], [`typst init @preview/thyme:0.1.0 my-site`],
 
-        text(fill: t.muted-light)[dev / build],
-        [`typst watch --features html,bundle -f bundle site.typ dist`],
+        text(fill: t.muted-light)[dev / build], [`typst watch --features html,bundle -f bundle site.typ dist`],
 
-        text(fill: t.muted-light)[license],
-        [`MIT` (`src/`) · `MIT-0` (`template/`, `examples/`)],
+        text(fill: t.muted-light)[license], [`MIT` (`src/`) · `MIT-0` (`template/`, `examples/`)],
       )
     },
   )

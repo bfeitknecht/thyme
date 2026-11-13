@@ -170,15 +170,7 @@
   let l-str = str(calc.round(l / 1%, digits: 2)) + "%"
   if a < 100% {
     (
-      "oklch("
-        + l-str
-        + " "
-        + str(c-clean)
-        + " "
-        + h-clean
-        + " / "
-        + str(calc.round(a / 1%, digits: 2))
-        + "%)"
+      "oklch(" + l-str + " " + str(c-clean) + " " + h-clean + " / " + str(calc.round(a / 1%, digits: 2)) + "%)"
     )
   } else {
     "oklch(" + l-str + " " + str(c-clean) + " " + h-clean + ")"
@@ -301,10 +293,7 @@
       font-version: t.at("font-version", default: none),
     )
     let used = (
-      _font-list(t.serif-fonts)
-        + _font-list(t.math-fonts)
-        + _font-list(t.sans-fonts)
-        + _font-list(t.mono-fonts)
+      _font-list(t.serif-fonts) + _font-list(t.math-fonts) + _font-list(t.sans-fonts) + _font-list(t.mono-fonts)
     )
     let blocks = ()
     for (fam, css-block) in builtin.pairs() {
@@ -349,9 +338,7 @@
     "__SURF1_DARK__": css-oklch(t.surface-1-dark),
     "__SURF2_DARK__": css-oklch(t.surface-2-dark),
   )
-  token-map
-    .pairs()
-    .fold(read("style.css"), (css, pair) => css.replace(pair.at(0), pair.at(1)))
+  token-map.pairs().fold(read("style.css"), (css, pair) => css.replace(pair.at(0), pair.at(1)))
 }
 
 // Build a compact per-post `:root` CSS custom-property override block when a post inside
