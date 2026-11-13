@@ -14,10 +14,9 @@
 #import "notes.typ": mcite, mn, sidenote, sn
 
 #import "components.typ": (
-  callout, codeblock, corollary, definition, diagram, epigraph, example,
-  grid-table, hr, important-box, kbd, lemma, links, note-box, proof,
-  proposition, recipe, remark, sbox, tablem, theorem, three-line-table, tip-box,
-  toc, warning-box, wide, zebraw,
+  callout, codeblock, corollary, definition, diagram, epigraph, example, grid-table, hr, important-box, kbd, lemma,
+  links, note-box, proof, proposition, recipe, remark, sbox, tablem, theorem, three-line-table, tip-box, toc,
+  warning-box, wide, zebraw,
 )
 
 #import "post.typ": post

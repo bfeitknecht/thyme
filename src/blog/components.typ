@@ -4,13 +4,9 @@
 
 #import "@preview/cheq:0.4.0": checklist
 #import "@preview/showybox:2.0.4": showybox
-#import "@preview/tablem:0.3.0": (
-  tablem as _tablem, three-line-table as _three-line-table,
-)
+#import "@preview/tablem:0.3.0": tablem as _tablem, three-line-table as _three-line-table
 #import "@preview/zebraw:0.6.3": zebraw as _zebraw, zebraw-init, zebraw-themes
-#import "../paths.typ": (
-  find-doc-containing, heading-anchor-id, resolve-abs-length,
-)
+#import "../paths.typ": find-doc-containing, heading-anchor-id, resolve-abs-length
 #import "../text.typ": to-plain-text, word-hint
 #import "theme.typ": active-theme
 
@@ -741,9 +737,7 @@
     let ends = query(selector(<thyme-body-end>).within(enc-doc.location()))
     if starts.len() > 0 and ends.len() > 0 {
       query(
-        selector(heading)
-          .after(starts.first().location())
-          .before(ends.first().location()),
+        selector(heading).after(starts.first().location()).before(ends.first().location()),
       )
     } else {
       query(selector(heading).within(enc-doc.location()))
@@ -753,9 +747,7 @@
     let ends = query(selector(<thyme-body-end>).after(here()))
     if starts.len() > 0 and ends.len() > 0 {
       query(
-        selector(heading)
-          .after(starts.last().location())
-          .before(ends.first().location()),
+        selector(heading).after(starts.last().location()).before(ends.first().location()),
       )
     } else {
       query(heading)

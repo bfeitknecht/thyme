@@ -63,10 +63,10 @@ runs:
         # is what `just fmt` drives.
         # Pin it: typstyle's output changes between releases (it adds/removes trailing
         # commas and parentheses), so a floating version makes `just fmt` on one machine
-        # report a clean tree that `just fmt --check` on CI rejects. 0.15.1 is the version
+        # report a clean tree that `just fmt --check` on CI rejects. 0.15.2 is the version
         # the tree is formatted with; bumping it means re-running `just fmt` in the same
         # commit.
         if ! command -v typstyle >/dev/null 2>&1; then
-          cargo install typstyle --version 0.15.1 --locked
+          cargo install typstyle --version 0.15.2 --locked
         fi
         echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"

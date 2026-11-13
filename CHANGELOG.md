@@ -17,8 +17,8 @@ Making markup your own is Typst's job. A site writes plain Typst content, and re
 `html.elem` when content cannot express what it needs. `thyme` stays out of the way.
 
 - **No HTML builder of its own.** Markup that plain Typst content cannot express goes
-  through Typst's typed `html.*` constructors: `html.elem("div", attrs: (class: "note"),
-  body)`. Inline math, `@label` references and components interpolate as usual.
+  through Typst's typed `html.*` constructors: `html.elem("div", attrs: (class: "note"), body)`.
+  Inline math, `@label` references and components interpolate as usual.
 - **The surface is `site`, `webpage`, `mount`, `file`, `backlinks`, `tr`, `robots-txt`**,
   plus `blog` for the preset. Everything else is a module-level function: importable, with
   stable module paths, and without a compatibility promise. `docs/api.md` lists what left
@@ -29,8 +29,8 @@ Making markup your own is Typst's job. A site writes plain Typst content, and re
 
 ### Core
 
-- **`site(...)` compiles a Typst directory into a static site.** One `typst compile
-  --features html,bundle` writes `index.html`, every mounted page, `404.html`, `sitemap.xml`,
+- **`site(...)` compiles a Typst directory into a static site.** One `typst compile --features html,bundle`
+  writes `index.html`, every mounted page, `404.html`, `sitemap.xml`,
   optional RSS 2.0 and Atom 1.0 feeds, and a sibling `.typ` source for each page. No wrapper
   CLI and no client-side JavaScript.
 - **Pages are ordinary Typst files.** `webpage(...)` declares one, `mount(path(...))` includes
@@ -47,8 +47,8 @@ Making markup your own is Typst's job. A site writes plain Typst content, and re
   translate every block: `site` and `blog.post` panic on a missing branch and name the language,
   because a gap is obvious on a two-language page and easy to ship on a six-language one.
 - **Feeds, sitemaps and metadata are emitted by `site(...)`.** XML is built through
-  [`@preview/syndicate:0.1.0`](https://github.com/bfeitknecht/syndicate), with `feed-content:
-  "summary" | "full"` selecting compact descriptions or full semantic HTML. Pages carry
+  [`@preview/syndicate:0.1.0`](https://github.com/bfeitknecht/syndicate), with `feed-content: "summary" | "full"`
+  selecting compact descriptions or full semantic HTML. Pages carry
   OpenGraph and Google Scholar Highwire tags.
 
 ### Blog preset
@@ -80,6 +80,6 @@ Making markup your own is Typst's job. A site writes plain Typst content, and re
   without writing to the tree. `fmt` and `lint` cover formatting. `preview` serves the template
   with live reload.
 - **`just release X.Y.Z` cuts a release.** It takes the version, derives the `vX.Y.Z` tag, checks
-  it against `typst.toml` and this file, runs the full gate, rebuilds `docs/manual.pdf` and `thumbnail.png`, then pushes the
-  commit and the tag together. The tag starts a workflow that publishes the GitHub Release and
+  it against `typst.toml` and this file, runs the full gate, rebuilds `docs/manual.pdf` and `thumbnail.png`,
+  then pushes the commit and the tag together. The tag starts a workflow that publishes the GitHub Release and
   submits the package to Typst Universe.

@@ -58,11 +58,7 @@
   }
   let r = repr(p).trim()
   if r.starts-with("path(\"") and r.ends-with("\")") {
-    let inner = r
-      .slice(6, r.len() - 2)
-      .replace("\\\"", "\"")
-      .replace("\\\\", "\\")
-      .trim("/")
+    let inner = r.slice(6, r.len() - 2).replace("\\\"", "\"").replace("\\\\", "\\").trim("/")
     if inner.starts-with("./") { inner.slice(2) } else { inner }
   } else {
     none
@@ -214,9 +210,7 @@
   let to-parts = str(to-path).trim("/").split("/").filter(s => s.len() > 0)
   let common = 0
   while (
-    common < from-parts.len()
-      and common < to-parts.len() - 1
-      and from-parts.at(common) == to-parts.at(common)
+    common < from-parts.len() and common < to-parts.len() - 1 and from-parts.at(common) == to-parts.at(common)
   ) {
     common += 1
   }
@@ -341,8 +335,7 @@
     el.func() == metadata
       and type(el.value) == dictionary
       and (
-        el.value.at("thyme-mounted", default: false)
-          or el.value.at("thyme-paged-ref", default: false)
+        el.value.at("thyme-mounted", default: false) or el.value.at("thyme-paged-ref", default: false)
       )
   ))
   if mount-meta.len() > 0 {
@@ -449,9 +442,7 @@
       let markers = query(selector(<thyme-doc-marker>).before(it.location()))
       let priors = if markers.len() > 0 {
         query(
-          selector(heading)
-            .after(markers.last().location())
-            .before(it.location()),
+          selector(heading).after(markers.last().location()).before(it.location()),
         )
       } else {
         query(selector(heading).before(it.location()))
@@ -549,8 +540,7 @@
         func == metadata
           and type(el.value) == dictionary
           and (
-            el.value.at("thyme-mounted", default: false)
-              or el.value.at("thyme-paged-ref", default: false)
+            el.value.at("thyme-mounted", default: false) or el.value.at("thyme-paged-ref", default: false)
           )
       ) {
         [#metadata((target: str(it.target)))<thyme-outbound-ref>]
@@ -630,17 +620,13 @@
   for d in query(document) {
     let dp = if d.path != none { str(d.path).trim("/") } else { "" }
     if (
-      dp.ends-with(".html")
-        and dp != "404.html"
-        and dp != "index.html"
-        and dp != clean-excl
+      dp.ends-with(".html") and dp != "404.html" and dp != "index.html" and dp != clean-excl
     ) {
       let metas = query(selector(<thyme-page-meta>).within(d.location()))
       if metas.len() > 0 {
         let m = metas.first().value
         if (
-          not m.at("draft", default: false)
-            and not m.at("unlisted", default: false)
+          not m.at("draft", default: false) and not m.at("unlisted", default: false)
         ) {
           let refs = query(selector(<thyme-outbound-ref>).within(d.location()))
           if refs.any(r => r.value.target == clean-target) {

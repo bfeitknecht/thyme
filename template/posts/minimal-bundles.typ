@@ -62,11 +62,7 @@ When a table or figure benefits from the full width of prose plus margin, wrap i
       columns: 5,
       gutter: 0.65em,
       align: horizon,
-      node[`posts/*.typ`],
-      $->$,
-      node[`site.typ`],
-      $->$,
-      node[`HTML + .typ + XML`],
+      node[`posts/*.typ`], $->$, node[`site.typ`], $->$, node[`HTML + .typ + XML`],
     )
   ]
 ]

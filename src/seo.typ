@@ -4,9 +4,7 @@
 
 #import "@preview/syndicate:0.1.0": atom, rss, sitemap
 #import "i18n.typ": normalize-alternates
-#import "paths.typ": (
-  canonical-page-url, date-sort-key, format-date, url-authority,
-)
+#import "paths.typ": canonical-page-url, date-sort-key, format-date, url-authority
 #import "text.typ": to-plain-text
 
 #let _default-epoch = datetime(
@@ -23,11 +21,7 @@
 }
 
 #let _escape-html(s) = {
-  str(s)
-    .replace("&", "&amp;")
-    .replace("<", "&lt;")
-    .replace(">", "&gt;")
-    .replace("\"", "&quot;")
+  str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;")
 }
 
 #let _entry-summary(p, lang: none) = {
@@ -67,10 +61,7 @@
 #let _resolve-feed-url(dest-str, site-url, doc-path) = {
   let s = str(dest-str).trim()
   if (
-    s.starts-with("http://")
-      or s.starts-with("https://")
-      or s.starts-with("mailto:")
-      or s.starts-with("#")
+    s.starts-with("http://") or s.starts-with("https://") or s.starts-with("mailto:") or s.starts-with("#")
   ) {
     s
   } else if site-url == none {
@@ -355,13 +346,7 @@
       if list-tag != "ul" {
         if list-tag != none and list-items.len() > 0 {
           out.push(
-            "<"
-              + list-tag
-              + ">"
-              + _join-strs(list-items)
-              + "</"
-              + list-tag
-              + ">",
+            "<" + list-tag + ">" + _join-strs(list-items) + "</" + list-tag + ">",
           )
         }
         list-tag = "ul"
@@ -375,13 +360,7 @@
       if list-tag != "ol" {
         if list-tag != none and list-items.len() > 0 {
           out.push(
-            "<"
-              + list-tag
-              + ">"
-              + _join-strs(list-items)
-              + "</"
-              + list-tag
-              + ">",
+            "<" + list-tag + ">" + _join-strs(list-items) + "</" + list-tag + ">",
           )
         }
         list-tag = "ol"
@@ -442,9 +421,7 @@
       para-buf = ()
       out.push(go-inline(ch))
     } else if (
-      fn == metadata
-        and type(ch.value) == dictionary
-        and ch.value.at("thyme-feed-node", default: false)
+      fn == metadata and type(ch.value) == dictionary and ch.value.at("thyme-feed-node", default: false)
     ) {
       let k = ch.value.at("kind", default: "")
       if k == "sidenote" {
@@ -452,13 +429,7 @@
       } else {
         if list-tag != none and list-items.len() > 0 {
           out.push(
-            "<"
-              + list-tag
-              + ">"
-              + _join-strs(list-items)
-              + "</"
-              + list-tag
-              + ">",
+            "<" + list-tag + ">" + _join-strs(list-items) + "</" + list-tag + ">",
           )
         }
         list-tag = none
@@ -494,11 +465,7 @@
           } else { "" }
           let qed = if k == "proof" { "<p>◻</p>" } else { "" }
           out.push(
-            "<blockquote>"
-              + head-html
-              + recurse(ch.value.body)
-              + qed
-              + "</blockquote>",
+            "<blockquote>" + head-html + recurse(ch.value.body) + qed + "</blockquote>",
           )
         } else {
           out.push(recurse(ch.value.body))
@@ -506,9 +473,7 @@
       }
     } else if fn == metadata or repr(fn) == "context" {
       if (
-        fn == metadata
-          and type(ch.value) == dictionary
-          and ch.value.at("thyme-tr", default: false)
+        fn == metadata and type(ch.value) == dictionary and ch.value.at("thyme-tr", default: false)
       ) {
         para-buf.push(go-inline(ch))
       }
@@ -722,8 +687,7 @@
     return explicit-epoch
   }
   let dated = posts.filter(p => (
-    type(p.at("created", default: none)) == datetime
-      or type(p.at("modified", default: none)) == datetime
+    type(p.at("created", default: none)) == datetime or type(p.at("modified", default: none)) == datetime
   ))
   if dated.len() > 0 {
     let sorted = dated.sorted(key: p => date-sort-key(if p.at(
@@ -746,8 +710,7 @@
   let out = extra
   for p in posts {
     if (
-      p.at("slug", default: none) != none
-        and p.at("html-path", default: none) != none
+      p.at("slug", default: none) != none and p.at("html-path", default: none) != none
     ) {
       out.insert(str(p.slug), canonical-page-url(clean-url, p.html-path))
     }

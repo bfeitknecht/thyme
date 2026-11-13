@@ -25,11 +25,13 @@ fmt args="--inplace":
     # The Typst CLI has no `fmt` subcommand (0.15.x ships compile/watch/init/query/
     # eval/fonts/update/completions/info); `typstyle` is the community formatter. It
     # takes paths positionally and has no `--output`, only `--inplace`/`--check`/`--diff`.
+    # The line width is pinned alongside the version: typstyle reads no config file,
+    # so the flag is the only way local and CI formatting stay identical.
     if ! command -v typstyle >/dev/null 2>&1; then
-        echo "typstyle not found — install it with: cargo install typstyle --version 0.15.1 --locked" >&2
+        echo "typstyle not found — install it with: cargo install typstyle --version 0.15.2 --locked" >&2
         exit 1
     fi
-    typstyle {{args}} $(find src template examples tests docs -name '*.typ' 2>/dev/null)
+    typstyle --line-width 120 {{args}} $(find src template examples tests docs -name '*.typ' 2>/dev/null)
 
 # Lint Typst files and Python scripts
 lint:
@@ -577,10 +579,13 @@ release *args:
         check=True,
         env={**os.environ, "SOURCE_DATE_EPOCH": "0"},
     )
+    # `assets/thumbnail.typ` is a miniature post in the `blog` preset whose single
+    # auto-height page lands near A4, so Universe cards need not crop it. No
+    # `--pages`: if the miniature ever outgrows one page, typst refuses the
+    # non-patterned output name and the release fails loudly.
     subprocess.run(
         ["typst", "compile", "--package-path", ".tmp-pkg", "--format", "png",
-         "--pages", "1", "--ppi", "250",
-         "template/posts/fixed-points.typ", "thumbnail.png"],
+         "--ppi", "250", "assets/thumbnail.typ", "thumbnail.png"],
         check=True,
     )
     subprocess.run(["just", "_stage", "dist/universe", package["name"], version], check=True)

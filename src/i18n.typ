@@ -24,8 +24,7 @@
 // Detect whether a Typst content value contains block-level elements so `#tr(...)`
 // chooses `html.div` vs `html.span` automatically.
 #let _has-block-content(c) = any-content(c, n => (
-  n.func() in _block-funcs
-    or (n.func() == raw and n.at("block", default: false))
+  n.func() in _block-funcs or (n.func() == raw and n.at("block", default: false))
 ))
 
 // Resolve a nested dotted key (`"nav.contact"` or `"abstract"`) inside a dictionary.
@@ -109,9 +108,7 @@
   }
 
   let collect-tr-codes(c) = collect-content(c, n => (
-    if n.func() == metadata
-      and type(n.value) == dictionary
-      and n.value.at("thyme-tr", default: false) {
+    if n.func() == metadata and type(n.value) == dictionary and n.value.at("thyme-tr", default: false) {
       n.value.entries.keys()
     } else {
       ()
@@ -168,9 +165,7 @@
     }
   }
   if type(alternates) == dictionary {
-    alternates
-      .pairs()
-      .map(((code, h)) => (hreflang: str(code), href: resolve-href(h)))
+    alternates.pairs().map(((code, h)) => (hreflang: str(code), href: resolve-href(h)))
   } else if type(alternates) == array {
     alternates.map(a => (
       hreflang: str(a.at("hreflang", default: a.at(
@@ -218,9 +213,7 @@
         root,
         n => {
           if not (
-            n.func() == metadata
-              and type(n.value) == dictionary
-              and n.value.at("thyme-tr", default: false)
+            n.func() == metadata and type(n.value) == dictionary and n.value.at("thyme-tr", default: false)
           ) {
             return ()
           }
@@ -359,11 +352,7 @@
   let hide-rules = (
     langs
       .map(l => (
-        ":root:has(#thyme-lang-"
-          + l
-          + ":not(:checked)) .thyme-tr[lang=\""
-          + l
-          + "\"]"
+        ":root:has(#thyme-lang-" + l + ":not(:checked)) .thyme-tr[lang=\"" + l + "\"]"
       ))
       .join(",\n")
       + " { display: none !important; }"
@@ -371,11 +360,7 @@
   let active-rules = (
     langs
       .map(l => (
-        ":root:has(#thyme-lang-"
-          + l
-          + ":checked) .thyme-lang-switch label[for=\"thyme-lang-"
-          + l
-          + "\"]"
+        ":root:has(#thyme-lang-" + l + ":checked) .thyme-lang-switch label[for=\"thyme-lang-" + l + "\"]"
       ))
       .join(",\n")
       + " { color: var(--fg, inherit); text-decoration: underline; text-underline-offset: 0.2em; text-decoration-thickness: 1px; }"
@@ -383,11 +368,7 @@
   let focus-rules = (
     langs
       .map(l => (
-        ":root:has(#thyme-lang-"
-          + l
-          + ":focus-visible) .thyme-lang-switch label[for=\"thyme-lang-"
-          + l
-          + "\"]"
+        ":root:has(#thyme-lang-" + l + ":focus-visible) .thyme-lang-switch label[for=\"thyme-lang-" + l + "\"]"
       ))
       .join(",\n")
       + " { outline: 1.5px solid var(--fg, currentColor); outline-offset: 3px; border-radius: 2px; }"

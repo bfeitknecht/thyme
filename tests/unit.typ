@@ -5,22 +5,13 @@
 // The internal helpers below are not part of the public surface, so the tests import
 // them from their modules. That also means a test cannot pass just because a name
 // happens to be re-exported.
-#import "../src/paths.typ": (
-  canonical-page-url, heading-anchor-id, slugify, source-path-for,
-)
-#import "../src/i18n.typ": (
-  assert-complete-translations, missing-translations, normalize-alternates,
-)
+#import "../src/paths.typ": canonical-page-url, heading-anchor-id, slugify, source-path-for
+#import "../src/i18n.typ": assert-complete-translations, missing-translations, normalize-alternates
 #import "../src/seo.typ": content-to-feed-html
-#import "../src/text.typ": (
-  count-words, query-body-words, short-hash, to-plain-text, word-hint,
-)
+#import "../src/text.typ": count-words, query-body-words, short-hash, to-plain-text, word-hint
 #import "../src/tree.typ": any-content, map-containers
 #import "../src/core.typ": with-html-math
-#import "../src/blog/theme.typ": (
-  css-hex, default-woff2-files, stylesheet-css, stylesheet-href,
-  theme-override-css,
-)
+#import "../src/blog/theme.typ": css-hex, default-woff2-files, stylesheet-css, stylesheet-href, theme-override-css
 #import "../src/blog/notes.typ": is-sidenote-link
 #import "@preview/syndicate:0.1.0": rfc3339, rss
 
@@ -94,8 +85,7 @@
 // `theme-color` must follow the *active* theme, not a pinned hex. A preset that resolves
 // its own theme and then drops it on the way to the shell would emit the default here.
 #let _probe-theme = (
-  theme-default
-    + (paper-light: oklch(50%, 0, 0deg), paper-dark: oklch(30%, 0, 0deg))
+  theme-default + (paper-light: oklch(50%, 0, 0deg), paper-dark: oklch(30%, 0, 0deg))
 )
 #assert.eq(css-hex(_probe-theme.paper-light), "#636363")
 #assert.eq(css-hex(_probe-theme.paper-dark), "#2e2e2e")
@@ -358,9 +348,7 @@
 // A block missing `fr` is reported once, with the missing code named.
 #assert.eq(missing-translations(partial-body, ("en", "de", "fr")).len(), 1)
 #assert(
-  missing-translations(partial-body, ("en", "de", "fr"))
-    .first()
-    .contains("`fr`"),
+  missing-translations(partial-body, ("en", "de", "fr")).first().contains("`fr`"),
 )
 // A single-language page is never a gap, whatever the block covers.
 #assert.eq(missing-translations(partial-body, ("en",)).len(), 0)
@@ -403,7 +391,6 @@
 ) {
   assert(
     name not in dictionary(thyme),
-    message: name
-      + " is exported again; it belongs to a module, not the public surface",
+    message: name + " is exported again; it belongs to a module, not the public surface",
   )
 }

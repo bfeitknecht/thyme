@@ -5,15 +5,12 @@
 // Tadi Web sites) and as the single shared bundle engine underneath presets like `blog`.
 
 #import "i18n.typ": (
-  assert-complete-translations, i18n-css, lang-switcher, normalize-alternates,
-  render-lang-inputs, resolve-page-langs,
+  assert-complete-translations, i18n-css, lang-switcher, normalize-alternates, render-lang-inputs, resolve-page-langs,
 )
 #import "paths.typ": (
-  canonical-page-url, date-sort-key, emit-doc-marker, find-doc-containing,
-  format-date, join-path, parent-dir, query-backlinks, rel-href, rel-root,
-  relative-typ-path, resolve-bundle-label, route-html-path, slug-from-path,
-  slug-from-typ-path, slugify, source-path-for, unwrap-typ-path,
-  with-html-headings, with-smart-refs,
+  canonical-page-url, date-sort-key, emit-doc-marker, find-doc-containing, format-date, join-path, parent-dir,
+  query-backlinks, rel-href, rel-root, relative-typ-path, resolve-bundle-label, route-html-path, slug-from-path,
+  slug-from-typ-path, slugify, source-path-for, unwrap-typ-path, with-html-headings, with-smart-refs,
 )
 #import "seo.typ": atom-xml, render-seo-meta, robots-txt, rss-xml, sitemap-xml
 #import "blog/theme.typ": css-hex, theme-default
@@ -103,14 +100,12 @@
   c.func() == metadata
     and type(c.value) == dictionary
     and (
-      c.value.at("thyme-mounted", default: false)
-        or c.value.at("thyme-raw-file", default: false)
+      c.value.at("thyme-mounted", default: false) or c.value.at("thyme-raw-file", default: false)
     )
 )
 
 #let extract-page-meta(c) = find-content(c, n => (
-  if n.func() == metadata
-    and n.at("label", default: none) == <thyme-page-meta> {
+  if n.func() == metadata and n.at("label", default: none) == <thyme-page-meta> {
     n.value
   } else {
     none
@@ -118,9 +113,7 @@
 ))
 
 #let extract-page-assets(c) = collect-content(c, n => (
-  if n.func() == metadata
-    and type(n.value) == dictionary
-    and n.value.at("thyme-page-asset", default: false) {
+  if n.func() == metadata and type(n.value) == dictionary and n.value.at("thyme-page-asset", default: false) {
     (
       (
         path: n.value.path,
@@ -143,9 +136,7 @@
 
 #let extract-mounts(c) = collect-content(
   c,
-  n => if n.func() == metadata
-    and type(n.value) == dictionary
-    and n.value.at("thyme-mounted", default: false) {
+  n => if n.func() == metadata and type(n.value) == dictionary and n.value.at("thyme-mounted", default: false) {
     ((el: n, val: n.value, lbl: n.at("label", default: none)),)
   } else {
     ()
@@ -155,9 +146,7 @@
 
 #let extract-raw-files(c) = collect-content(
   c,
-  n => if n.func() == metadata
-    and type(n.value) == dictionary
-    and n.value.at("thyme-raw-file", default: false) {
+  n => if n.func() == metadata and type(n.value) == dictionary and n.value.at("thyme-raw-file", default: false) {
     ((val: n.value, lbl: n.at("label", default: none)),)
   } else {
     ()
@@ -299,8 +288,7 @@
           not m.at("draft", default: false)
             and (include-unlisted or not m.at("unlisted", default: false))
             and (
-              collection == none
-                or m.at("collection", default: none) == collection
+              collection == none or m.at("collection", default: none) == collection
             )
             and (tag == none or tag in m.at("tags", default: ()))
             and (lang == none or m.at("primary-lang", default: "en") == lang)
@@ -354,8 +342,7 @@
   let resolved-slug = if target != auto {
     str(target)
   } else if (
-    doc-metas.len() > 0
-      and doc-metas.first().value.at("slug", default: none) != none
+    doc-metas.len() > 0 and doc-metas.first().value.at("slug", default: none) != none
   ) {
     doc-metas.first().value.slug
   } else if doc-path != none {
@@ -557,11 +544,7 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
   if node.has("base") {
     let base = node.base
     if (
-      in-display
-        and base.func() == math.op
-        and base.has("limits")
-        and base.limits
-        and (node.has("b") or node.has("t"))
+      in-display and base.func() == math.op and base.has("limits") and base.limits and (node.has("b") or node.has("t"))
     ) {
       return true
     }
@@ -592,16 +575,12 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
   }
   let cp = str.to-unicode(cps.at(0))
   if (
-    (cp >= 0x30 and cp <= 0x39)
-      or (cp >= 0x41 and cp <= 0x5A)
-      or (cp >= 0x61 and cp <= 0x7A)
+    (cp >= 0x30 and cp <= 0x39) or (cp >= 0x41 and cp <= 0x5A) or (cp >= 0x61 and cp <= 0x7A)
   ) {
     return false
   }
   if (
-    (cp >= 0x0370 and cp <= 0x03FF)
-      or (cp >= 0x2100 and cp <= 0x214F)
-      or (cp >= 0x1D400 and cp <= 0x1D7FF)
+    (cp >= 0x0370 and cp <= 0x03FF) or (cp >= 0x2100 and cp <= 0x214F) or (cp >= 0x1D400 and cp <= 0x1D7FF)
   ) {
     return false
   }
@@ -625,9 +604,7 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
     let is-disp = eq.block
     show math.lr: it => {
       if (
-        it.size != 100% + 0pt
-          or it.body.func() == math.lr
-          or _math-needs-stretch(it.body, in-display: is-disp)
+        it.size != 100% + 0pt or it.body.func() == math.lr or _math-needs-stretch(it.body, in-display: is-disp)
       ) {
         it
       } else {
@@ -782,9 +759,7 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
       for css-p in stylesheet-paths {
         let p-str = str(css-p)
         let href = if (
-          p-str.starts-with("http://")
-            or p-str.starts-with("https://")
-            or p-str.starts-with("/")
+          p-str.starts-with("http://") or p-str.starts-with("https://") or p-str.starts-with("/")
         ) {
           p-str
         } else {
@@ -1262,10 +1237,7 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
     default-title
   }
   let emit-auto-h1 = (
-    h1 == none
-      and wrap-main
-      and resolved-title != none
-      and (title != auto or shell-hook != none)
+    h1 == none and wrap-main and resolved-title != none and (title != auto or shell-hook != none)
   )
   let home-langs = resolve-page-langs(lang, default-lang: lang, scan-nodes: (
     resolved-title,
@@ -1380,12 +1352,10 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
 
   context {
     let pre-mount-els = query(selector(metadata).before(here())).filter(el => (
-      type(el.value) == dictionary
-        and el.value.at("thyme-mounted", default: false)
+      type(el.value) == dictionary and el.value.at("thyme-mounted", default: false)
     ))
     let pre-raw-els = query(selector(metadata).before(here())).filter(el => (
-      type(el.value) == dictionary
-        and el.value.at("thyme-raw-file", default: false)
+      type(el.value) == dictionary and el.value.at("thyme-raw-file", default: false)
     ))
     let all-mounts = (
       pre-mount-els.map(el => (
@@ -1400,8 +1370,7 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
       default-route-fn: default-route-hook,
     ))
     let all-raw-files = (
-      pre-raw-els.map(el => (val: el.value, lbl: el.at("label", default: none)))
-        + body-raw-files
+      pre-raw-els.map(el => (val: el.value, lbl: el.at("label", default: none))) + body-raw-files
     )
 
     // Build `<thyme-source-map>` mapping `doc-path -> sibling .typ asset path`
@@ -1511,9 +1480,7 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
     }
 
     if (
-      target() == "bundle"
-        and not-found-page != false
-        and not-found-page != none
+      target() == "bundle" and not-found-page != false and not-found-page != none
     ) {
       [#document(
         "404.html",
@@ -1547,8 +1514,7 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
                 )
                 html.meta(name: "robots", content: "noindex")
                 html.title(
-                  "404 - "
-                    + to-plain-text(resolved-title, lang: home-langs.first()),
+                  "404 - " + to-plain-text(resolved-title, lang: home-langs.first()),
                 )
                 html.meta(
                   name: "theme-color",
@@ -1663,8 +1629,7 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
       }
 
       let explicit-paths = (
-        assets.map(a => str(a.path).trim("/"))
-          + all-raw-files.map(r => r.val.path)
+        assets.map(a => str(a.path).trim("/")) + all-raw-files.map(r => r.val.path)
       )
       for a in assets {
         emit-bundle-asset(str(a.path).trim("/"), a.data, lbl: a.at(

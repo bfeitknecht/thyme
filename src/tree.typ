@@ -51,8 +51,7 @@
 /// -> bool
 #let any-content(c, pred, descend: _ => true) = {
   (
-    find-content(c, n => if pred(n) { true } else { none }, descend: descend)
-      == true
+    find-content(c, n => if pred(n) { true } else { none }, descend: descend) == true
   )
 }
 
@@ -139,8 +138,7 @@
     return if mapped.len() > 0 { mapped.join() } else { [] }
   }
   if (
-    fn in (block, box, align, pad, list.item, enum.item, quote)
-      and c.has("body")
+    fn in (block, box, align, pad, list.item, enum.item, quote) and c.has("body")
   ) {
     let f = c.fields()
     let b = f.remove("body")

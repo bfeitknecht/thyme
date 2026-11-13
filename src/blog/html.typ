@@ -174,9 +174,7 @@
       for css-p in sheets {
         let p-str = str(css-p)
         let href = if (
-          p-str.starts-with("http://")
-            or p-str.starts-with("https://")
-            or p-str.starts-with("/")
+          p-str.starts-with("http://") or p-str.starts-with("https://") or p-str.starts-with("/")
         ) {
           p-str
         } else {
