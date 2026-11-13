@@ -41,6 +41,7 @@ jobs:
     outputs:
       pkg_name: ${{ steps.meta.outputs.pkg_name }}
       pkg_version: ${{ steps.meta.outputs.pkg_version }}
+      pkg_description: ${{ steps.meta.outputs.pkg_description }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -59,6 +60,7 @@ jobs:
           {
             echo "pkg_name=$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml","rb"))["package"]["name"])')"
             echo "pkg_version=$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml","rb"))["package"]["version"])')"
+            echo "pkg_description=$(python3 -c 'import tomllib; print(tomllib.load(open("typst.toml","rb"))["package"]["description"])')"
           } >> "$GITHUB_OUTPUT"
 
       - name: Run full check suite
@@ -108,6 +110,7 @@ jobs:
     env:
       PKG_NAME: ${{ needs.verify.outputs.pkg_name }}
       PKG_VER: ${{ needs.verify.outputs.pkg_version }}
+      PKG_DESCRIPTION: ${{ needs.verify.outputs.pkg_description }}
       UPSTREAM_REPO: typst/packages
       UNIVERSE_REPO: ${{ vars.UNIVERSE_REPO || 'github.com/bfeitknecht/packages' }}
     steps:
@@ -233,14 +236,6 @@ jobs:
           git remote add fork "https://x-access-token:${GH_TOKEN}@${UNIVERSE_HOST}/${UNIVERSE_SLUG}.git"
           git push --force fork "HEAD:refs/heads/${branch}"
 
-          # The same text `just release --pr` prints, so the PR the workflow opens and the
-          # PR the maintainer opens by hand cannot say different things.
-          just release --pr > submission.txt
-          # Drop the compare link and the blank line that follows it: the workflow
-          # already knows where the PR goes.
-          sed '1,2d' submission.txt > ../pr-body.md
-          rm submission.txt
-
           # Opening the PR is best-effort. The branch and the GitHub Release are the
           # deliverables; a pull request into typst/packages needs permissions that a
           # fine-grained token cannot have, because the org restricts them. So a refused
@@ -256,7 +251,7 @@ jobs:
               --base main \
               --head "${fork_owner}:${branch}" \
               --title "${PKG_NAME}:${PKG_VER}" \
-              --body-file ../pr-body.md; then
+              --body "${PKG_DESCRIPTION}"; then
             echo "Opened the submission PR."
           else
             {
@@ -269,11 +264,7 @@ jobs:
               echo
               echo "${compare}"
               echo
-              echo "Use \`${PKG_NAME}:${PKG_VER}\` as the title, and this as the body:"
-              echo
-              echo "\`\`\`markdown"
-              cat ../pr-body.md
-              echo "\`\`\`"
+              echo "Use \`${PKG_NAME}:${PKG_VER}\` as the title and write the body by hand."
             } >> "$GITHUB_STEP_SUMMARY"
             echo "::warning::The token cannot open a PR on ${UPSTREAM_REPO}. Open it here: ${compare}"
           fi

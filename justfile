@@ -418,7 +418,7 @@ bump version:
         p.write_text(txt)
     print(f"bumped thyme {old_ver} -> {new_ver} (then update CHANGELOG.md; `just check` rebuilds the manual)")
 
-# Cut a release: `just release VERSION` (`--check`, `--notes`, `--pr` for the read-only parts)
+# Cut a release: `just release VERSION` (`--check`, `--notes` for the read-only parts)
 release *args:
     #!/usr/bin/env python3
     import os, pathlib, re, subprocess, sys, tomllib
@@ -429,12 +429,12 @@ release *args:
 
     flags = [a for a in "{{args}}".split() if a.startswith("--")]
     positional = [a for a in "{{args}}".split() if not a.startswith("--")]
-    unknown = [f for f in flags if f not in ("--check", "--notes", "--pr")]
+    unknown = [f for f in flags if f not in ("--check", "--notes")]
     if unknown:
-        sys.exit(f"release: unknown flag {unknown[0]} (expected --check, --notes or --pr)")
+        sys.exit(f"release: unknown flag {unknown[0]} (expected --check or --notes)")
     if len(flags) > 1:
         sys.exit(
-            f"release: --check, --notes and --pr are mutually exclusive (got {flags})"
+            f"release: --check and --notes are mutually exclusive (got {flags})"
         )
     if len(positional) > 1:
         sys.exit(
@@ -443,7 +443,7 @@ release *args:
     # The argument is the version, without a `v`. The tag is derived from it, because a
     # release tag is `v<version>` and typing that prefix by hand adds nothing.
     given = positional[0] if positional else ""
-    if not given and not {"--notes", "--pr"} & set(flags):
+    if not given and "--notes" not in flags:
         sys.exit("release: pass a version, e.g. `just release 0.1.0`")
     if given.startswith("v"):
         sys.exit(
@@ -459,41 +459,6 @@ release *args:
         re.M | re.S,
     )
     notes = section.group(1).strip() if section else ""
-
-    def submission() -> str:
-        """The Typst Universe PR: the compare link, a blank line, then the filled-in template.
-
-        The pull request cannot be opened for you. `typst/packages` restricts who may open
-        one, and a fine-grained token is refused with `Resource not accessible by personal
-        access token`. The release workflow pushes the branch, then falls back to this text
-        for the job summary, so printing it is worth more than remembering it.
-        """
-        name = package["name"]
-        fork = "bfeitknecht"  # the fork the release workflow pushes `name-version` to
-        head = f"https://github.com/typst/packages/compare/main...{fork}:{name}-{version}"
-        body = pathlib.Path(".github/universe-pr.md").read_text()
-        # Replace, do not substitute: the description is text, and a backslash or `\1` in
-        # it would otherwise be read as a replacement escape.
-        body = body.replace("Explain what the package does and why it's useful.", package["description"])
-        body = body.replace(
-            "https://github.com/bfeitknecht/thyme/releases/download/v0.1.0/manual.pdf",
-            f"https://github.com/{package['repository'].removeprefix('https://github.com/')}"
-            f"/releases/download/v{version}/manual.pdf",
-        )
-        # A new submission leaves exactly one box unchecked, the "an update" one. Anything
-        # else unchecked is a claim that was not made, so refuse rather than hand over a
-        # pull request that contradicts itself.
-        unchecked = re.findall(r"^- \[ \] (.+)$", body, re.M)
-        if unchecked != ["an update for a package"]:
-            sys.exit(
-                "release: the submission template has unchecked boxes: "
-                + ", ".join(unchecked)
-            )
-        return f"{head}\n\n{body}"
-
-    if "--pr" in flags:
-        print(submission(), end="")
-        sys.exit(0)
 
     if "--notes" in flags:
         if not notes:
@@ -598,11 +563,3 @@ release *args:
     # without the tag that triggers its workflow.
     subprocess.run(["git", "push", "--atomic", "origin", "HEAD", tag], check=True)
     print(f"released {tag}; CI is cutting the GitHub release and pushing the Universe branch")
-    # The pull request into typst/packages has to be opened by hand once CI has pushed the
-    # branch, because the organisation restricts who may open one there. Printing the whole
-    # thing now means the release finishes where the maintainer needs to be, instead of
-    # naming a second command to run later.
-    print()
-    print("When CI has pushed the branch, open the submission PR with this text:")
-    print()
-    print(submission(), end="")
