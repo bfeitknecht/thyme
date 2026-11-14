@@ -1126,7 +1126,8 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
 ///
 /// Compile a pure-Typst project into a static site bundle: `index.html`, mounted
 /// subpages, your own stylesheets, static files, `404.html`, `sitemap.xml`,
-/// `robots.txt`, optional RSS/Atom feeds, and Tadi Web `.typ` source files.
+/// optional RSS/Atom feeds, and Tadi Web `.typ` source files. `robots.txt` and
+/// `llms.txt` are copied from your files only when you pass `robots`/`llms`.
 ///
 /// Ships no CSS or JavaScript of its own, so the site looks exactly like what you
 /// pass in `stylesheets`. For the batteries-included monochrome blog instead, use

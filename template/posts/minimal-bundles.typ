@@ -22,7 +22,7 @@ Passing capability paths (`#post(path("posts/fixed-points.typ"))`) lets `thyme` 
 
 - [x] Zero custom CLI wrappers — driven purely by `typst watch` and `typst compile`
 - [x] Typst's native typed `html.*` constructors, with no builder of our own
-- [x] Automatic `sitemap.xml`, `robots.txt`, `rss.xml`, and `atom.xml` via `syndicate`
+- [x] Automatic `sitemap.xml`, `rss.xml`, and `atom.xml` via `syndicate`
 - [x] Tadi Web sibling `.typ` source co-emission and single-URL zero-JS CSS `#tr(...)` i18n
 - [ ] Client-side JavaScript runtimes or framework lock-in
 
@@ -34,7 +34,7 @@ When a table or figure benefits from the full width of prose plus margin, wrap i
   #tablem[
     | *Command* | *Target* | *Result* |
     | :--- | :--- | :--- |
-    | `typst compile --features html,bundle -f bundle site.typ public` | `bundle` | `index.html`, `posts/`, `.typ` sources, `sitemap.xml`, `robots.txt`, `rss.xml`, `atom.xml` |
+    | `typst compile --features html,bundle -f bundle site.typ public` | `bundle` | `index.html`, `posts/`, `.typ` sources, `sitemap.xml`, `rss.xml`, `atom.xml` |
     | `typst watch --features html,bundle -f bundle site.typ public` | `bundle` | Built-in live-reloading HTTP dev server |
     | `typst watch posts/fixed-points.typ` | `paged` | Instant `height: auto` editor preview |
   ]
