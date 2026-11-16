@@ -395,7 +395,7 @@ _stage out name version:
         stray.unlink()
     print(f"staged {dest}")
 
-# Bump package version across typst.toml, template/, examples/, tests/unit.typ, docs/manual.typ, and README.md
+# Bump package version across typst.toml, template/, examples/, assets/, src/, tests/unit.typ, docs/manual.typ, and README.md
 bump version:
     #!/usr/bin/env python3
     import pathlib, re, tomllib
@@ -408,6 +408,8 @@ bump version:
     targets = (
         list(pathlib.Path("template").rglob("*.typ"))
         + list(pathlib.Path("examples").rglob("*.typ"))
+        + list(pathlib.Path("assets").rglob("*.typ"))
+        + list(pathlib.Path("src").rglob("*.typ"))
         + [pathlib.Path("tests/unit.typ"), pathlib.Path("docs/manual.typ"), pathlib.Path("README.md")]
     )
     for p in targets:
