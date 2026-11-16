@@ -1,4 +1,4 @@
-#import "@preview/thyme:0.1.0": *
+#import "@preview/thyme:0.1.1": *
 
 #show: site.with(
   url: "https://example.org",

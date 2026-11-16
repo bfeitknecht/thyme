@@ -1,4 +1,4 @@
-// Public entrypoint for `@preview/thyme:0.1.0`.
+// Public entrypoint for `@preview/thyme:0.1.1`.
 //
 // Only what a site author writes by hand is re-exported here. The helpers that the
 // engine and the presets use to build a site (slugs, plain-text extraction, tree walks,

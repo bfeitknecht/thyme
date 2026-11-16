@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-16
+
+### Fixed
+
+- **Wide tables scroll sideways in HTML.** Every table in a `blog` post is wrapped in a
+  `.blog-table` scroll container. Before, a narrow screen squeezed the table to fit.
+- **Inline code in table cells no longer breaks.** The mobile rule
+  `overflow-wrap: anywhere` broke code chips one character per line. Code in cells now
+  stays on one line, and the table scrolls.
+- **Proof boxes scroll sideways** when their content is wider than the column.
+- **Docs no longer say that `robots.txt` is generated.** The `site` doc comment and the
+  template sample post now match the behaviour: the file is copied only when you pass
+  `robots: path(...)`.
+
 ## [0.1.0] - 2026-11-12
 
 First release. Requires Typst 0.15.0 or later.

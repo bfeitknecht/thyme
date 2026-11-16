@@ -2,7 +2,7 @@
 // auto-height page lands near A4, so Typst Universe cards need not crop or
 // overflow it. Keep the content small: if it outgrows one page, the release
 // render fails loudly instead of silently cropping.
-#import "@preview/thyme:0.1.0": *
+#import "@preview/thyme:0.1.1": *
 #import blog: *
 
 #show: post.with(
