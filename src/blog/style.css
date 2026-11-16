@@ -731,6 +731,21 @@ tbody tr:last-child td {
   overflow-x: auto;
 }
 
+/* Wide tables scroll sideways. Code chips in cells do not break. */
+.blog-table {
+  margin: 1.3rem 0;
+  overflow-x: auto;
+}
+
+.blog-table > table {
+  margin: 0;
+}
+
+:is(th, td) code {
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+
 .blog-grid-table table {
   border-top: none;
   border-bottom: none;
@@ -791,6 +806,7 @@ tbody tr:last-child td {
 .blog-sbox-part > ul:last-child,
 .blog-sbox-part > ol:last-child,
 .blog-sbox-part > table:last-child,
+.blog-sbox-part > .blog-table:last-child,
 .blog-sbox-part > .blog-grid-table:last-child {
   margin-bottom: 0;
 }
@@ -827,6 +843,7 @@ tbody tr:last-child td {
   margin: 1.15rem 0;
   padding: 0.2rem 0 0.2rem 1rem;
   border-left: 1.5px solid var(--line);
+  overflow-x: auto;
 }
 
 .blog-proof-head {
@@ -1064,9 +1081,6 @@ nav.blog-post-nav .post-nav-label {
   }
   .blog-wide {
     overflow-x: auto;
-  }
-  :is(th, td) code {
-    overflow-wrap: anywhere;
   }
   input.margin-toggle {
     -webkit-appearance: none;

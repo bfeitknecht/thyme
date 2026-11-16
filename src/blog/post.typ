@@ -650,6 +650,8 @@
                 permalinks: eff-permalinks,
               )
               set text(lang: primary-lang)
+              // Wrap each table in a scroll container. Wide tables scroll and do not squeeze.
+              show table: it => html.div(class: "blog-table", it)
               [#metadata(merged-theme)<blog-post-theme>]
               [#metadata(none)<thyme-body-start>]
               body
