@@ -420,7 +420,7 @@ bump version:
         p.write_text(txt)
     print(f"bumped thyme {old_ver} -> {new_ver} (then update CHANGELOG.md; `just check` rebuilds the manual)")
 
-# Cut a release: `just release VERSION` (`--check`, `--notes` for the read-only parts)
+# Cut a release of the typst.toml version (`--check`, `--notes` for the read-only parts)
 release *args:
     #!/usr/bin/env python3
     import os, pathlib, re, subprocess, sys, tomllib
@@ -442,11 +442,9 @@ release *args:
         sys.exit(
             f"release: expected at most one argument (the version), got {positional}."
         )
-    # The argument is the version, without a `v`. The tag is derived from it, because a
-    # release tag is `v<version>` and typing that prefix by hand adds nothing.
-    given = positional[0] if positional else ""
-    if not given and "--notes" not in flags:
-        sys.exit("release: pass a version, e.g. `just release 0.1.0`")
+    # The version comes from typst.toml. An explicit version (without `v`) is optional
+    # and must match. The tag is `v<version>`.
+    given = positional[0] if positional else version
     if given.startswith("v"):
         sys.exit(
             f"release: pass the version without a 'v' prefix (got {given!r}, want {given[1:]!r})"

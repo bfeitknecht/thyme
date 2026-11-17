@@ -203,9 +203,9 @@ The CI setup action pins the same version, so local and CI formatting cannot dri
 
 ### Releasing
 
-To publish a version, run `just release X.Y.Z`. The version is the only argument; the recipe
-derives the `vX.Y.Z` tag from it. The recipe checks that version against `typst.toml` and
-`CHANGELOG.md`, requires a clean worktree, and requires your branch to match `origin`. It then
+To publish a version, run `just release`. The recipe reads the version from `typst.toml` and
+derives the `vX.Y.Z` tag from it (an explicit `X.Y.Z` argument is optional and must match). It
+checks the version against `CHANGELOG.md`, requires a clean worktree, and requires your branch to match `origin`. It then
 runs the full gate, rebuilds `docs/manual.pdf` and `thumbnail.png`, commits, and pushes the
 commit and the tag together. The commit is `Release X.Y.Z` and the tag `thyme X.Y.Z`, so the
 release never stops to ask for a message; the changelog section is only used for the release
@@ -221,7 +221,7 @@ The workflow opens the submission PR as a draft with the package description fro
 Releasing is one command, with a read-only mode so you can validate before you tag:
 
 ```sh
-just release 0.1.0 --check     # version vs typst.toml vs CHANGELOG.md, nothing written
-just release 0.1.0             # the gate, then commit, tag v0.1.0, and push
+just release --check           # version vs typst.toml vs CHANGELOG.md, nothing written
+just release                   # the gate, then commit, tag vX.Y.Z, and push
 just release --notes           # the CHANGELOG section, as CI publishes it
 ```
