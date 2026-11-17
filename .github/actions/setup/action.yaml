@@ -32,22 +32,22 @@ runs:
         set -eu
         mkdir -p "$HOME/.local/bin" "$HOME/.local/share/fonts"
 
-        curl -fsSL "https://github.com/typst/typst/releases/download/v${TYPST_VERSION}/typst-x86_64-unknown-linux-musl.tar.xz" \
+        curl -fsSL --retry 4 --retry-all-errors "https://github.com/typst/typst/releases/download/v${TYPST_VERSION}/typst-x86_64-unknown-linux-musl.tar.xz" \
           | tar -xJ -C "$HOME/.local/bin" --strip-components=1 "typst-x86_64-unknown-linux-musl/typst"
-        curl -fsSL "https://just.systems/install.sh" | bash -s -- --to "$HOME/.local/bin"
+        curl -fsSL --retry 4 --retry-all-errors "https://just.systems/install.sh" | bash -s -- --to "$HOME/.local/bin"
 
         # STIX Two (text + math), matching the `default-theme` font stacks.
         fonts="$HOME/.local/share/fonts"
         for f in STIXTwoText-Regular STIXTwoText-Italic STIXTwoText-SemiBold \
                  STIXTwoText-SemiBoldItalic STIXTwoText-Bold STIXTwoText-BoldItalic \
                  STIXTwoMath-Regular; do
-          curl -fsSL "https://cdn.jsdelivr.net/gh/stipub/stixfonts@v2.13b171/fonts/static_otf/${f}.otf" \
+          curl -fsSL --retry 4 --retry-all-errors "https://cdn.jsdelivr.net/gh/stipub/stixfonts@v2.13b171/fonts/static_otf/${f}.otf" \
             -o "${fonts}/${f}.otf"
         done
 
         # Commit Mono, so code blocks render with the intended metrics.
         tmp="$(mktemp -d)"
-        curl -fsSL "https://github.com/eigilnikolajsen/commit-mono/releases/download/v1.143/CommitMono-1.143.zip" \
+        curl -fsSL --retry 4 --retry-all-errors "https://github.com/eigilnikolajsen/commit-mono/releases/download/v1.143/CommitMono-1.143.zip" \
           -o "$tmp/commit-mono.zip"
         unzip -j -q "$tmp/commit-mono.zip" "*.otf" -d "$fonts"
         rm -rf "$tmp"
