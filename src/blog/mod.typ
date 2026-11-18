@@ -38,6 +38,8 @@
 //   post-nav    `blog.site(post-nav: true)` puts it under every post.
 //   tag-cloud   `blog.site` builds the `/tags/` index and the per-tag archives.
 //   post-asset  a post's `assets: ((name, bytes),)` parameter does the same job.
+//   show-reading   `blog.site(show-reading: true)` puts the estimated minutes
+//                 (`· <n> min`) beside the date on every entry card.
 //   with-html-math   applied by the page shell.
 //
 // `checklist`, `showybox`, `zebraw-init` and `zebraw-themes` are `@preview` packages

@@ -1,6 +1,6 @@
 // Unit & regression tests for `@preview/thyme` and `@preview/syndicate`.
-#import "@preview/thyme:0.1.1": *
-#import "@preview/thyme:0.1.1" as thyme
+#import "@preview/thyme:0.1.2": *
+#import "@preview/thyme:0.1.2" as thyme
 #import blog: *
 // The internal helpers below are not part of the public surface, so the tests import
 // them from their modules. That also means a test cannot pass just because a name

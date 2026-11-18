@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-11-18
+
+### Added
+
+- **Entry cards can show an estimated reading time.** `blog.site(show-reading: true)`
+  puts `· <n> min` beside the date on every entry card: homepage `#post(...)` mounts,
+  `#posts()` listings, and tag archive pages. The estimate reuses the post's own
+  `base-words` + `<thyme-word-hint>` tally and `wpm`, so it always matches the
+  `words` / `reading` rows on the post page. The date and the reading time share one
+  right-aligned meta group (`span.when`); with no date, the reading time stands alone.
+
+### Changed
+
+- The `.when` meta group on entry cards is a `span` that wraps the `<time>` element
+  (it was the class of the `<time>` element itself). Styling is unchanged.
+
 ## [0.1.1] - 2026-11-16
 
 ### Fixed

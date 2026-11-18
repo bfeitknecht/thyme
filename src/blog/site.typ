@@ -8,13 +8,14 @@
 
 #import "../core.typ": (
   backlinks as render-backlinks, extract-first-h1, query-pages, render-top-bar, resolve-core-mount, site as core-site,
+  site-config,
 )
 #import "../i18n.typ": resolve-page-langs
 #import "../paths.typ": (
   date-sort-key, emit-doc-marker, format-date, join-path, post-html-path, rel-href, resolve-bundle-label,
   route-html-path, slugify, unwrap-typ-path, with-html-headings,
 )
-#import "../text.typ": count-words
+#import "../text.typ": count-words, estimate-reading-minutes
 #import "html.typ": render-html-shell, render-not-found-page
 #import "post.typ": post
 #import "theme.typ": active-theme, resolve-theme, stylesheet-asset-path, stylesheet-css, stylesheet-href
@@ -27,6 +28,8 @@
   summary: none,
   subtitle: none,
   show-summary: true,
+  // Estimated reading minutes (`int`) shown as `· <n> min` beside the date.
+  reading: none,
   wrapper-tag: "div",
   theme-config: none,
 ) = {
@@ -35,12 +38,19 @@
     html.elem(wrapper-tag, attrs: (class: "entry"), {
       html.div(class: "entry-head", {
         html.h3(if dest != none { link(dest, title) } else { title })
-        if created-str != none {
-          html.elem(
-            "time",
-            attrs: (datetime: created-str, class: "when"),
-            created-str,
-          )
+        if created-str != none or reading != none {
+          // One meta group keeps the date and the reading time on one right edge.
+          html.span(class: "when", {
+            if created-str != none {
+              html.elem("time", attrs: (datetime: created-str), created-str)
+            }
+            if created-str != none and reading != none {
+              [ · ]
+            }
+            if reading != none {
+              str(reading) + " min"
+            }
+          })
         }
       })
       if show-summary and desc != none {
@@ -50,9 +60,16 @@
   } else {
     block(below: 0.65em, {
       strong(title)
-      if created-str != none {
+      if created-str != none or reading != none {
+        let meta-str = if created-str != none and reading != none {
+          created-str + " · " + str(reading) + " min"
+        } else if created-str != none {
+          created-str
+        } else {
+          str(reading) + " min"
+        }
         h(1fr)
-        text(font: theme-config.mono-fonts, size: 0.8em, created-str)
+        text(font: theme-config.mono-fonts, size: 0.8em, meta-str)
       }
     })
   }
@@ -72,6 +89,8 @@
   lang: none,
 ) = context {
   let t = active-theme()
+  let cfg = site-config()
+  let show-reading = cfg != none and cfg.at("show-reading", default: false)
   let entries = query-pages(collection: "posts", tag: tag, lang: lang)
   if target() == "html" {
     html.ul(class: "entries", {
@@ -83,6 +102,7 @@
           summary: p.summary,
           subtitle: p.subtitle,
           show-summary: show-summary,
+          reading: if show-reading { p.minutes } else { none },
           wrapper-tag: "li",
           theme-config: t,
         )
@@ -94,6 +114,7 @@
         title: p.title,
         created-str: p.created-str,
         show-summary: show-summary,
+        reading: if show-reading { p.minutes } else { none },
         theme-config: t,
       )
     }
@@ -157,6 +178,7 @@
   site-typ-path: none,
   default-route-fn: none,
   show-summary: true,
+  show-reading: false,
 ) = {
   let m = resolve-core-mount(
     rec,
@@ -175,6 +197,23 @@
     let target-el = if target() == "html" {
       resolve-bundle-label(m.label)
     } else { none }
+    // `base-words` skips prose inside context components (sidenotes, proofs, ...).
+    // The `<thyme-word-hint>` markers inside the post's own document add it back,
+    // so the entry matches the `words` / `reading` rows on the post page.
+    let reading = none
+    if show-reading {
+      let hints = if target-el != none {
+        query(
+          selector(label("thyme-word-hint")).within(target-el.location()),
+        ).fold(0, (acc, h) => acc + h.value)
+      } else {
+        0
+      }
+      reading = estimate-reading-minutes(
+        pm.at("base-words", default: 0) + hints,
+        wpm: pm.at("wpm", default: 200),
+      )
+    }
     _render-entry-card(
       title: m.title,
       dest: if target-el != none { target-el.location() } else { none },
@@ -182,6 +221,7 @@
       summary: pm.at("summary", default: none),
       subtitle: pm.at("subtitle", default: none),
       show-summary: show-summary,
+      reading: reading,
       wrapper-tag: "div",
       theme-config: t,
     )
@@ -277,6 +317,10 @@
   /// Render chronological older / newer navigation links at the bottom of posts by default.
   /// -> bool
   post-nav: false,
+  /// Show an estimated reading time (`· <n> min`) beside the date on every entry card:
+  /// homepage `#post(...)` mounts, `#posts()` listings, and tag archive pages.
+  /// -> bool
+  show-reading: false,
   /// Inject copy-button JavaScript (`auto` injects only on pages containing `#zebraw` code blocks).
   /// -> auto | bool
   copy-button: auto,
@@ -346,6 +390,7 @@
     heading-permalinks: heading-permalinks,
     backlinks: backlinks,
     post-nav: post-nav,
+    show-reading: show-reading,
     copy-button: copy-button,
     open-graph: open-graph,
     scholar-meta: scholar-meta,
@@ -394,6 +439,7 @@
       rec,
       site-typ-path: site-typ-path,
       default-route-fn: default-route,
+      show-reading: show-reading,
     ),
     _shell-fn: (
       title: [Blog],

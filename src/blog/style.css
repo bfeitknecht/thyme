@@ -971,6 +971,7 @@ div.entry {
   font-weight: 600;
 }
 
+/* One meta group on the right edge of an entry card: the `<time>` date and the reading time. */
 .when {
   font-family: var(--mono);
   font-size: var(--step--2);

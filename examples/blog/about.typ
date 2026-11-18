@@ -1,4 +1,4 @@
-#import "@preview/thyme:0.1.1": *
+#import "@preview/thyme:0.1.2": *
 
 #show: webpage.with(
   title: [Colophon],
