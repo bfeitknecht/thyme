@@ -28,7 +28,7 @@
   summary: none,
   subtitle: none,
   show-summary: true,
-  // Estimated reading minutes (`int`) shown as `· <n> min` beside the date.
+  // Estimated reading minutes (`int`) shown as `· <n> min` beside the title.
   reading: none,
   wrapper-tag: "div",
   theme-config: none,
@@ -38,19 +38,13 @@
     html.elem(wrapper-tag, attrs: (class: "entry"), {
       html.div(class: "entry-head", {
         html.h3(if dest != none { link(dest, title) } else { title })
-        if created-str != none or reading != none {
-          // One meta group keeps the date and the reading time on one right edge.
-          html.span(class: "when", {
-            if created-str != none {
-              html.elem("time", attrs: (datetime: created-str), created-str)
-            }
-            if created-str != none and reading != none {
-              [ · ]
-            }
-            if reading != none {
-              str(reading) + " min"
-            }
-          })
+        if reading != none {
+          // The reading time sits right after the title; the date stays alone
+          // on the right edge.
+          html.span(class: "reading", [ · ] + str(reading) + " min")
+        }
+        if created-str != none {
+          html.elem("time", attrs: (class: "when", datetime: created-str), created-str)
         }
       })
       if show-summary and desc != none {
@@ -62,7 +56,7 @@
       strong(title)
       if created-str != none or reading != none {
         let meta-str = if created-str != none and reading != none {
-          created-str + " · " + str(reading) + " min"
+          str(reading) + " min · " + created-str
         } else if created-str != none {
           created-str
         } else {

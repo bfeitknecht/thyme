@@ -961,7 +961,6 @@ div.entry {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  justify-content: space-between;
   gap: 0.25rem 1rem;
 }
 
@@ -971,12 +970,21 @@ div.entry {
   font-weight: 600;
 }
 
-/* One meta group on the right edge of an entry card: the `<time>` date and the reading time. */
+/* The reading time sits right after the title on an entry card. */
+.reading {
+  font-family: var(--mono);
+  font-size: var(--step--2);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* The date stays alone on the right edge of an entry card. */
 .when {
   font-family: var(--mono);
   font-size: var(--step--2);
   color: var(--muted);
   white-space: nowrap;
+  margin-left: auto;
 }
 
 .entry-summary {

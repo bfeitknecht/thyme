@@ -39,7 +39,8 @@
 //   tag-cloud   `blog.site` builds the `/tags/` index and the per-tag archives.
 //   post-asset  a post's `assets: ((name, bytes),)` parameter does the same job.
 //   show-reading   `blog.site(show-reading: true)` puts the estimated minutes
-//                 (`· <n> min`) beside the date on every entry card.
+//                 (`· <n> min`) beside the title on every entry card; the date
+//                 stays alone on the right edge.
 //   with-html-math   applied by the page shell.
 //
 // `checklist`, `showybox`, `zebraw-init` and `zebraw-themes` are `@preview` packages
