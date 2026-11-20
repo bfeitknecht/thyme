@@ -920,6 +920,31 @@ tbody tr:last-child td {
   clear: right;
 }
 
+/* A wide table stays in the reading column and scrolls sideways: spilling
+   into the sidenote margin broke the flow of the page. The table keeps its
+   wide layout (156% of the column) inside the scroll box. */
+.blog-wide:has(> .blog-table) {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  /* Scroll hint: a soft shadow on the side with more table (CSS only). The
+     `local` covers move with the content and hide the shadow at each end. */
+  background:
+    linear-gradient(to right, var(--bg) 40%, transparent) left / 1.5rem 100% no-repeat local,
+    linear-gradient(to left, var(--bg) 40%, transparent) right / 1.5rem 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, color-mix(in oklab, var(--fg) 22%, transparent), transparent) left / 0.6rem 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, color-mix(in oklab, var(--fg) 22%, transparent), transparent) right / 0.6rem 100% no-repeat scroll;
+}
+
+.blog-wide > .blog-table {
+  overflow: visible;
+  margin: 0;
+}
+
+.blog-wide > .blog-table > table {
+  width: 156%;
+}
+
 .blog-diagram {
   margin: 1.35rem 0;
   text-align: center;

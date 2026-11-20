@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- A table in `wide` stays in the reading column and scrolls sideways (it spilled into the sidenote margin).
+
 ### Fixed
 
 - A sidenote inside a table cell no longer floats onto the next column; on wide screens it sits under its text.

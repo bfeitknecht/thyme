@@ -547,6 +547,7 @@
 }
 
 /// Full-width container spanning both the prose column and the right sidenote margin.
+/// In HTML a table inside stays in the prose column and scrolls sideways at its wide width.
 /// Automatically clears any active right-margin sidenotes in both HTML (`clear: right`)
 /// and paged mode (`@preview/marge` page state).
 /// -> content
