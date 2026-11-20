@@ -473,6 +473,18 @@ nav.blog-toc .toc-num {
   position: relative;
 }
 
+/* A table cell has no margin to float into: margin-right: -56% of a narrow
+   cell lands on the next column. Show the note under its text instead. */
+@media only screen and (min-width: 1101px) {
+  :is(td, th) :is(.sidenote, .marginnote) {
+    float: none;
+    display: block;
+    width: auto;
+    margin: 0.3rem 0 0;
+    text-align: left;
+  }
+}
+
 .sidenote-number {
   counter-increment: sidenote-counter;
 }
