@@ -970,6 +970,15 @@ div.entry {
   font-weight: 600;
 }
 
+/* Title and reading time: one group, a short gap between them. */
+.entry-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 0.6em;
+  min-width: 0;
+}
+
 /* The reading time sits right after the title on an entry card. */
 .reading {
   font-family: var(--mono);

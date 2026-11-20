@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-11-20
+
+### Changed
+
+- **Entry cards: the reading time sits beside the title, the date alone on the right edge.**
+  Title and reading time form one group (`div.entry-title`), so on a narrow screen the
+  reading time wraps under the title, never between title and date. The leading `·` is gone.
+  Paged output reads `<n> min · <date>` on the right, the date last.
+
 ## [0.1.2] - 2026-11-18
 
 ### Added

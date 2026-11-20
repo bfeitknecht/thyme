@@ -37,12 +37,14 @@
   if target() == "html" {
     html.elem(wrapper-tag, attrs: (class: "entry"), {
       html.div(class: "entry-head", {
-        html.h3(if dest != none { link(dest, title) } else { title })
-        if reading != none {
-          // The reading time sits right after the title; the date stays alone
-          // on the right edge.
-          html.span(class: "reading", [ · ] + str(reading) + " min")
-        }
+        // Title and reading time form one group, so the time stays next to
+        // the title when the line wraps; the date stays alone on the right.
+        html.div(class: "entry-title", {
+          html.h3(if dest != none { link(dest, title) } else { title })
+          if reading != none {
+            html.span(class: "reading", str(reading) + " min")
+          }
+        })
         if created-str != none {
           html.elem("time", attrs: (class: "when", datetime: created-str), created-str)
         }
