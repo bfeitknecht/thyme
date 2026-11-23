@@ -1012,7 +1012,7 @@ tbody tr:last-child td {
 /* Without scroll-driven animations: a fixed fade on the right edge. */
 @supports not (animation-timeline: scroll()) {
   .blog-wide:has(> .blog-table) {
-    --fade-end: var(--scroll-fade, 2.5rem);
+    --fade-end: var(--scroll-fade, 3rem);
   }
 }
 
@@ -1026,7 +1026,7 @@ tbody tr:last-child td {
   /* Scroll hint: the table fades out at the edge where more of it is. The
      fade lengths follow the scroll position (scroll-driven animation): only
      the right edge at the start, both in the middle, only the left at the end. */
-  --fade: var(--scroll-fade, 2.5rem);
+  --fade: var(--scroll-fade, 3rem);
   mask-image: linear-gradient(
     to right,
     transparent,

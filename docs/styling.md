@@ -67,7 +67,7 @@ Set any of these on `:root` in your stylesheet. The defaults are thyme's look.
 | `--topbar-space` | `1.4rem` | space under the top bar |
 | `--radius` | `3px` | code chips, code blocks, boxes |
 | `--link-thickness`, `--link-underline` | `1px`, 42 % of `--fg` | link underlines |
-| `--scroll-fade` | `2.5rem` | how far a wide table fades out at the edge where more of it is |
+| `--scroll-fade` | `3rem` | how far a wide table fades out at the edge where more of it is |
 | `--code-size`, `--code-bg`, `--code-border` | `0.84em`, `--surface-1`, `1px solid var(--line)` | inline code chips |
 
 A narrower `--measure` leaves more room for sidenotes. Below 1100px the sidenotes

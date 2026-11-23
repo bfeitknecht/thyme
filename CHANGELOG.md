@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The scroll hint of a wide table is a fade of the table itself at the edge where more
   of it is (a CSS mask that follows the scroll position: right edge at the start, both in
   the middle, left at the end; a fixed right fade where scroll-driven animations are not
-  supported). Length: `--scroll-fade`. It was a faint radial shadow.
+  supported). Length: `--scroll-fade` (`3rem`). It was a faint radial shadow.
 - An inline code chip no longer breaks across lines (`white-space: nowrap`).
 
 ### Fixed
