@@ -77,7 +77,7 @@
     return none
   }
   let last = parts.last()
-  if last == "site.typ" and parts.len() >= 2 {
+  if (last == "site.typ" or last == "index.typ") and parts.len() >= 2 {
     parts.at(parts.len() - 2)
   } else if last.ends-with(".typ") {
     last.slice(0, last.len() - 4)
@@ -121,6 +121,8 @@
     "index.html"
   } else if clean.ends-with("/site.typ") {
     clean.slice(0, clean.len() - "/site.typ".len()) + "/index.html"
+  } else if clean.ends-with("/index.typ") {
+    clean.slice(0, clean.len() - "/index.typ".len()) + "/index.html"
   } else if clean.ends-with(".typ") {
     clean.slice(0, clean.len() - 4) + "/index.html"
   } else if clean.ends-with(".html") {

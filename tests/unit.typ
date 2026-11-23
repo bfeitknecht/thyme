@@ -1,11 +1,13 @@
 // Unit & regression tests for `@preview/thyme` and `@preview/syndicate`.
-#import "@preview/thyme:0.1.3": *
-#import "@preview/thyme:0.1.3" as thyme
+#import "@preview/thyme:0.1.4": *
+#import "@preview/thyme:0.1.4" as thyme
 #import blog: *
 // The internal helpers below are not part of the public surface, so the tests import
 // them from their modules. That also means a test cannot pass just because a name
 // happens to be re-exported.
-#import "../src/paths.typ": canonical-page-url, heading-anchor-id, slugify, source-path-for
+#import "../src/paths.typ": (
+  canonical-page-url, heading-anchor-id, route-html-path, slug-from-typ-path, slugify, source-path-for,
+)
 #import "../src/i18n.typ": assert-complete-translations, missing-translations, normalize-alternates
 #import "../src/seo.typ": content-to-feed-html
 #import "../src/text.typ": count-words, query-body-words, short-hash, to-plain-text, word-hint
@@ -57,6 +59,13 @@
 
 // 3. Slugify, heading anchor collision deduplication, source paths, canonical URLs, and hreflang normalization
 #assert.eq(slugify([`*glob?` — Notes & Proofs!]), "glob-notes-proofs")
+#assert.eq(slug-from-typ-path("posts/impli.typ"), "impli")
+#assert.eq(slug-from-typ-path("posts/gol/index.typ"), "gol")
+#assert.eq(slug-from-typ-path("posts/state-machine/site.typ"), "state-machine")
+#assert.eq(slug-from-typ-path("index.typ"), "index")
+#assert.eq(route-html-path("index.typ"), "index.html")
+#assert.eq(route-html-path("docs/intro/index.typ"), "docs/intro/index.html")
+#assert.eq(route-html-path("contact.typ"), "contact/index.html")
 #assert.eq(heading-anchor-id(heading[§]), "section")
 #let h-ex = heading[Example]
 #assert.eq(heading-anchor-id(h-ex, prior-headings: ()), "example")
