@@ -871,10 +871,14 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
           []
         }
         if wrap-main {
-          html.main({
-            top-bar
-            body
-          })
+          // The homepage gets `main.home`, so a stylesheet can size its title.
+          html.main(
+            ..if doc-path != none and str(doc-path).trim("/") == "index.html" { (class: "home") } else { (:) },
+            {
+              top-bar
+              body
+            },
+          )
         } else {
           top-bar
           body

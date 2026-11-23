@@ -1,4 +1,4 @@
-#import "@preview/thyme:0.1.4": *
+#import "@preview/thyme:0.1.5": *
 
 #show: webpage.with(
   title: [Contact],

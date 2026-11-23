@@ -22,6 +22,16 @@ __FONT_FACES__
   --sans: __FONT_SANS__;
   --mono: __FONT_MONO__;
 
+  /* Layout knobs a site can override from its own stylesheet (`stylesheets:`):
+     heading weight, the homepage title, page titles, entry-card titles, and
+     the space under the top bar. */
+  --heading-weight: 600;
+  --title-size: var(--step-3);
+  --title-tracking: -0.03em;
+  --page-title-size: var(--step-3);
+  --entry-title-size: var(--step-0);
+  --topbar-space: 1.4rem;
+
   --step--2: clamp(0.75rem, 0.73rem + 0.10vw, 0.81rem);
   --step--1: clamp(0.84rem, 0.81rem + 0.14vw, 0.92rem);
   --step-0: clamp(1.07rem, 1.02rem + 0.22vw, 1.17rem);
@@ -140,7 +150,7 @@ a:hover {
 
 /* Top utility bar: `/..` backlink on left, optional `en · de` + Tadi `.typ` source link on right */
 nav.back-home {
-  margin-bottom: 1.4rem;
+  margin-bottom: var(--topbar-space);
   display: flex;
   align-items: baseline;
   justify-content: space-between;
@@ -191,14 +201,21 @@ nav.back-home .site-nav a[aria-current="page"] {
 /* Headings & Prose */
 :is(h1, h2, h3, h4, h5, h6) {
   line-height: 1.18;
-  font-weight: 600;
+  font-weight: var(--heading-weight);
   letter-spacing: -0.015em;
   text-wrap: balance;
 }
 
 h1 {
-  font-size: var(--step-3);
+  font-size: var(--page-title-size);
   margin: 0 0 0.55rem 0;
+}
+
+/* The homepage title (`main.home`). */
+main.home > h1 {
+  font-size: var(--title-size);
+  line-height: 1;
+  letter-spacing: var(--title-tracking);
 }
 
 main > h1 > code {
@@ -207,7 +224,7 @@ main > h1 > code {
   background: transparent;
   border: none;
   padding: 0;
-  letter-spacing: -0.03em;
+  letter-spacing: var(--title-tracking);
 }
 
 /* Uniform hover underline across mixed `<code>` + prose titles */
@@ -557,8 +574,9 @@ code, pre, kbd, samp {
   font-feature-settings: "liga" 0;
 }
 
+/* A code chip never breaks across lines. */
 :where(:not(pre)) > code {
-  overflow-wrap: break-word;
+  white-space: nowrap;
 }
 
 :where(:not(pre):not(a)) > code {
@@ -945,13 +963,14 @@ tbody tr:last-child td {
   width: 100%;
   max-width: 100%;
   overflow-x: auto;
-  /* Scroll hint: a soft shadow on the side with more table (CSS only). The
-     `local` covers move with the content and hide the shadow at each end. */
+  /* Scroll hint: a straight, even shadow on the side with more table (CSS
+     only), the same strength top to bottom. The solid `local` covers move
+     with the content and hide the shadow at each end. */
   background:
-    linear-gradient(to right, var(--bg) 40%, transparent) left / 1.5rem 100% no-repeat local,
-    linear-gradient(to left, var(--bg) 40%, transparent) right / 1.5rem 100% no-repeat local,
-    radial-gradient(farthest-side at 0 50%, color-mix(in oklab, var(--fg) 22%, transparent), transparent) left / 0.6rem 100% no-repeat scroll,
-    radial-gradient(farthest-side at 100% 50%, color-mix(in oklab, var(--fg) 22%, transparent), transparent) right / 0.6rem 100% no-repeat scroll;
+    linear-gradient(var(--bg), var(--bg)) left / 1.25rem 100% no-repeat local,
+    linear-gradient(var(--bg), var(--bg)) right / 1.25rem 100% no-repeat local,
+    linear-gradient(to right, color-mix(in oklab, var(--fg) 28%, transparent), transparent) left / 0.75rem 100% no-repeat scroll,
+    linear-gradient(to left, color-mix(in oklab, var(--fg) 28%, transparent), transparent) right / 0.75rem 100% no-repeat scroll;
 }
 
 .blog-wide > .blog-table {
@@ -1021,8 +1040,8 @@ div.entry {
 
 .entry-head h3 {
   margin: 0;
-  font-size: var(--step-0);
-  font-weight: 600;
+  font-size: var(--entry-title-size);
+  font-weight: var(--heading-weight);
 }
 
 /* Title and reading time: one group, a short gap between them. */

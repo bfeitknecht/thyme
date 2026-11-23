@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Layout knobs for a site stylesheet.** CSS variables a site can set from its own
+  `stylesheets:` file: `--heading-weight`, `--title-size` and `--title-tracking` (the
+  homepage title), `--page-title-size`, `--entry-title-size` and `--topbar-space`. The
+  defaults keep the current look.
+- The homepage `<main>` carries `class="home"`, so a stylesheet can address its title.
+
+### Changed
+
+- The scroll hint of a wide table is a straight shadow of even strength from top to
+  bottom, a little stronger. It was a radial gradient, faint and round, under a fading
+  cover.
+- An inline code chip no longer breaks across lines (`white-space: nowrap`).
+
 ## [0.1.4] - 2026-11-24
 
 ### Added
