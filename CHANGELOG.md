@@ -9,10 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Layout knobs for a site stylesheet.** CSS variables a site can set from its own
-  `stylesheets:` file: `--heading-weight`, `--title-size` and `--title-tracking` (the
-  homepage title), `--page-title-size`, `--entry-title-size` and `--topbar-space`. The
-  defaults keep the current look.
+- **Styling without lock-in** (`docs/styling.md`). Every thyme rule sits in
+  `@layer thyme`, so a site stylesheet (`stylesheets:`) wins whatever the specificity.
+  Design tokens (CSS variables) cover fonts (`--body-font`, `--heading-font`), the type
+  scale (`--body-size`, `--body-leading`, `--heading-weight`, `--title-size`,
+  `--title-tracking`, `--page-title-size`, `--entry-title-size`), layout (`--page-max`,
+  `--page-padding`, `--measure` and their `-narrow` forms, `--topbar-space`), and
+  details (`--radius`, `--section-rule`, `--link-thickness`, `--link-underline`,
+  `--code-size`, `--code-bg`, `--code-border`). The defaults keep the current look.
+  `blog.site(base-stylesheet: false)` drops thyme's CSS for a site that brings its own.
+  The class names in `docs/styling.md` are now part of the stable surface.
 - The homepage `<main>` carries `class="home"`, so a stylesheet can address its title.
 - **Site footer.** `blog.site(footer: ...)` puts the same `<footer class="site-footer">` at
   the end of every page: homepage, posts, pages and tag archives.

@@ -515,12 +515,12 @@
 }
 
 // Minimal built-in layout CSS ONLY for the top utility bar on zero-stylesheet `thyme` core sites.
-#let _core-topbar-css = "nav.back-home { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; font-family: ui-monospace, monospace; font-size: 0.82rem; }
+#let _core-topbar-css = "@layer thyme { nav.back-home { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; font-family: ui-monospace, monospace; font-size: 0.82rem; }
 nav.back-home.only-end { justify-content: flex-end; }
 nav.back-home .top-actions { display: inline-flex; align-items: baseline; gap: 0.85rem; }
 a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-weight: 400; }
 :is(h2, h3, h4, h5, h6):hover > a.heading-anchor, a.heading-anchor:focus { opacity: 0.65; }
-@media print { nav.back-home, a.heading-anchor { display: none !important; } }"
+@media print { nav.back-home, a.heading-anchor { display: none !important; } } }"
 
 // Big operator glyphs whose presence inside `math.lr` requires vertical delimiter stretching.
 #let _math-big-ops = (

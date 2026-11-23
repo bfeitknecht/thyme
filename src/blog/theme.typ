@@ -338,7 +338,10 @@
     "__SURF1_DARK__": css-oklch(t.surface-1-dark),
     "__SURF2_DARK__": css-oklch(t.surface-2-dark),
   )
-  token-map.pairs().fold(read("style.css"), (css, pair) => css.replace(pair.at(0), pair.at(1)))
+  let css = token-map.pairs().fold(read("style.css"), (css, pair) => css.replace(pair.at(0), pair.at(1)))
+  // One cascade layer: a site stylesheet outside it wins over every thyme rule,
+  // whatever the specificity (docs/styling.md).
+  "@layer thyme {\n" + css + "\n}\n"
 }
 
 // Build a compact per-post `:root` CSS custom-property override block when a post inside

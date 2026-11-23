@@ -269,8 +269,14 @@
   /// -> bool | str
   expose-source: true,
   /// Additional user stylesheets (`path("extra.css")`) appended after `css/style.css`.
+  /// thyme's own rules sit in `@layer thyme`, so these win whatever their specificity.
+  /// Override the design tokens (`--body-font`, `--measure`, ...) here (docs/styling.md).
   /// -> array
   stylesheets: (),
+  /// Emit and link thyme's stylesheet (`css/style.css`). `false`: only `stylesheets`
+  /// style the site, for a site that brings its whole design.
+  /// -> bool
+  base-stylesheet: true,
   /// Optional site favicon (`path("favicon.svg")` or `(path: "favicon.svg", data: ...)`).
   /// -> path | dictionary | none
   favicon: none,
@@ -404,15 +410,20 @@
     scholar-meta: scholar-meta,
   )
 
-  let merged-stylesheets = (
+  // `base-stylesheet: false` drops thyme's CSS: the site brings all of it.
+  let merged-stylesheets = if base-stylesheet {
     (
-      path: stylesheet-asset-path,
-      href: built-css-href,
-      data: built-css,
-      label: <stylesheet>,
-    ),
-    ..stylesheets,
-  )
+      (
+        path: stylesheet-asset-path,
+        href: built-css-href,
+        data: built-css,
+        label: <stylesheet>,
+      ),
+      ..stylesheets,
+    )
+  } else {
+    stylesheets
+  }
 
   core-site(
     title: title,

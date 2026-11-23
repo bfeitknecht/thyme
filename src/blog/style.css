@@ -22,9 +22,25 @@ __FONT_FACES__
   --sans: __FONT_SANS__;
   --mono: __FONT_MONO__;
 
-  /* Layout knobs a site can override from its own stylesheet (`stylesheets:`):
-     heading weight, the homepage title, page titles, entry-card titles, and
-     the space under the top bar. */
+  /* Design tokens. A site overrides any of them from its own stylesheet
+     (`blog.site(stylesheets: ...)`); thyme's rules sit in `@layer thyme`, so a
+     plain site rule always wins. Reference: docs/styling.md. */
+  --body-font: var(--serif);
+  --heading-font: var(--serif);
+  --body-size: var(--step-0);
+  --body-leading: 1.66;
+  --page-max: 76rem;
+  --page-padding: clamp(2.75rem, 6.5vw, 5rem) clamp(1.25rem, 4vw, 2.5rem) clamp(4rem, 8vw, 6.5rem) clamp(1.5rem, 8vw, 7rem);
+  --measure: 62%;
+  --page-padding-narrow: 2rem 1.25rem 3.5rem 1.25rem;
+  --measure-narrow: 44rem;
+  --radius: 3px;
+  --link-thickness: 1px;
+  --link-underline: color-mix(in oklab, var(--fg) 42%, transparent);
+  --code-size: 0.84em;
+  --code-bg: var(--surface-1);
+  --code-border: 1px solid var(--line);
+  --section-rule: 1px solid var(--line);
   --heading-weight: 600;
   --title-size: var(--step-3);
   --title-tracking: -0.03em;
@@ -87,13 +103,13 @@ html {
 body {
   min-height: 100svh;
   margin: 0 auto;
-  padding: clamp(2.75rem, 6.5vw, 5rem) clamp(1.25rem, 4vw, 2.5rem) clamp(4rem, 8vw, 6.5rem) clamp(1.5rem, 8vw, 7rem);
-  max-width: 76rem;
+  padding: var(--page-padding);
+  max-width: var(--page-max);
   background: var(--bg);
   color: var(--fg);
-  font-family: var(--serif);
-  font-size: var(--step-0);
-  line-height: 1.66;
+  font-family: var(--body-font);
+  font-size: var(--body-size);
+  line-height: var(--body-leading);
   font-synthesis: none;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -130,15 +146,15 @@ math[display="block"] {
 
 /* Main reading measure + wide right margin for sidenotes */
 main {
-  width: 62%;
+  width: var(--measure);
 }
 
 /* Strictly monotone links mixed in oklab */
 a {
   color: inherit;
   text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-decoration-color: color-mix(in oklab, var(--fg) 42%, transparent);
+  text-decoration-thickness: var(--link-thickness);
+  text-decoration-color: var(--link-underline);
   text-underline-offset: 0.2em;
   transition: color 0.15s ease, text-decoration-color 0.15s ease;
 }
@@ -200,6 +216,7 @@ nav.back-home .site-nav a[aria-current="page"] {
 
 /* Headings & Prose */
 :is(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--heading-font);
   line-height: 1.18;
   font-weight: var(--heading-weight);
   letter-spacing: -0.015em;
@@ -326,7 +343,7 @@ a.prop-tag:hover {
 h2 {
   margin: 2.35rem 0 0.95rem 0;
   padding-bottom: 0.45rem;
-  border-bottom: 1px solid var(--line);
+  border-bottom: var(--section-rule);
   font-size: var(--step-2);
 }
 
@@ -580,11 +597,11 @@ code, pre, kbd, samp {
 }
 
 :where(:not(pre):not(a)) > code {
-  font-size: 0.84em;
+  font-size: var(--code-size);
   padding: 0.1rem 0.34rem;
-  border-radius: 3px;
-  background: var(--surface-1);
-  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--code-bg);
+  border: var(--code-border);
 }
 
 a > code {
@@ -596,7 +613,7 @@ pre {
   padding: 0.85rem 1rem;
   background: var(--surface-1);
   border: 1px solid var(--line);
-  border-radius: 3px;
+  border-radius: var(--radius);
   overflow-x: auto;
   font-size: 0.84rem;
   line-height: 1.52;
@@ -608,7 +625,7 @@ kbd {
   padding: 0.08rem 0.36rem;
   border: 1px solid var(--frame);
   border-bottom-width: 2px;
-  border-radius: 3px;
+  border-radius: var(--radius);
   background: var(--surface-1);
 }
 
@@ -617,7 +634,7 @@ kbd {
   position: relative;
   margin: 1.25rem 0;
   border: 1px solid var(--line);
-  border-radius: 3px;
+  border-radius: var(--radius);
   background: var(--surface-1);
   overflow: hidden;
 }
@@ -720,7 +737,7 @@ kbd {
   background: var(--bg);
   border: 1px solid var(--line);
   color: var(--muted);
-  border-radius: 3px;
+  border-radius: var(--radius);
   padding: 0.12rem 0.45rem;
   font-family: var(--mono);
   font-size: 0.68rem;
@@ -825,7 +842,7 @@ tbody tr:last-child td {
 .blog-sbox {
   margin: 1.35rem 0;
   border: 1px solid var(--frame);
-  border-radius: 3px;
+  border-radius: var(--radius);
   background: var(--bg);
   overflow: hidden;
 }
@@ -1167,12 +1184,12 @@ nav.blog-post-nav .post-nav-label {
 /* Responsive collapse on viewports < 1100px */
 @media only screen and (max-width: 1100px) {
   body {
-    padding: 2rem 1.25rem 3.5rem 1.25rem;
+    padding: var(--page-padding-narrow);
   }
   main,
   .blog-wide {
     width: 100%;
-    max-width: 44rem;
+    max-width: var(--measure-narrow);
     margin-inline: auto;
   }
   .blog-wide {
