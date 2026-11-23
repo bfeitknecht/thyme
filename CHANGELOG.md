@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   scale (`--body-size`, `--body-leading`, `--heading-weight`, `--title-size`,
   `--title-tracking`, `--page-title-size`, `--entry-title-size`), layout (`--page-max`,
   `--page-padding`, `--measure` and their `-narrow` forms, `--topbar-space`), and
-  details (`--radius`, `--section-rule`, `--link-thickness`, `--link-underline`,
+  details (`--radius`, `--scroll-fade`, `--section-rule`, `--link-thickness`, `--link-underline`,
   `--code-size`, `--code-bg`, `--code-border`). The defaults keep the current look.
   `blog.site(base-stylesheet: false)` drops thyme's CSS for a site that brings its own.
   The class names in `docs/styling.md` are now part of the stable surface.
@@ -25,9 +25,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- The scroll hint of a wide table is a straight shadow of even strength from top to
-  bottom, and clearly visible. It was a radial gradient, faint and round, under a fading
-  cover.
+- The scroll hint of a wide table is a fade of the table itself at the edge where more
+  of it is (a CSS mask that follows the scroll position: right edge at the start, both in
+  the middle, left at the end; a fixed right fade where scroll-driven animations are not
+  supported). Length: `--scroll-fade`. It was a faint radial shadow.
 - An inline code chip no longer breaks across lines (`white-space: nowrap`).
 
 ### Fixed

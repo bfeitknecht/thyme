@@ -98,6 +98,10 @@ html {
     transition-duration: 0.001ms !important;
     animation-duration: 0.001ms !important;
   }
+  /* The table fade follows the scroll position, not the clock: keep it. */
+  .blog-wide:has(> .blog-table) {
+    animation-duration: auto !important;
+  }
 }
 
 body {
@@ -977,6 +981,41 @@ tbody tr:last-child td {
   clear: right;
 }
 
+@property --fade-start {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --fade-end {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes thyme-scroll-fade {
+  0% {
+    --fade-start: 0px;
+    --fade-end: var(--fade);
+  }
+  8%,
+  92% {
+    --fade-start: var(--fade);
+    --fade-end: var(--fade);
+  }
+  100% {
+    --fade-start: var(--fade);
+    --fade-end: 0px;
+  }
+}
+
+/* Without scroll-driven animations: a fixed fade on the right edge. */
+@supports not (animation-timeline: scroll()) {
+  .blog-wide:has(> .blog-table) {
+    --fade-end: var(--scroll-fade, 2.5rem);
+  }
+}
+
 /* A wide table stays in the reading column and scrolls sideways: spilling
    into the sidenote margin broke the flow of the page. The table keeps its
    wide layout (156% of the column) inside the scroll box. */
@@ -984,14 +1023,19 @@ tbody tr:last-child td {
   width: 100%;
   max-width: 100%;
   overflow-x: auto;
-  /* Scroll hint: a straight, even shadow on the side with more table (CSS
-     only), the same strength top to bottom. The solid `local` covers move
-     with the content and hide the shadow at each end. */
-  background:
-    linear-gradient(var(--bg), var(--bg)) left / 1.5rem 100% no-repeat local,
-    linear-gradient(var(--bg), var(--bg)) right / 1.5rem 100% no-repeat local,
-    linear-gradient(to right, color-mix(in oklab, var(--fg) 50%, transparent), transparent) left / 1rem 100% no-repeat scroll,
-    linear-gradient(to left, color-mix(in oklab, var(--fg) 50%, transparent), transparent) right / 1rem 100% no-repeat scroll;
+  /* Scroll hint: the table fades out at the edge where more of it is. The
+     fade lengths follow the scroll position (scroll-driven animation): only
+     the right edge at the start, both in the middle, only the left at the end. */
+  --fade: var(--scroll-fade, 2.5rem);
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 var(--fade-start),
+    #000 calc(100% - var(--fade-end)),
+    transparent
+  );
+  animation: thyme-scroll-fade linear both;
+  animation-timeline: scroll(self inline);
 }
 
 .blog-wide > .blog-table {
