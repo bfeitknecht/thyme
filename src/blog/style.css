@@ -170,6 +170,24 @@ nav.back-home a:hover {
   text-decoration-color: var(--fg);
 }
 
+/* `blog.site(nav: ...)`: path-style section links in place of `/..`; the current one in full colour */
+nav.back-home .site-nav {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem clamp(0.7rem, 3vw, 1.5rem);
+}
+
+nav.back-home .site-nav a {
+  text-decoration: none;
+}
+
+nav.back-home .site-nav a:hover,
+nav.back-home .site-nav a:focus-visible,
+nav.back-home .site-nav a[aria-current="page"] {
+  color: var(--fg);
+}
+
 /* Headings & Prose */
 :is(h1, h2, h3, h4, h5, h6) {
   line-height: 1.18;

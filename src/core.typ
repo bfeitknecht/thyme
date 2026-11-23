@@ -421,13 +421,60 @@
   metas.fold((), (acc, m) => acc + m.value.entries.keys())
 }
 
+// Site navigation for the top bar: `nav` is an array of site-root paths
+// (`("/", "/posts/", "/tags/")`), each shown as its own label, or
+// `(href: "/posts/", label: [posts])` dictionaries. Hrefs resolve relative to
+// `doc-path` (a bundle stays browsable from disk); with no `doc-path` (404) they
+// stay absolute. The section that contains `doc-path` gets `aria-current="page"`:
+// `/` only on the homepage, any other path on itself and everything under it.
+#let render-site-nav(nav, doc-path: none) = {
+  let here-path = if doc-path == none { none } else { str(doc-path).trim("/") }
+  html.span(class: "site-nav", {
+    for item in nav {
+      let (href, label) = if type(item) == dictionary {
+        (str(item.href), item.at("label", default: str(item.href)))
+      } else {
+        (str(item), str(item))
+      }
+      let is-external = href.starts-with("http://") or href.starts-with("https://")
+      let target = href.trim("/", at: start)
+      let section = target.trim("/", at: end)
+      let current = if here-path == none or is-external {
+        false
+      } else if section == "" {
+        here-path == "index.html"
+      } else {
+        here-path == section or here-path.starts-with(section + "/")
+      }
+      let resolved = if is-external or here-path == none {
+        href
+      } else if target == "" or target.ends-with("/") {
+        rel-root(doc-path) + target + "index.html"
+      } else {
+        rel-root(doc-path) + target
+      }
+      html.a(
+        href: resolved,
+        ..if current { ("aria-current": "page") } else { (:) },
+        label,
+      )
+    }
+  })
+}
+
 // Render the top utility bar (`backlink` on the left, `en · de` + `.typ` source link on the right).
+// With `blog.site(nav: ...)` the site navigation takes the place of the backlink.
 #let render-top-bar(
   back-content: none,
   langs: ("en",),
   source-href: none,
   source-label: ".typ",
+  nav: none,
+  doc-path: none,
 ) = {
+  if nav != none and nav.len() > 0 {
+    back-content = render-site-nav(nav, doc-path: doc-path)
+  }
   let has-lang = langs.len() >= 2
   let has-src = (
     source-href != none and source-label != none and source-label != false
@@ -668,6 +715,9 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
   /// honour sRGB there, so the `oklch` tokens are converted to hex for this one tag.
   /// -> dictionary
   theme-config: theme-default,
+  /// Site navigation for the top bar (`blog.site(nav: ...)`); `none` keeps the backlink.
+  /// -> array | none
+  nav: none,
   body,
 ) = {
   let in-bundle = doc-path != none
@@ -806,12 +856,17 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
       let inner = {
         render-lang-inputs(langs)
         let top-bar = if render-topbar {
-          render-top-bar(
-            back-content: back-content,
-            langs: langs,
-            source-href: source-href,
-            source-label: source-label,
-          )
+          context {
+            let cfg = site-config()
+            render-top-bar(
+              back-content: back-content,
+              langs: langs,
+              source-href: source-href,
+              source-label: source-label,
+              nav: if nav != none { nav } else if cfg != none { cfg.at("nav", default: none) },
+              doc-path: doc-path,
+            )
+          }
         } else {
           []
         }

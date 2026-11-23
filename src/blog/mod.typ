@@ -36,6 +36,8 @@
 // Applied for you, and therefore not exported:
 //
 //   post-nav    `blog.site(post-nav: true)` puts it under every post.
+//   nav         `blog.site(nav: ("/", "/posts/", "/tags/"))` puts section links
+//               in the top bar in place of `/..`.
 //   tag-cloud   `blog.site` builds the `/tags/` index and the per-tag archives.
 //   post-asset  a post's `assets: ((name, bytes),)` parameter does the same job.
 //   show-reading   `blog.site(show-reading: true)` puts the estimated minutes

@@ -89,6 +89,7 @@ That is the whole core surface.
 **Applied for you by `blog.site`, so not exported:**
 
 - `post-nav` — `blog.site(post-nav: true)` puts newer/older links under every post.
+- `nav` — `blog.site(nav: ("/", "/posts/", "/tags/"))` puts path-style section links in the top bar in place of `/..`; the current section is marked `aria-current="page"`.
 - `show-reading` — `blog.site(show-reading: true)` puts `<n> min` beside the title on every entry card; the date stays alone on the right edge.
 - `tag-cloud` — `blog.site` builds the `/tags/` index and the per-tag archives.
 - `post-asset` — a post's `assets: ((name, bytes),)` parameter does the same job.

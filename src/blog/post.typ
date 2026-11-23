@@ -569,6 +569,8 @@
                 langs: eff-langs,
                 source-href: src-href,
                 source-label: src-label,
+                nav: if site-config != none { site-config.at("nav", default: none) },
+                doc-path: doc-path,
               )
 
               html.header(class: "article-header", {

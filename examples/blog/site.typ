@@ -1,5 +1,5 @@
-#import "@preview/thyme:0.1.3": *
-#import "@preview/thyme:0.1.3": blog
+#import "@preview/thyme:0.1.4": *
+#import "@preview/thyme:0.1.4": blog
 
 #show: blog.site.with(
   description: "Algebraic invariants, automata, and bilingual static notes.",
@@ -10,6 +10,7 @@
   heading-permalinks: true,
   backlinks: true,
   post-nav: true,
+  nav: ("/", "/about/", "/tags/"),
   open-graph: true,
   scholar-meta: true,
   robots: path("robots.txt"),

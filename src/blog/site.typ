@@ -313,6 +313,11 @@
   /// Render chronological older / newer navigation links at the bottom of posts by default.
   /// -> bool
   post-nav: false,
+  /// Site navigation in the top bar, in place of the `/..` backlink: site-root paths shown
+  /// as their own labels (`("/", "/posts/", "/tags/")`) or `(href: ..., label: ...)`
+  /// dictionaries. The current section is marked `aria-current="page"`. `none` keeps `/..`.
+  /// -> array | none
+  nav: none,
   /// Show an estimated reading time (`· <n> min`) beside the date on every entry card:
   /// homepage `#post(...)` mounts, `#posts()` listings, and tag archive pages.
   /// -> bool
@@ -386,6 +391,7 @@
     heading-permalinks: heading-permalinks,
     backlinks: backlinks,
     post-nav: post-nav,
+    nav: nav,
     show-reading: show-reading,
     copy-button: copy-button,
     open-graph: open-graph,
@@ -495,6 +501,7 @@
       lang: primary-lang,
       stylesheet-paths: sheet-hrefs,
       theme-config: theme-config,
+      nav: nav,
     ),
     _extra-docs-fn: (
       all-mounts: (),

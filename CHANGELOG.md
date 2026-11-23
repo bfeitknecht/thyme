@@ -7,12 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-11-24
+
+### Added
+
+- **Site navigation in the top bar.** `blog.site(nav: ("/", "/posts/", "/tags/"))`
+  puts path-style section links (`span.site-nav`) in the top bar of every page in place
+  of the `/..` backlink: homepage, posts, pages, tag archives and `404.html`. An entry is a
+  site-root path, shown as its own label, or `(href: ..., label: ...)`. The section that
+  holds the page is marked `aria-current="page"` (`/` only on the homepage). Hrefs are
+  relative, so a bundle still browses from disk; the 404 page keeps them absolute.
+
 ### Changed
 
 - A table in `wide` stays in the reading column and scrolls sideways (it spilled into the sidenote margin).
 
 ### Fixed
 
+- A folder post `posts/<name>/index.typ` gets the slug `<name>` (URL `/posts/<name>/`), as
+  documented, instead of `index`; `<dir>/index.typ` pages route to `<dir>/index.html`. Only
+  `<name>/site.typ` was handled.
 - A sidenote inside a table cell no longer floats onto the next column; on wide screens it sits under its text.
 
 ## [0.1.3] - 2026-11-20

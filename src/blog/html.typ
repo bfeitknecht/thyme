@@ -3,7 +3,7 @@
 
 #import "@preview/cheq:0.4.0": checklist
 #import "@preview/zebraw:0.6.3": zebraw-init
-#import "../core.typ": render-core-shell
+#import "../core.typ": render-core-shell, render-site-nav
 #import "../paths.typ": with-smart-refs
 #import "../text.typ": to-plain-text
 #import "theme.typ": css-hex, stylesheet-css, stylesheet-href, theme-default
@@ -143,6 +143,9 @@
 #let render-not-found-page(
   site-title: [Blog],
   home-text: "/..",
+  /// Site navigation (`blog.site(nav: ...)`), absolute hrefs; replaces `home-text`.
+  /// -> array | none
+  nav: none,
   lang: "en",
   stylesheet-paths: auto,
   theme-config: theme-default,
@@ -188,7 +191,7 @@
         html.elem(
           "nav",
           attrs: (class: "back-home", "aria-label": "Site navigation"),
-          html.a(href: "/", home-text),
+          if nav != none and nav.len() > 0 { render-site-nav(nav) } else { html.a(href: "/", home-text) },
         )
         html.h1("404")
         html.p(class: "lede", "No such page.")

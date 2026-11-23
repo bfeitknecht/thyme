@@ -1,7 +1,7 @@
-// thyme v0.1.3 — Package Reference Manual (generated from source doc-comments via @preview/tidy)
+// thyme v0.1.4 — Package Reference Manual (generated from source doc-comments via @preview/tidy)
 #import "@preview/tidy:0.4.3"
-#import "@preview/thyme:0.1.3" as thyme
-#import "@preview/thyme:0.1.3": *
+#import "@preview/thyme:0.1.4" as thyme
+#import "@preview/thyme:0.1.4": *
 #import blog: kbd, sidenote, theme-default, wide, zebraw
 
 // `checklist` and `zebraw-init` are upstream packages that `blog` wraps. The manual
@@ -24,7 +24,7 @@
   header: context {
     if here().page() > 1 {
       set text(font: t.mono-fonts, size: 7.5pt, fill: t.muted-light)
-      [thyme v0.1.3 #h(1fr) Package Reference Manual]
+      [thyme v0.1.4 #h(1fr) Package Reference Manual]
       v(-0.45em)
       line(length: 100%, stroke: 0.45pt + t.border-light)
     }
@@ -465,7 +465,7 @@
     font: t.mono-fonts,
     size: 0.9em,
     fill: t.muted-light,
-  )[v0.1.3 · Typst >= 0.15.0]
+  )[v0.1.4 · Typst >= 0.15.0]
   v(0.35em)
   text(size: 1.14em, fill: t.muted-light, emph[
     Build static sites and blogs from Typst documents, with typed HTML, Tadi Web .typ source transparency, zero-JS CSS i18n, XML sitemaps & feeds, and a monochrome blog preset.
@@ -481,11 +481,11 @@
         columns: (6.8em, 1fr),
         row-gutter: 0.34em,
         column-gutter: 0.9em,
-        text(fill: t.muted-light)[core ssg], [`#import "@preview/thyme:0.1.3": *`],
+        text(fill: t.muted-light)[core ssg], [`#import "@preview/thyme:0.1.4": *`],
 
         text(fill: t.muted-light)[blog preset], [`#import blog: *` or `blog.site.with(...)`],
 
-        text(fill: t.muted-light)[scaffold], [`typst init @preview/thyme:0.1.3 my-site`],
+        text(fill: t.muted-light)[scaffold], [`typst init @preview/thyme:0.1.4 my-site`],
 
         text(fill: t.muted-light)[dev / build], [`typst watch --features html,bundle -f bundle site.typ dist`],
 
@@ -522,7 +522,7 @@
       text(font: t.sans-fonts, size: 7.8pt, weight: "bold")[RESPONSIBILITIES],
     ),
     [Core SSG],
-    [`#import "@preview/thyme:0.1.3": *`],
+    [`#import "@preview/thyme:0.1.4": *`],
     [Seven names: `site`, `webpage`, `mount(path(...))`, `file`, `backlinks`, `#tr(...)` zero-JS CSS i18n + `hreflang` alternates, and `robots-txt`. Markup beyond content uses Typst's own `html.elem`. `sitemap.xml`, OpenGraph/Scholar `<meta>`, and summary or full-HTML `rss.xml` / `atom.xml` are emitted for you.],
 
     [`blog` Preset],
@@ -549,7 +549,7 @@ Two small re-export lists are the public API. Everything a site file writes by h
 in one of them; everything else in `src/` is a module-level function that the engine and
 the presets call.
 
-== Core — `#import "@preview/thyme:0.1.3": *`
+== Core — `#import "@preview/thyme:0.1.4": *`
 
 #let core-surface = (
   (
@@ -587,7 +587,7 @@ Seven names. Everything a `site` or `webpage` applies for you is absent on purpo
   `llms.txt` is copied byte for byte when you pass `path(...)`.
 - Per-page assets go in the page's `assets:` parameter.
 
-== `blog` — `#import "@preview/thyme:0.1.3": blog` then `#import blog: *`
+== `blog` — `#import "@preview/thyme:0.1.4": blog` then `#import blog: *`
 
 #let blog-surface = (
   ("site", [The blog bundler: `#show: blog.site.with(...)`.], [Engine]),
@@ -640,6 +640,7 @@ Seven names. Everything a `site` or `webpage` applies for you is absent on purpo
 Applied for you by `blog.site`, and absent on purpose:
 
 - `blog.site(post-nav: true)` puts newer/older links under every post.
+- `blog.site(nav: ("/", "/posts/", "/tags/"))` puts path-style section links in the top bar in place of `/..`. Each entry is a site-root path (shown as its own label) or `(href: ..., label: ...)`. The current section is marked `aria-current="page"`.
 - `blog.site` builds the `/tags/` index and the per-tag archives.
 - A post's `assets: ((name, bytes),)` parameter emits a co-located asset.
 
