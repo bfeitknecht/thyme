@@ -24,6 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   cover.
 - An inline code chip no longer breaks across lines (`white-space: nowrap`).
 
+### Fixed
+
+- Code blocks with ten or more lines: from line 10 on, the code no longer shifts one
+  column right (the line-number gutter now has a real two-digit minimum width).
+
 ## [0.1.4] - 2026-11-24
 
 ### Added

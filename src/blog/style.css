@@ -673,8 +673,12 @@ kbd {
   border-right: 1px solid var(--line);
   color: var(--muted);
   text-align: right;
-  min-width: 2.3ch;
+  /* Every gutter as wide as two digits: content-box, or the global
+     border-box folds the padding into min-width and line 10 shifts the code. */
+  box-sizing: content-box;
+  min-width: 2ch;
   font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .expressive-code .code {
