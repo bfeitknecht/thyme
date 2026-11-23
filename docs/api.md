@@ -90,6 +90,7 @@ That is the whole core surface.
 
 - `post-nav` — `blog.site(post-nav: true)` puts newer/older links under every post.
 - CSS knobs — a site stylesheet (`blog.site(stylesheets: ...)`) can set `--heading-weight`, `--title-size`, `--title-tracking`, `--page-title-size`, `--entry-title-size` and `--topbar-space`; the homepage `<main>` has `class="home"`.
+- `footer` — `blog.site(footer: links(...))` puts the same footer at the end of every page; use absolute or `<label>` links.
 - `nav` — `blog.site(nav: ("/", "/posts/", "/tags/"))` puts path-style section links in the top bar in place of `/..`; the current section is marked `aria-current="page"`.
 - `show-reading` — `blog.site(show-reading: true)` puts `<n> min` beside the title on every entry card; the date stays alone on the right edge.
 - `tag-cloud` — `blog.site` builds the `/tags/` index and the per-tag archives.

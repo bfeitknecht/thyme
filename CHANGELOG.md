@@ -14,11 +14,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   homepage title), `--page-title-size`, `--entry-title-size` and `--topbar-space`. The
   defaults keep the current look.
 - The homepage `<main>` carries `class="home"`, so a stylesheet can address its title.
+- **Site footer.** `blog.site(footer: ...)` puts the same `<footer class="site-footer">` at
+  the end of every page: homepage, posts, pages and tag archives.
 
 ### Changed
 
 - The scroll hint of a wide table is a straight shadow of even strength from top to
-  bottom, a little stronger. It was a radial gradient, faint and round, under a fading
+  bottom, and clearly visible. It was a radial gradient, faint and round, under a fading
   cover.
 - An inline code chip no longer breaks across lines (`white-space: nowrap`).
 

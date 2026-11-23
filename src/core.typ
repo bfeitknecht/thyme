@@ -870,6 +870,16 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
         } else {
           []
         }
+        // `blog.site(footer: ...)`: the same footer at the end of every page.
+        let site-footer = if in-bundle {
+          context {
+            let cfg = site-config()
+            let f = if cfg != none { cfg.at("footer", default: none) }
+            if f != none { html.footer(class: "site-footer", f) }
+          }
+        } else {
+          []
+        }
         if wrap-main {
           // The homepage gets `main.home`, so a stylesheet can size its title.
           html.main(
@@ -877,11 +887,13 @@ a.heading-anchor { margin-left: 0.35em; opacity: 0; text-decoration: none; font-
             {
               top-bar
               body
+              site-footer
             },
           )
         } else {
           top-bar
           body
+          site-footer
         }
       }
       show: with-html-math

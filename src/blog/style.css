@@ -967,10 +967,10 @@ tbody tr:last-child td {
      only), the same strength top to bottom. The solid `local` covers move
      with the content and hide the shadow at each end. */
   background:
-    linear-gradient(var(--bg), var(--bg)) left / 1.25rem 100% no-repeat local,
-    linear-gradient(var(--bg), var(--bg)) right / 1.25rem 100% no-repeat local,
-    linear-gradient(to right, color-mix(in oklab, var(--fg) 28%, transparent), transparent) left / 0.75rem 100% no-repeat scroll,
-    linear-gradient(to left, color-mix(in oklab, var(--fg) 28%, transparent), transparent) right / 0.75rem 100% no-repeat scroll;
+    linear-gradient(var(--bg), var(--bg)) left / 1.5rem 100% no-repeat local,
+    linear-gradient(var(--bg), var(--bg)) right / 1.5rem 100% no-repeat local,
+    linear-gradient(to right, color-mix(in oklab, var(--fg) 50%, transparent), transparent) left / 1rem 100% no-repeat scroll,
+    linear-gradient(to left, color-mix(in oklab, var(--fg) 50%, transparent), transparent) right / 1rem 100% no-repeat scroll;
 }
 
 .blog-wide > .blog-table {

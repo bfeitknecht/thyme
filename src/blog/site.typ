@@ -318,6 +318,11 @@
   /// dictionaries. The current section is marked `aria-current="page"`. `none` keeps `/..`.
   /// -> array | none
   nav: none,
+  /// A footer at the end of every page (homepage, posts, pages, tag archives), wrapped in
+  /// `<footer class="site-footer">`. Use absolute or `<label>` links: the pages sit at
+  /// different depths.
+  /// -> content | none
+  footer: none,
   /// Show an estimated reading time (`· <n> min`) beside the date on every entry card:
   /// homepage `#post(...)` mounts, `#posts()` listings, and tag archive pages.
   /// -> bool
@@ -392,6 +397,7 @@
     backlinks: backlinks,
     post-nav: post-nav,
     nav: nav,
+    footer: footer,
     show-reading: show-reading,
     copy-button: copy-button,
     open-graph: open-graph,
