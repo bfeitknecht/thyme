@@ -14,13 +14,13 @@
 /// -> function
 #let tablem = _tablem
 
-/// Classic academic three-line table (`@preview/tablem:0.3.0`).
+/// Booktabs-style table: three rules, top, under the header, bottom (`@preview/tablem:0.3.0`).
 /// -> function
-#let three-line-table = _three-line-table
+#let booktab = _three-line-table
 
-/// Inner crosshair grid table built on `tablem` (`left` & `top` hairlines between cells).
+/// Crosshair table built on `tablem`: hairlines between cells only, no outer frame.
 /// -> content
-#let grid-table(
+#let crosstab(
   /// Markdown-style pipe table content block.
   /// -> content
   body,
@@ -51,7 +51,7 @@
       body,
     )
     if target() == "html" {
-      html.div(class: "blog-grid-table", inner)
+      html.div(class: "blog-crosstab", inner)
     } else {
       inner
     }
@@ -485,10 +485,10 @@
   }
 }
 
-#let note-box = callout.with(kind: "note")
-#let tip-box = callout.with(kind: "tip")
-#let warning-box = callout.with(kind: "warning")
-#let important-box = callout.with(kind: "important")
+#let note = callout.with(kind: "note")
+#let tip = callout.with(kind: "tip")
+#let warning = callout.with(kind: "warning")
+#let important = callout.with(kind: "important")
 
 /// Section-opening italic epigraph with optional right-aligned attribution.
 ///
@@ -546,13 +546,14 @@
   }
 }
 
-/// Full-width container spanning both the prose column and the right sidenote margin.
-/// In HTML a table inside stays in the prose column and scrolls sideways at its wide width.
+/// Full-width container for pictures and figures: spans the prose column and the right
+/// sidenote margin. Tables do not need it: a table inside stays in the prose column and
+/// scrolls sideways at its wide width.
 /// Automatically clears any active right-margin sidenotes in both HTML (`clear: right`)
 /// and paged mode (`@preview/marge` page state).
 /// -> content
 #let wide(
-  /// Wide table, figure, or listing body.
+  /// Picture, figure or diagram.
   /// -> content
   body,
 ) = {

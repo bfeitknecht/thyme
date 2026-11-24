@@ -1,5 +1,5 @@
-#import "@preview/thyme:0.1.5": *
-#import "@preview/thyme:0.1.5": blog
+#import "@preview/thyme:0.2.0": *
+#import "@preview/thyme:0.2.0": blog
 
 #show: blog.site.with(
   description: "Algebraic invariants, automata, and bilingual static notes.",

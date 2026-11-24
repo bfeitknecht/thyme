@@ -1,4 +1,4 @@
-#import "@preview/thyme:0.1.5": *
+#import "@preview/thyme:0.2.0": *
 #import blog: *
 
 #show: post.with(
@@ -28,22 +28,20 @@ Passing capability paths (`#post(path("posts/fixed-points.typ"))`) lets `thyme` 
 
 = Compilation Modes at a Glance <modes>
 
-When a table or figure benefits from the full width of prose plus margin, wrap it in `#wide[...]`:
-
-#wide[
-  #tablem[
-    | *Command* | *Target* | *Result* |
-    | :--- | :--- | :--- |
-    | `typst compile --features html,bundle -f bundle site.typ public` | `bundle` | `index.html`, `posts/`, `.typ` sources, `sitemap.xml`, `rss.xml`, `atom.xml` |
-    | `typst watch --features html,bundle -f bundle site.typ public` | `bundle` | Built-in live-reloading HTTP dev server |
-    | `typst watch posts/fixed-points.typ` | `paged` | Instant `height: auto` editor preview |
-  ]
+#tablem[
+  | *Command* | *Target* | *Result* |
+  | :--- | :--- | :--- |
+  | `typst compile --features html,bundle -f bundle site.typ public` | `bundle` | `index.html`, `posts/`, `.typ` sources, `sitemap.xml`, `rss.xml`, `atom.xml` |
+  | `typst watch --features html,bundle -f bundle site.typ public` | `bundle` | Built-in live-reloading HTTP dev server |
+  | `typst watch posts/fixed-points.typ` | `paged` | Instant `height: auto` editor preview |
 ]
+
+A wide table stays in the text column and scrolls sideways. A picture or figure that needs more room goes in `#wide[...]`, which spans the text column and the margin:
 
 #example[Single-Source Fan-Out][
   Vector diagrams authored in Typst render natively in editor previews and as crisp inline `<svg>` in HTML (automatically inverted in dark mode):
 
-  #diagram(
+  #wide[#diagram(
     caption: [One Typst source tree compiling to HTML, raw .typ sources, sitemap.xml, and RSS / Atom feeds.],
   )[
     #set text(
@@ -64,7 +62,7 @@ When a table or figure benefits from the full width of prose plus margin, wrap i
       align: horizon,
       node[`posts/*.typ`], $->$, node[`site.typ`], $->$, node[`HTML + .typ + XML`],
     )
-  ]
+  ]]
 ]
 
 Return to @site[`folio`].

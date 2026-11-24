@@ -100,7 +100,7 @@ CHANGELOG entry.
 | `article.numbered-sections` | a post with numbered `h2` |
 | `.sidenote`, `.sidenote-number`, `.margin-toggle` | sidenotes |
 | `ul.tag-cloud`, `.tag-count` | `/tags/` |
-| `.blog-wide`, `.blog-table`, `.blog-grid-table` | wide blocks and tables (a wide table scrolls sideways) |
+| `.blog-wide`, `.blog-table`, `.blog-crosstab` | wide blocks and tables (a wide table scrolls sideways) |
 | `.expressive-code`, `.ec-line`, `.gutter`, `.ln`, `.code`, `.code-lang`, `.copy-button` | code blocks |
 | `.blog-toc`, `.blog-post-nav` | table of contents, older/newer links |
 | `.blog-proof`, `.blog-qed`, `.blog-sbox` | proofs and statement boxes |

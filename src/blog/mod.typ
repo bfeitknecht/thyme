@@ -14,9 +14,8 @@
 #import "notes.typ": mcite, mn, sidenote, sn
 
 #import "components.typ": (
-  callout, codeblock, corollary, definition, diagram, epigraph, example, grid-table, hr, important-box, kbd, lemma,
-  links, note-box, proof, proposition, recipe, remark, sbox, tablem, theorem, three-line-table, tip-box, toc,
-  warning-box, wide, zebraw,
+  booktab, callout, codeblock, corollary, crosstab, definition, diagram, epigraph, example, hr, important, kbd, lemma,
+  links, note, proof, proposition, recipe, remark, sbox, tablem, theorem, tip, toc, warning, wide, zebraw,
 )
 
 #import "post.typ": post
@@ -28,9 +27,9 @@
 //   notes       sidenote, sn, mn, mcite
 //   blocks      callout, codeblock, sbox, academic environments
 //               (definition, theorem, lemma, proposition, corollary, example,
-//               recipe, remark, proof), note-box, tip-box, warning-box,
-//               important-box, epigraph, wide, diagram, kbd, hr, links, toc
-//   tables      tablem, three-line-table, grid-table, zebraw
+//               recipe, remark, proof), note, tip, warning,
+//               important, epigraph, wide, diagram, kbd, hr, links, toc
+//   tables      tablem, booktab, crosstab, zebraw
 //   posts       post, posts
 //
 // Applied for you, and therefore not exported:

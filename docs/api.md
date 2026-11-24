@@ -65,13 +65,13 @@ That is the whole core surface.
 
 | Name | Purpose |
 | :--- | :--- |
-| `callout`, `note-box`, `tip-box`, `warning-box`, `important-box` | Boxed asides. |
+| `callout`, `note`, `tip`, `warning`, `important` | Boxed asides. |
 | `sbox` | Generic boxed block. |
 | `definition`, `theorem`, `lemma`, `proposition`, `corollary`, `example`, `recipe`, `remark`, `proof` | Academic environments. |
 | `epigraph` | Opening quotation. |
 | `codeblock` | Fenced code with a copy button. |
 | `diagram` | Captioned figure for a diagram. |
-| `wide` | Break out of the text column. |
+| `wide` | Pictures and figures across the text column and the margin. |
 | `kbd` | Keyboard key. |
 | `hr` | Section divider. |
 | `links` | Inline link row (`links(direction: "row", ...)`). |
@@ -82,8 +82,8 @@ That is the whole core surface.
 | Name | Purpose |
 | :--- | :--- |
 | `tablem` | Markdown-style table. |
-| `three-line-table` | Booktabs-style table. |
-| `grid-table` | Grid table. |
+| `booktab` | Booktabs-style table: rules at the top, under the header and at the bottom. |
+| `crosstab` | Crosshair table: hairlines between cells, no outer frame. |
 | `zebraw` | Striped table rows. |
 
 **Applied for you by `blog.site`, so not exported:**

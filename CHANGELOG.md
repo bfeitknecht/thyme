@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-24
+
+### Changed (breaking)
+
+- **Renamed.** `three-line-table` is `booktab`, `grid-table` is `crosstab` (not `grid`: that
+  would shadow Typst's `grid` under `#import blog: *`), and the callouts lose their
+  suffix: `note-box`, `tip-box`, `warning-box`, `important-box` are `note`, `tip`,
+  `warning`, `important`. The class `blog-grid-table` is `blog-crosstab`. No aliases.
+- `wide` is documented for pictures and figures. A table needs no `wide`: it stays in the
+  text column (inside `wide` it scrolls sideways at its wide width).
+
 ### Added
 
 - **Styling without lock-in** (`docs/styling.md`). Every thyme rule sits in

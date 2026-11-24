@@ -1,6 +1,6 @@
 [package]
 name = "thyme"
-version = "0.1.5"
+version = "0.2.0"
 entrypoint = "src/lib.typ"
 authors = ["Basil Feitknecht <https://0xbf.ch>"]
 license = "MIT AND MIT-0"

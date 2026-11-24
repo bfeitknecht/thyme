@@ -800,7 +800,7 @@ tbody tr:last-child td {
   border-bottom: none;
 }
 
-.blog-grid-table {
+.blog-crosstab {
   overflow-x: auto;
 }
 
@@ -819,26 +819,26 @@ tbody tr:last-child td {
   overflow-wrap: normal;
 }
 
-.blog-grid-table table {
+.blog-crosstab table {
   border-top: none;
   border-bottom: none;
   width: auto;
   min-width: 55%;
 }
 
-.blog-grid-table th,
-.blog-grid-table td {
+.blog-crosstab th,
+.blog-crosstab td {
   text-align: center;
   border-bottom: none;
   border-top: 1px solid var(--frame);
   border-left: 1px solid var(--frame);
 }
 
-.blog-grid-table tr:first-child > :is(th, td) {
+.blog-crosstab tr:first-child > :is(th, td) {
   border-top: none;
 }
 
-.blog-grid-table tr > :is(th, td):first-child {
+.blog-crosstab tr > :is(th, td):first-child {
   border-left: none;
 }
 
@@ -880,7 +880,7 @@ tbody tr:last-child td {
 .blog-sbox-part > ol:last-child,
 .blog-sbox-part > table:last-child,
 .blog-sbox-part > .blog-table:last-child,
-.blog-sbox-part > .blog-grid-table:last-child {
+.blog-sbox-part > .blog-crosstab:last-child {
   margin-bottom: 0;
 }
 

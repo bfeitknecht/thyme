@@ -1,4 +1,4 @@
-#import "@preview/thyme:0.1.5": *
+#import "@preview/thyme:0.2.0": *
 #import blog: *
 
 #show: site.with(

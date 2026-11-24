@@ -12,7 +12,7 @@
 
 `thyme` builds static sites from Typst's native `bundle` and typed `html` targets. The standard `typst` CLI does the work: `typst compile` and `typst watch` need no wrapper CLI and no client-side JavaScript.
 
-The core is zero-CSS and unopinionated. Import it (`#import "@preview/thyme:0.1.5": *`) to build a site with your own stylesheet. The `blog` preset adds a monochrome scholarly theme: native MathML, right-margin sidenotes and citations, static `/tags/` archives, backlinks, Obsidian frontmatter, theorem and proof environments, and two-column print output.
+The core is zero-CSS and unopinionated. Import it (`#import "@preview/thyme:0.2.0": *`) to build a site with your own stylesheet. The `blog` preset adds a monochrome scholarly theme: native MathML, right-margin sidenotes and citations, static `/tags/` archives, backlinks, Obsidian frontmatter, theorem and proof environments, and two-column print output.
 
 The public surface is eight names in core and thirty-nine in `blog`. Everything else in `src/` is a module-level function that `site` and the presets call; the module paths are stable, the names inside them are not. See [`docs/api.md`](docs/api.md).
 
@@ -37,7 +37,7 @@ The public surface is eight names in core and thirty-nine in `blog`. Everything 
 Scaffold a ready-to-compile blog with `typst init`:
 
 ```sh
-typst init @preview/thyme:0.1.5 my-blog
+typst init @preview/thyme:0.2.0 my-blog
 cd my-blog
 typst compile --features html,bundle --format bundle site.typ public
 ```
@@ -45,8 +45,8 @@ typst compile --features html,bundle --format bundle site.typ public
 Or wire `site.typ` by hand:
 
 ```typst
-#import "@preview/thyme:0.1.5": *
-#import "@preview/thyme:0.1.5": blog
+#import "@preview/thyme:0.2.0": *
+#import "@preview/thyme:0.2.0": blog
 
 #show: blog.site.with(
   description: "Notes on programming languages, formal methods, and systems.",
@@ -77,7 +77,7 @@ Notes on programming languages, formal methods, mathematics, and systems.
 Bring your own `styles.css` with zero preset styles injected (see [`examples/portfolio/`](examples/portfolio)):
 
 ```typst
-#import "@preview/thyme:0.1.5": *
+#import "@preview/thyme:0.2.0": *
 
 #show: site.with(
   url: "https://example.org",
@@ -138,7 +138,7 @@ headers = { Content-Type = "text/plain; charset=utf-8", Content-Disposition = "i
 ## Stability & Versioning
 
 `thyme` follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Because Typst packages
-are pinned per-version (`@preview/thyme:0.1.5`), upgrading is always an explicit, reviewable change
+are pinned per-version (`@preview/thyme:0.2.0`), upgrading is always an explicit, reviewable change
 in the imports next to `typst.toml`. Nothing is fetched at compile time beyond the version you
 name.
 
@@ -146,7 +146,7 @@ What the version number promises:
 
 | Surface                                                                                                                                                                  | Guarantee                                                                                                                            |
 | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------- |
-| Names re-exported by `#import "@preview/thyme:0.1.5": *`                                                                                                                 | **Stable** across `0.x` patch releases; renamed only in a minor release, with the old name gone (no deprecation aliases; see below). |
+| Names re-exported by `#import "@preview/thyme:0.2.0": *`                                                                                                                 | **Stable** across `0.x` patch releases; renamed only in a minor release, with the old name gone (no deprecation aliases; see below). |
 | Names re-exported by `#import blog: *`                                                                                                                                   | Same as above.                                                                                                                       |
 | Design tokens (CSS variables) and class names listed in `docs/styling.md` | Same as above: renamed only in a minor release, with a CHANGELOG entry. |
 | Everything else in `src/` (module-level functions)                                                                                                                       | **Not public.** Importable, and the module paths are stable, but the names change whenever the engine or a preset needs them to.     |
@@ -170,7 +170,7 @@ rename a non-event for anyone who is not actively upgrading.
 - **[API Surface (`docs/api.md`)](docs/api.md)**: the exported surface of the core and the `blog` preset, grouped by purpose.
 - **[Styling (`docs/styling.md`)](docs/styling.md)**: the four levels of customization, the design tokens and the stable class names.
 - **[Package Reference Manual (`docs/manual.pdf`)](docs/manual.pdf)**: API documentation generated from source doc-comments with `@preview/tidy:0.4.3`.
-- **[`template/`](template)**: starter monochrome blog (`typst init @preview/thyme:0.1.5`).
+- **[`template/`](template)**: starter monochrome blog (`typst init @preview/thyme:0.2.0`).
 - **[`examples/portfolio/`](examples/portfolio)**: zero-CSS core `thyme` site using a custom `styles.css`, plus native `html.elem`, `#tr(en: ..., de: ...)`, `file` and `webpage`.
 - **[`examples/blog/`](examples/blog)**: a `blog.site` showcase with bilingual `en`/`de` switching (`#tr(...)` and `lang.toml`), co-located folder assets (`posts/state-machine/{site.typ,dfa.svg}`), mounted `webpage` subpages (`about.typ`), full-HTML Atom and RSS feeds, static `/tags/` archives, `#toc()`, `#mcite(...)` margin citations, compile-time backlinks, post navigation, and OpenGraph and Google Scholar `<meta>` tags.
 

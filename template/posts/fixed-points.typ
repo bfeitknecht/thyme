@@ -1,4 +1,4 @@
-#import "@preview/thyme:0.1.5": *
+#import "@preview/thyme:0.2.0": *
 #import blog: *
 
 #show: post.with(
@@ -59,7 +59,7 @@ For a `while` command over store domain $Sigma$, define the characteristic funct
 #recipe[Tracing Kleene Approximates][
   To verify how fast $F^n (bot)$ stabilizes on a small sign lattice, tabulate the first iterates side by side:
 
-  #grid-table[
+  #crosstab[
     | *Iterate* | $x < 0$ | $x = 0$ | $x > 0$ |
     | --- | --- | --- | --- |
     | $F^0 (bot)$ | $bot$ | $bot$ | $bot$ |
