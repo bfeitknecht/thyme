@@ -6,3 +6,4 @@ dist/
 preview/
 .tmp-lint/
 __pycache__/
+.direnv/
