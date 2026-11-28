@@ -22,3 +22,16 @@ Posts with co-located figures can live in a subfolder (`posts/state-machine/site
 #proposition[Parity Invariant][
   Let $delta : Q times {0, 1} -> Q$ flip between $q_0$ and $q_1$ on symbol $1$ and stay fixed on $0$. Then $delta^*(q_0, w) = q_0$ if and only if $|w|_1 equiv 0 mod 2$.
 ]
+
+The same acceptor as a `mermaid` code block: the `blog` preset renders it at compile time (`@preview/merman`), with no client-side JavaScript.
+
+```mermaid
+stateDiagram-v2
+  direction LR
+  [*] --> q0
+  q0 --> q0: 0
+  q0 --> q1: 1
+  q1 --> q1: 0
+  q1 --> q0: 1
+  q0 --> [*]
+```

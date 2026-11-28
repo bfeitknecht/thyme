@@ -201,6 +201,9 @@ check:
         fail("missing post-nav")
     if '<time datetime="' not in sm_html:
         fail("missing semantic <time datetime>")
+    # a ```mermaid block renders to a .blog-diagram figure (inline svg), not a code block
+    if sm_html.count('<figure class="blog-diagram"') < 2 or 'stateDiagram-v2' in sm_html:
+        fail("mermaid block did not render as a blog-diagram figure")
     if '<div class="blog-sbox"' not in bi_html or '<aside class="blog-sbox"' in bi_html:
         fail("blog-sbox must be a Reader-Mode-safe <div>, not <aside>")
     if 'aria-label="Language: en"' not in bi_html or 'aria-label="Toggle sidenote 1"' not in sm_html:

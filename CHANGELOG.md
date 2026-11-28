@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Mermaid diagrams.** The `blog` preset renders every `mermaid` code block at compile time with
+  `@preview/merman:0.6.0`: Mermaid's grayscale `neutral` theme, placed like `#diagram` (inline
+  `<svg>` in HTML, inverted in dark mode, centred in PDF). A broken diagram shows a placeholder.
+  No client-side JavaScript.
+
 ## [0.2.0] - 2026-11-24
 
 ### Changed (breaking)

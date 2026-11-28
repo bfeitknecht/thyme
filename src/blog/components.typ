@@ -1,11 +1,12 @@
 // Monochrome `oklch` blog & math components for the `blog` preset, built on top of
 // `@preview/showybox:2.0.4`, `@preview/tablem:0.3.0`, `@preview/cheq:0.4.0`,
-// and `@preview/zebraw:0.6.3`.
+// `@preview/zebraw:0.6.3` and `@preview/merman:0.6.0`.
 
 #import "@preview/cheq:0.4.0": checklist
 #import "@preview/showybox:2.0.4": showybox
 #import "@preview/tablem:0.3.0": tablem as _tablem, three-line-table as _three-line-table
 #import "@preview/zebraw:0.6.3": zebraw as _zebraw, zebraw-init, zebraw-themes
+#import "@preview/merman:0.6.0": mermaid as _mermaid
 #import "../paths.typ": find-doc-containing, heading-anchor-id, resolve-abs-length
 #import "../text.typ": to-plain-text, word-hint
 #import "theme.typ": active-theme
@@ -637,6 +638,22 @@
     align(center, body)
   }
 }
+
+/// Show rule for `mermaid` code blocks (`@preview/merman:0.6.0`): the diagram is
+/// rendered at compile time in Mermaid's grayscale `neutral` theme and placed like
+/// `#diagram` (inline `<svg>` in HTML, inverted in dark mode). A broken diagram shows a
+/// placeholder instead of failing the build. The `blog` preset applies it to every page.
+/// -> content
+#let mermaid-block(
+  /// The `raw` element with `lang: "mermaid"`.
+  /// -> raw
+  it,
+) = diagram(_mermaid(
+  it.text,
+  theme-name: "neutral",
+  background: "transparent",
+  error-mode: "placeholder",
+))
 
 /// Monochrome keyboard shortcut badge (`#kbd("Ctrl+P")`).
 ///

@@ -3,6 +3,7 @@
 
 #import "@preview/cheq:0.4.0": checklist
 #import "@preview/zebraw:0.6.3": zebraw-init
+#import "components.typ": mermaid-block
 #import "../core.typ": render-core-shell, render-site-nav
 #import "../paths.typ": with-smart-refs
 #import "../text.typ": to-plain-text
@@ -127,6 +128,7 @@
     },
     body-wrapper: inner => {
       show: zebraw-init
+      show raw.where(lang: "mermaid"): mermaid-block
       show: checklist
       show: with-smart-refs.with(
         ink: theme-config.text-light,

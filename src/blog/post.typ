@@ -4,6 +4,7 @@
 
 #import "@preview/cheq:0.4.0": checklist
 #import "@preview/zebraw:0.6.3": zebraw-init
+#import "components.typ": mermaid-block
 #import "../core.typ": (
   backlinks, extract-page-assets, extract-page-meta, lookup-source-href, mount, normalize-assets, page-asset,
   query-doc-tr-codes, query-pages, render-top-bar, site-config,
@@ -682,6 +683,7 @@
         fill: merged-theme.paper-light,
       )
       show: zebraw-init
+      show raw.where(lang: "mermaid"): mermaid-block
       show: checklist.with(
         marker-map: (
           " ": move(
